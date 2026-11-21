@@ -3,7 +3,6 @@ import type { gsap } from 'gsap';
 import type { Product } from '../../catalog/product';
 import type { PreviewPoint, PreviewRequest } from '../../product-preview/product-preview';
 import { heroCamera } from '../hero.config';
-import { garageZoneFor, zones } from './garage-path';
 import type { mountGarage } from './garage-renderer';
 
 type GarageScene = ReturnType<typeof mountGarage>;
@@ -20,6 +19,7 @@ interface InspectionOptions {
   holdSelection: (held: boolean) => void;
   select: (product: Product, point: PreviewPoint) => void;
   fallback: () => void;
+  zoneX: (product: Product) => number;
 }
 
 export function connectInspection(options: InspectionOptions) {
@@ -33,7 +33,7 @@ export function connectInspection(options: InspectionOptions) {
     const zoom = Boolean(
       read() && bounds.top >= headerBottom - 2 && bounds.bottom <= view.innerHeight + 2,
     );
-    const zoneX = zones.find(({ category }) => category === garageZoneFor(product))!.x;
+    const zoneX = options.zoneX(product);
     const viewerAvailable = signal(false);
     const freeze = (signal: AbortSignal) => options.freeze(signal, () => viewerAvailable.set(true));
 

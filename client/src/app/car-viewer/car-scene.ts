@@ -11,7 +11,7 @@ import {
   WebGLRenderTarget,
 } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { parseGltfModel } from './gltf-model';
 import { prefetchedModel } from './model-prefetch';
 import { motionLevel, motionQueries } from '../motion/motion-policy';
 import { createEnvironment, disposeModels } from './three-resources';
@@ -196,7 +196,7 @@ export function mountCarScene(
 
   async function load() {
     const { buffer, basePath } = await fetchModel(url, abort.signal, events.onProgress);
-    const gltf = await new GLTFLoader().parseAsync(buffer, basePath);
+    const gltf = await parseGltfModel(buffer, basePath);
     if (disposed) {
       disposeModels(gltf.scenes);
       return;

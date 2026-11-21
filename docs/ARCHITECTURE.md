@@ -4,7 +4,9 @@
 
 The home hero shows an image until the WebGL scene loads and keeps that fallback for unsupported or reduced-motion environments. `garage-renderer.ts` builds and draws the room, lights, and products. The original animated door opens from the Enter button or can be skipped for the rest of the session.
 
-The hero controls select four zones independently of page scrolling. `hero-scroll.ts` handles the entrance and scroll-linked fade. Below it, `garage-tour-scroll.ts` selects the block crossing the viewport and scrubs a single camera and parallax path. Tab navigation uses native smooth scrolling and the tour uses CSS sticky positioning. The hero and tour lease a single canvas through `garage-canvas-slot.ts`, with `garage-session.ts` disposing the old context before the next view mounts. During a 3D preview, `garage-inspection.ts` coordinates the handoff to the product viewer.
+The hero pins while the camera moves through Cars, Trucks, Bikes, and RC Toys. The tabs scroll to the matching zone. `hero.config.ts` defines the zone order and scroll length. `garage-session.ts` releases the renderer when the hero leaves the viewport, and `garage-inspection.ts` hands it off to the product viewer during a 3D preview.
+
+Below the hero, `category-stages-motion.ts` links card entrances and background parallax to normal scrolling. Each category uses a CSS sticky heading and the standard product cards.
 
 ## Cart
 

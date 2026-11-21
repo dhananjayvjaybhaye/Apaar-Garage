@@ -1,0 +1,51 @@
+.scene-backdrop {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  overflow: clip;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, var(--scene-base) 4rem, #101115 92%);
+}
+
+.scene-backdrop span {
+  position: absolute;
+  inset: 0;
+}
+
+.scene-glow {
+  background:
+    radial-gradient(
+      ellipse at 17% 25%,
+      color-mix(in srgb, var(--scene-accent) 17%, transparent),
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse at 85% 65%,
+      color-mix(in srgb, var(--scene-accent) 10%, transparent),
+      transparent 56%
+    );
+}
+
+.scene-beams {
+  opacity: 0.16;
+  background: conic-gradient(
+    from 155deg at 75% 0%,
+    transparent 6deg,
+    var(--scene-accent) 16deg,
+    transparent 37deg
+  );
+  mask-image: linear-gradient(transparent, #000 20%, transparent 80%);
+}
+
+.scene-dust {
+  opacity: 0.22;
+  background:
+    radial-gradient(circle at 20px 55px, var(--scene-accent) 1px, transparent 2px) 0 0 / 169px 131px,
+    radial-gradient(circle at 48px 17px, #ffe4be 1px, transparent 1.8px) 0 0 / 197px 179px;
+  mask-image: linear-gradient(transparent, #000 24%, transparent 89%);
+}
+
+.scene-backdrop.is-moving,
+.scene-backdrop.is-moving span {
+  will-change: transform, opacity;
+}

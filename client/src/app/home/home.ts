@@ -21,16 +21,15 @@ import { TrackDivider } from '../ui/track-divider';
 import { ScrollVehicles } from '../motion/scroll-vehicles';
 import { AmbientVisible } from '../motion/ambient-visible';
 import { heroLayout } from './hero.config';
-import { GarageTour } from './garage-tour';
-import { GarageCanvasSlot } from './garage/garage-canvas-slot';
+import { CategoryStages } from './category-stages';
+import { categoryScenes } from './category-scenes.config';
 
 type FeaturedState = { loading: boolean; items: Product[]; error?: boolean };
 const loading: FeaturedState = { loading: true, items: [] };
 
 @Component({
   selector: 'app-home',
-  imports: [Tilt, Magnetic, Parallax, RouterLink, HomeHero, GarageIntro, GarageTour, ProductCard, Reveal, ShopState, GarageAmbience, TrackDivider, ScrollVehicles, AmbientVisible],
-  providers: [GarageCanvasSlot],
+  imports: [Tilt, Magnetic, Parallax, RouterLink, HomeHero, GarageIntro, CategoryStages, ProductCard, Reveal, ShopState, GarageAmbience, TrackDivider, ScrollVehicles, AmbientVisible],
   templateUrl: './home.html',
   styleUrls: ['./home.css', './home-motion.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -78,9 +77,9 @@ export class Home {
     },
   ] as const;
   protected readonly categoryName = computed(() => this.categories.find(({ id }) => id === this.category())?.name ?? '');
-  protected readonly tourStops = computed(() => this.categories.map((category) => {
-    const { loading, items } = this.featuredByCategory[category.id]();
-    return { ...category, loading, items: items.slice(0, 3) };
+  protected readonly categoryStages = computed(() => this.categories.map(({ id, name, note }) => {
+    const state = this.featuredByCategory[id]();
+    return { id, name, note, ...state };
   }));
   protected readonly scales = ['1:18', '1:24', '1:43', '1:64'];
 
@@ -97,7 +96,7 @@ export class Home {
       filter((requested) => requested === category),
       startWith(category),
       switchMap(() => this.api.getProducts({
-        ...(category === 'rc' ? { productType: 'rc' as const } : { category }), sort: 'featured', limit: 6,
+        ...(category === 'rc' ? { productType: 'rc' as const } : { category }), sort: 'featured', limit: categoryScenes.productLimit,
       }).pipe(
         map(({ items }): FeaturedState => ({ loading: false, items })),
         catchError(() => of<FeaturedState>({ loading: false, items: [], error: true })),

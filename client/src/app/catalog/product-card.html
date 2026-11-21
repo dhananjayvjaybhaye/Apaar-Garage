@@ -9,7 +9,7 @@
       <img
         [src]="image"
         [attr.srcset]="imageSet(image)"
-        sizes="(min-width: 80rem) 304px, (min-width: 49rem) calc((100vw - 5.6rem) / 4), calc((100vw - 2.6rem) / 2)"
+        [sizes]="imageSizes()"
         alt=""
         [loading]="priority() ? 'eager' : 'lazy'"
         [attr.fetchpriority]="priority() ? 'high' : null"

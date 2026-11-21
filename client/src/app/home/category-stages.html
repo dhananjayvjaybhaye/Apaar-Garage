@@ -1,0 +1,93 @@
+<section
+  #listing
+  id="garage-tour"
+  class="category-scenes"
+  aria-labelledby="category-scenes-title"
+  [style.--scene-height]="config.sectionHeight"
+  [style.--scene-padding]="config.sectionPadding"
+  [style.--scene-overlap]="config.overlap"
+>
+  <h2 id="category-scenes-title" class="visually-hidden">Shop by vehicle category</h2>
+  @for (stop of stops(); track stop.id) {
+    @let filters = stop.id === 'rc' ? { productType: 'rc' } : { category: stop.id };
+    <section
+      class="category-scene"
+      [attr.data-category]="stop.id"
+      [id]="'tour-' + stop.id"
+      [attr.aria-labelledby]="'tour-' + stop.id + '-title'"
+    >
+      <div class="scene-backdrop" aria-hidden="true">
+        <span class="scene-glow"></span>
+        <span class="scene-beams"></span>
+        <span class="scene-dust"></span>
+      </div>
+      <header class="scene-heading" data-scene-heading>
+        <div class="scene-heading-inner">
+          <div>
+            <div class="heading-mask">
+              <h3 data-heading-line [id]="'tour-' + stop.id + '-title'">{{ stop.name }}</h3>
+            </div>
+            <div class="heading-mask">
+              <p data-heading-line>{{ stop.note }}</p>
+            </div>
+          </div>
+          <a
+            class="secondary-button"
+            routerLink="/catalog"
+            [queryParams]="filters"
+            [attr.aria-label]="'View all ' + stop.name"
+            data-heading-link
+            >View all <span aria-hidden="true">↗</span></a
+          >
+        </div>
+      </header>
+      <div class="scene-products">
+        @if (stop.loading) {
+          <p class="visually-hidden" role="status">Loading {{ stop.name }}…</p>
+          <div class="scene-grid" aria-hidden="true">
+            @for (placeholder of [1, 2, 3, 4]; track placeholder) {
+              <div class="skeleton scene-skeleton"></div>
+            }
+          </div>
+        } @else {
+          @if (!stop.items.length) {
+            <p class="scene-empty">
+              {{
+                stop.error
+                  ? 'Products are temporarily unavailable.'
+                  : 'No products are available in this category yet.'
+              }}
+            </p>
+          }
+          <div class="scene-grid" data-scene-grid>
+            @for (product of stop.items; track product.slug) {
+              <div class="scene-card" data-scene-card>
+                <div class="scene-card-motion">
+                  @defer (on viewport) {
+                    <app-product-card
+                      [product]="product"
+                      [tiltDegrees]="4"
+                      [imageSizes]="config.imageSizes"
+                    />
+                  } @placeholder {
+                    <div class="skeleton scene-skeleton" aria-hidden="true"></div>
+                  }
+                  <span class="card-softness" aria-hidden="true"></span>
+                </div>
+              </div>
+            }
+            <div class="scene-card final-card" data-scene-card>
+              <div class="scene-card-motion">
+                <a class="scene-catalog-link" routerLink="/catalog" [queryParams]="filters">
+                  <span class="scene-catalog-arrow" aria-hidden="true">↗</span>
+                  <strong>View all {{ stop.name }}</strong>
+                  <span>Explore the collection</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+  }
+</section>

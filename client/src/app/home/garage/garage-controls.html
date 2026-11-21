@@ -2,7 +2,7 @@
   #tabs
   class="hero-categories"
   role="group"
-  [attr.aria-label]="tour() ? 'Garage tour categories' : 'Featured categories'"
+  aria-label="Featured categories"
   [style.--zone-count]="zones.length"
   (keydown)="onKey($event, tabs)"
 >
@@ -12,7 +12,7 @@
       class="secondary-button"
       type="button"
       [attr.aria-pressed]="activeIndex() === index"
-      [attr.aria-controls]="tour() ? 'tour-' + zone.category : 'featured'"
+      aria-controls="featured"
       (click)="selectZone.emit(index)"
     >
       {{ zone.name }}
@@ -24,7 +24,6 @@
     <button
       #chip
       class="hero-model"
-      [class.tour-chip]="tour()"
       type="button"
       aria-haspopup="dialog"
       (pointerenter)="prefetch(item)"
@@ -48,14 +47,16 @@
       <strong>{{ item.price | currency: 'INR' : 'symbol' : '1.0-2' }}</strong>
     </button>
   } @empty {
-    @if (ready() && !tour()) {
-      @let zone = zones[activeIndex()];
+    @let zone = zones[activeIndex()];
+    @if (ready()) {
       <a
-        class="secondary-button"
+        class="hero-model hero-placeholder"
         routerLink="/catalog"
         [queryParams]="zone.category === 'rc' ? { productType: 'rc' } : { category: zone.category }"
-        >Browse {{ zone.name }}</a
+        >No featured models yet. Browse {{ zone.category === 'rc' ? 'RC Toys' : zone.name }}.</a
       >
+    } @else {
+      <span class="hero-model hero-placeholder">Finding featured models…</span>
     }
   }
 </div>

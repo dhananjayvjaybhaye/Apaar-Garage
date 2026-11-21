@@ -4,7 +4,11 @@ import { NavigationStart, Router } from '@angular/router';
 import type { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { motionLevel, motionQueries } from './motion-policy';
 
-interface Pointer { x: number; y: number; target: Element | null }
+interface Pointer {
+  x: number;
+  y: number;
+  target: Element | null;
+}
 interface MotionFrame {
   pointer: Pointer | null;
   width: number;
@@ -26,7 +30,10 @@ export class Motion {
   private pointer: Pointer | null = null;
   private hitTestPending = false;
   private frameId = 0;
-  private scrollPlugin?: Promise<{ gsap: typeof import('gsap').gsap; ScrollTrigger: ScrollPlugin } | null>;
+  private scrollPlugin?: Promise<{
+    gsap: typeof import('gsap').gsap;
+    ScrollTrigger: ScrollPlugin;
+  } | null>;
 
   constructor() {
     const view = this.view;
@@ -61,7 +68,9 @@ export class Motion {
   subscribe(listener: FrameListener) {
     this.listeners.add(listener);
     this.requestFrame();
-    return () => { this.listeners.delete(listener); };
+    return () => {
+      this.listeners.delete(listener);
+    };
   }
 
   schedule(key: object, job: () => void) {
@@ -74,43 +83,26 @@ export class Motion {
   }
 
   revealWhenVisible(element: HTMLElement, reveal: () => void) {
-    let done = false;
-    let observer: IntersectionObserver | undefined;
-    let trigger: ScrollTrigger | undefined;
-    const stop = () => {
-      done = true;
-      observer?.disconnect();
-      trigger?.kill();
-    };
-    const enter = () => {
-      if (done) return;
-      stop();
+    if (typeof IntersectionObserver === 'undefined') {
       reveal();
-    };
-    if (typeof IntersectionObserver === 'undefined') return stop;
-
-    // Keep a lightweight fallback for motion preferences and unavailable plugin chunks.
-    observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) enter();
+      return () => undefined;
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      observer.disconnect();
+      reveal();
     });
     observer.observe(element);
-
-    if (this.level() === 'full') {
-      void this.loadScrollTools().then((tools) => {
-        if (!tools || done || !element.isConnected || this.level() !== 'full') return;
-        trigger = tools.ScrollTrigger.create({ trigger: element, start: 'top 98%', once: true, onEnter: enter });
-        if (done) trigger.kill();
-      });
-    }
-    return stop;
+    return () => observer.disconnect();
   }
 
   loadScrollTools() {
-    return this.scrollPlugin ??= Promise.all([import('gsap'), import('gsap/ScrollTrigger')])
+    return (this.scrollPlugin ??= Promise.all([import('gsap'), import('gsap/ScrollTrigger')])
       .then(([{ gsap }, { ScrollTrigger }]) => {
         gsap.registerPlugin(ScrollTrigger);
         return { gsap, ScrollTrigger };
-      }).catch(() => null);
+      })
+      .catch(() => null));
   }
 
   private refreshPolicy = () => {
@@ -128,7 +120,8 @@ export class Motion {
       return;
     }
     this.pointer = {
-      x: event.clientX, y: event.clientY,
+      x: event.clientX,
+      y: event.clientY,
       target: event.target instanceof Element ? event.target : null,
     };
     this.requestFrame();

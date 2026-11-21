@@ -13,7 +13,7 @@ Start with the dark amber palette in `client/src/styles.css`. Change a shared va
 
 ## Change animation speed
 
-Edit `hero.config.ts` for the hero entrance and camera animations, and `garage-tour.config.ts` for the tour heights, scroll offsets, and timings. Test both normal motion and reduced motion.
+Edit `hero.config.ts` for the hero entrance and camera animations. Edit `category-scenes.config.ts` for category section heights, scroll distances, and stagger timings. Test both normal motion and reduced motion.
 
 ## Change the COD fee
 

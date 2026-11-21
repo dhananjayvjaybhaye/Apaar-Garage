@@ -25,6 +25,9 @@ export class ProductCard {
   readonly product = input.required<Product>();
   protected readonly imageSet = responsiveImage;
   readonly priority = input(false);
+  readonly imageSizes = input(
+    '(min-width: 80rem) 304px, (min-width: 49rem) calc((100vw - 5.6rem) / 4), calc((100vw - 2.6rem) / 2)',
+  );
   readonly addLabel = input('Add');
   readonly tiltDegrees = input(10);
   protected readonly cart = inject(CartStore);

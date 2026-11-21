@@ -2,13 +2,13 @@ import type { Renderer2 } from '@angular/core';
 import type { gsap } from 'gsap';
 import type { Product } from '../../catalog/product';
 import type { Motion } from '../../motion/motion';
+import { motionQueries } from '../../motion/motion-policy';
 import type { PreviewPoint } from '../../product-preview/product-preview';
 import { prefetchProductMedia } from '../../product-preview/prefetch-product-media';
 import type { EngineLoading } from '../../ui/engine-loading';
-import { heroCamera, heroLayout } from '../hero.config';
 import { connectInspection } from './garage-inspection';
-import type { GarageCanvasSlot } from './garage-canvas-slot';
-import { zones } from './garage-path';
+import { garageZoneFor } from './garage-path';
+import { heroZones } from './hero-garage-camera';
 import type { mountGarage } from './garage-renderer';
 
 interface SessionOptions {
@@ -16,14 +16,13 @@ interface SessionOptions {
   dom: Renderer2;
   motion: Motion;
   loading: EngineLoading;
-  slot: GarageCanvasSlot;
-  scrollProgress?: () => number;
-  allowMobile?: boolean;
+  manual: boolean;
+  scrollProgress: () => number;
   activeIndex: () => number;
   readProducts: () => readonly Product[];
-  push: () => number;
-  dolly: () => number;
   selectProduct: (item: Product, point: PreviewPoint) => void;
+  hoverProduct?: NonNullable<Parameters<typeof mountGarage>[1]['hover']>;
+  onUnavailable?: () => void;
   onScene: (scene: ReturnType<typeof mountGarage>) => void;
   onLive: (live: boolean) => void;
 }
@@ -31,11 +30,15 @@ interface SessionOptions {
 export function observeGarage(options: SessionOptions) {
   const { stage, motion, loading } = options;
   const view = stage.ownerDocument.defaultView;
-  if (!view || typeof IntersectionObserver === 'undefined' || typeof ResizeObserver === 'undefined')
+  if (
+    !view ||
+    typeof IntersectionObserver === 'undefined' ||
+    typeof ResizeObserver === 'undefined'
+  ) {
+    options.onUnavailable?.();
     return;
-  const desktop = view.matchMedia(
-    '(min-width: ' + heroLayout.columnsAtRem + 'rem) and (pointer: fine)',
-  );
+  }
+  const desktop = view.matchMedia(motionQueries[2] + ' and (pointer: fine)');
   const device = view.navigator as Navigator & {
     deviceMemory?: number;
     connection?: { saveData?: boolean };
@@ -55,15 +58,17 @@ export function observeGarage(options: SessionOptions) {
   const refresh = () => {
     observer.disconnect();
     stop();
-    const mobileCapable =
-      options.allowMobile && (device.deviceMemory ?? 4) >= 4 && device.hardwareConcurrency >= 4;
+    const enoughCores = !device.hardwareConcurrency || device.hardwareConcurrency >= 4;
     if (
       !disposed &&
-      (desktop.matches || mobileCapable) &&
-      !device.connection?.saveData &&
-      (device.deviceMemory ?? 4) > 2
+      (options.manual ||
+        (desktop.matches &&
+          enoughCores &&
+          !device.connection?.saveData &&
+          (device.deviceMemory ?? 4) > 2))
     )
       observer.observe(stage);
+    else options.onUnavailable?.();
   };
   const observer = new IntersectionObserver(([entry]) => {
     if (!entry.isIntersecting) {
@@ -75,25 +80,33 @@ export function observeGarage(options: SessionOptions) {
     const loadingJob = (job = loading.begin());
     void Promise.all([motion.loadScrollTools(), import('./garage-renderer')])
       .then(([tools, world]) => {
-        if (disposed || current !== generation || !tools) return loadingJob.finish();
+        if (disposed || current !== generation) return loadingJob.finish();
+        if (!tools) {
+          options.onUnavailable?.();
+          return loadingJob.finish();
+        }
         loadingJob.progress(0.8);
-        session = connectGarage(
-          options,
-          view,
-          world.mountGarage,
-          tools.gsap,
-          !desktop.matches,
-          () => loadingJob.finish(),
+        session = motion.zone.runOutsideAngular(() =>
+          connectGarage(
+            options,
+            view,
+            world.mountGarage,
+            tools.gsap,
+            options.manual || !desktop.matches,
+            () => loadingJob.finish(),
+          ),
         );
       })
-      .catch(() => loadingJob.finish());
+      .catch(() => {
+        if (!disposed && current === generation) options.onUnavailable?.();
+        loadingJob.finish();
+      });
   });
   motion.zone.runOutsideAngular(() => {
     desktop.addEventListener('change', refresh);
     refresh();
   });
   return {
-    select: (index: number) => session?.select(index),
     scrollTo: (progress: number, index: number) => session?.setScrollFrame(progress, index),
     inspect: (...args: Parameters<ReturnType<typeof connectInspection>['inspect']>) =>
       session?.inspect(...args),
@@ -115,14 +128,13 @@ function connectGarage(
   finish: () => void,
 ) {
   const { stage, motion, dom } = options;
-  const playhead = { progress: options.scrollProgress?.() ?? zones[options.activeIndex()].center };
+  let progress = options.scrollProgress();
   let activeZone = options.activeIndex();
   let canvas: HTMLCanvasElement | undefined;
   let still: HTMLImageElement | undefined;
   let scene: ReturnType<typeof mountGarage> = null;
   let cancelled = false;
   let held = false;
-  let releaseCanvas: (() => void) | undefined;
 
   function dropScene() {
     scene?.destroy();
@@ -130,15 +142,12 @@ function connectGarage(
     options.onScene(null);
     canvas?.remove();
     canvas = undefined;
-    releaseCanvas?.();
-    releaseCanvas = undefined;
   }
 
   function destroy() {
     if (cancelled) return;
     cancelled = true;
     finish();
-    animator.killTweensOf(playhead);
     inspection.destroy();
     options.onLive(false);
     dropScene();
@@ -146,7 +155,6 @@ function connectGarage(
   }
 
   function start() {
-    releaseCanvas = options.slot.claim(destroy);
     const surface: HTMLCanvasElement = dom.createElement('canvas');
     canvas = surface;
     Object.assign(surface.style, { width: '100%', height: '100%', display: 'block' });
@@ -156,7 +164,9 @@ function connectGarage(
       {
         select: (product, point) => motion.zone.run(() => options.selectProduct(product, point)),
         prefetch: prefetchProductMedia,
-        failed: destroy,
+        hover:
+          options.hoverProduct && ((item) => motion.zone.run(() => options.hoverProduct?.(item))),
+        failed: fallback,
         ready: () => {
           finish();
           still?.remove();
@@ -165,37 +175,23 @@ function connectGarage(
         },
       },
       mobile,
-      Boolean(options.scrollProgress),
     );
     if (!scene) return false;
-    if (options.scrollProgress) scene.setTourFrame(playhead.progress, activeZone);
-    else scene.setProgress(playhead.progress);
-    scene.pushIn(options.push());
-    scene.setDolly(options.dolly());
+    scene.setScrollFrame(progress, activeZone);
     scene.setFeatured(options.readProducts());
     options.onScene(scene);
     return true;
   }
 
-  function select(index: number) {
-    if (held || cancelled) return;
-    motion.zone.runOutsideAngular(() => {
-      if (playhead.progress === zones[index].center && !animator.isTweening(playhead)) return;
-      animator.killTweensOf(playhead);
-      animator.to(playhead, {
-        progress: zones[index].center,
-        duration: heroCamera.tabSeconds,
-        ease: 'power2.out',
-        overwrite: true,
-        onUpdate: () => scene?.setProgress(playhead.progress),
-      });
-    });
+  function setScrollFrame(value: number, index: number) {
+    progress = value;
+    activeZone = index;
+    if (!held) scene?.setScrollFrame(progress, activeZone);
   }
 
-  function setScrollFrame(progress: number, index: number) {
-    playhead.progress = progress;
-    activeZone = index;
-    if (!held) scene?.setTourFrame(progress, index);
+  function fallback() {
+    options.onUnavailable?.();
+    destroy();
   }
 
   async function freeze(signal: AbortSignal, ready: () => void) {
@@ -229,23 +225,22 @@ function connectGarage(
     animator,
     read: () => scene,
     cancelled: () => cancelled,
-    restart: start,
+    restart: () => motion.zone.runOutsideAngular(start),
     freeze,
     holdSelection: (hold) => {
       held = hold;
-      if (hold) animator.killTweensOf(playhead);
-      else if (options.scrollProgress) scene?.setTourFrame(playhead.progress, activeZone);
-      else if (playhead.progress !== zones[options.activeIndex()].center)
-        select(options.activeIndex());
+      if (!hold) scene?.setScrollFrame(progress, activeZone);
     },
+    zoneX: (product) =>
+      heroZones.find(({ category }) => category === garageZoneFor(product))?.x ?? 0,
     select: options.selectProduct,
-    fallback: destroy,
+    fallback,
   });
 
   try {
-    if (!start()) destroy();
+    if (!start()) fallback();
   } catch {
-    destroy();
+    fallback();
   }
-  return { inspect: inspection.inspect, select, setScrollFrame, destroy };
+  return { inspect: inspection.inspect, setScrollFrame, destroy };
 }

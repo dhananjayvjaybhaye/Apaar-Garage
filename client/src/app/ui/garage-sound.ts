@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { afterNextRender, DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
+import { DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
 import { EngineLoading } from './engine-loading';
 
 const soundFiles = {
@@ -35,12 +35,6 @@ export class GarageSound {
 
   constructor() {
     const view = this.view;
-    afterNextRender(() => {
-      view?.requestAnimationFrame(() => view.setTimeout(() => {
-        if (this.destroyed) return;
-        for (const sound of Object.keys(soundFiles) as Sound[]) void this.download(sound);
-      }, 0));
-    });
     const visibility = () => {
       this.visible.set(!this.document.hidden);
       if (this.document.hidden) this.stop();
@@ -78,8 +72,12 @@ export class GarageSound {
     else if (this.activate()) this.click();
   }
 
-  enter() {
+  prepareIntro() {
     if (!this.activate()) return;
+    for (const sound of ['click', 'door', 'start'] as const) void this.download(sound);
+  }
+
+  enter() {
     void this.play('start');
     void this.play('door');
   }

@@ -5,112 +5,91 @@ import { heroMotion } from './hero.config';
 type ScrollTools = { gsap: typeof gsap; ScrollTrigger: typeof ScrollTrigger };
 
 export function playHeroEntrance(hero: HTMLElement, reduced: boolean) {
-  const entrance = Array.from(hero.querySelectorAll<HTMLElement>('[data-hero-enter]'));
-  const window = hero.querySelector<HTMLElement>('[data-hero-window]');
-  if (!window?.animate) return () => undefined;
-  if (reduced) {
-    const fade = hero.animate([{ opacity: 0.75 }, { opacity: 1 }], {
-      duration: heroMotion.reducedFade * 1000,
-      easing: 'ease-out',
-    });
-    return () => fade.cancel();
-  }
-
-  const { entranceStagger: stagger, entrance: duration, sceneEntranceScale } = heroMotion;
-  const animations = entrance.map((element, index) => {
-    const masked = element.parentElement?.classList.contains('hero-title-line');
-    return element.animate(
-      [
-        { transform: masked ? 'translateY(108%)' : 'translateY(12px)', opacity: 0 },
-        { transform: 'none', opacity: 1 },
-      ],
-      {
-        duration: (duration - stagger * (entrance.length - 1)) * 1000,
-        delay: index * stagger * 1000,
-        fill: 'backwards',
-        easing: 'cubic-bezier(.22,.73,.3,1)',
-      },
-    );
-  });
-  animations.push(
-    window.animate(
-      [
-        { transform: 'scale(' + sceneEntranceScale + ')', opacity: 0 },
-        { transform: 'none', opacity: 1 },
-      ],
-      { duration: duration * 700, delay: duration * 300, fill: 'backwards', easing: 'ease-out' },
-    ),
-  );
-  const focus = () => animations.forEach((animation) => animation.cancel());
-  // Show controls immediately if keyboard focus enters during the entrance.
-  hero.addEventListener('focusin', focus, { once: true });
+  const items = [...hero.querySelectorAll<HTMLElement>('[data-hero-enter]')];
+  const duration = heroMotion.entrance * 1000;
+  const animations = reduced
+    ? [
+        hero.animate([{ opacity: 0.85 }, { opacity: 1 }], {
+          duration: heroMotion.reducedFade * 1000,
+        }),
+      ]
+    : items.map((element, index) =>
+        element.animate(
+          [
+            {
+              transform: element.closest('.hero-title-line')
+                ? 'translateY(105%)'
+                : 'translateY(14px)',
+              opacity: 0,
+            },
+            { transform: 'none', opacity: 1 },
+          ],
+          {
+            duration: duration - (items.length - 1) * heroMotion.entranceStagger * 1000,
+            delay: index * heroMotion.entranceStagger * 1000,
+            fill: 'backwards',
+            easing: 'ease-out',
+          },
+        ),
+      );
+  const cancel = () => animations.forEach((animation) => animation.cancel());
+  hero.addEventListener('focusin', cancel, { once: true });
   return () => {
-    hero.removeEventListener('focusin', focus);
-    focus();
+    hero.removeEventListener('focusin', cancel);
+    cancel();
   };
 }
 
 export function attachHeroScroll(
   hero: HTMLElement,
-  tools: ScrollTools,
-  dolly: (progress: number) => void,
+  { gsap, ScrollTrigger }: ScrollTools,
+  headerHeight: () => number,
+  update: (progress: number) => void,
 ) {
-  const nextHeading = hero.closest('main')?.querySelector('#garage-tour-title');
-
-  const context = tools.gsap.context(() => {
-    const {
-      scrub,
-      scrollDistance,
-      copyLag,
-      sceneLift,
-      sceneScale,
-      controlsFadeStart,
-      controlsLiftPx,
-      glowFadeEnd,
-      featuredRiseStart,
-      featuredLiftPx,
-    } = heroMotion;
-    const camera = { progress: 0 };
-    const timeline = tools.gsap.timeline({
-      defaults: { ease: 'none' },
+  const playhead = { progress: 0 };
+  const view = hero.ownerDocument.defaultView!;
+  let trigger: ScrollTrigger | undefined;
+  const context = gsap.context(() => {
+    const timeline = gsap.timeline({
       scrollTrigger: {
         trigger: hero,
-        start: 'top top',
-        end: () => '+=' + Math.round(hero.offsetHeight * scrollDistance),
-        scrub,
+        start: () => {
+          const mobileNav = view.document.querySelector('app-mobile-nav nav');
+          const bottom = view.innerHeight - (mobileNav?.getBoundingClientRect().height ?? 0);
+          return 'top ' + Math.min(headerHeight(), bottom - hero.offsetHeight) + 'px';
+        },
+        end: () => '+=' + Math.round(view.innerHeight * heroMotion.scrollDistance),
+        pin: true,
+        scrub: heroMotion.scrub,
         invalidateOnRefresh: true,
       },
     });
-    timeline
-      .to(
-        '[data-hero-copy]',
-        { y: () => hero.offsetHeight * scrollDistance * copyLag, opacity: 0, duration: 1 },
-        0,
-      )
-      .to(
-        '[data-hero-visual]',
-        { y: () => -hero.offsetHeight * sceneLift, scale: sceneScale, opacity: 0, duration: 1 },
-        0,
-      )
-      .to('[data-hero-glow]', { opacity: 0, duration: glowFadeEnd }, 0)
-      .to(camera, { progress: 1, duration: 1, onUpdate: () => dolly(camera.progress) }, 0)
-      .to(
-        '[data-hero-controls]',
-        { y: -controlsLiftPx, opacity: 0, duration: 1 - controlsFadeStart },
-        controlsFadeStart,
-      );
-    if (nextHeading) {
-      timeline.fromTo(
-        nextHeading,
-        { y: featuredLiftPx },
-        { y: 0, duration: 1 - featuredRiseStart },
-        featuredRiseStart,
-      );
-    }
+    timeline.to(
+      playhead,
+      { progress: 1, duration: 1, ease: 'none', onUpdate: () => update(playhead.progress) },
+      0,
+    );
+    timeline.to(
+      '[data-hero-content]',
+      {
+        opacity: 0,
+        y: -heroMotion.exitLiftPx,
+        duration: 1 - heroMotion.exitStart,
+        ease: 'none',
+      },
+      heroMotion.exitStart,
+    );
+    trigger = timeline.scrollTrigger;
   }, hero);
-
-  return () => {
-    context.revert();
-    dolly(0);
+  return {
+    refresh: () => ScrollTrigger.refresh(),
+    jump(progress: number) {
+      if (!trigger) return;
+      view.scrollTo({
+        top: trigger.start + (trigger.end - trigger.start) * progress,
+        behavior: 'smooth',
+      });
+    },
+    destroy: () => context.revert(),
   };
 }

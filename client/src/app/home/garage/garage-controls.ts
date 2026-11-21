@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import type { Product } from '../../catalog/product';
 import { prefetchProductMedia } from '../../product-preview/prefetch-product-media';
 import { responsiveImage } from '../../ui/responsive-image';
-import { zones } from './garage-path';
+import { heroZones } from './hero-garage-camera';
 
 @Component({
   selector: 'app-garage-controls',
@@ -17,10 +17,9 @@ export class GarageControls {
   readonly activeIndex = input.required<number>();
   readonly product = input<Product>();
   readonly ready = input(false);
-  readonly tour = input(false);
   readonly selectZone = output<number>();
   readonly openProduct = output<{ product: Product; source: HTMLElement }>();
-  protected readonly zones = zones;
+  protected readonly zones = heroZones;
   protected readonly items = computed(() => {
     const product = this.product();
     return product ? [product] : [];
@@ -43,9 +42,11 @@ export class GarageControls {
       event.key === 'Home'
         ? 0
         : event.key === 'End'
-          ? zones.length - 1
-          : Math.max(0, Math.min(zones.length - 1, focused + directions[event.key]));
+          ? buttons.length - 1
+          : Math.max(0, Math.min(buttons.length - 1, focused + directions[event.key]));
     buttons[next]?.focus({ preventScroll: true });
     this.selectZone.emit(next);
   }
 }
+
+

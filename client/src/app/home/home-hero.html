@@ -2,75 +2,99 @@
   #hero
   class="hero"
   [class.garage-live]="live()"
+  [style.--hero-copy-clearance]="copyClearance"
   aria-labelledby="hero-title"
-  (pointerdown)="startSwipe($event)"
-  (pointerup)="endSwipe($event)"
-  (pointercancel)="endSwipe($event)"
 >
-  <div class="hero-layout">
-    <div class="hero-copy" data-hero-copy>
-      <p class="hero-label" data-hero-enter>Diecast &amp; RC toys</p>
-      <h1 id="hero-title" tabindex="-1">
-        <span class="hero-title-line"><span data-hero-enter>Collect the</span></span>
-        <span class="hero-title-line"><em data-hero-enter>Classics.</em></span>
-      </h1>
-      <p class="hero-description" data-hero-enter>
-        Display a diecast classic or take an RC toy for a spin.
-      </p>
-      <div class="hero-actions" data-hero-enter>
-        <a class="primary-button" routerLink="/catalog" [queryParams]="{ productType: 'diecast' }"
-          >Shop Diecast</a
-        >
-        <a class="secondary-button" routerLink="/catalog" [queryParams]="{ productType: 'rc' }"
-          >Shop RC Toys</a
-        >
-      </div>
-      <p class="hero-trust" data-hero-enter>Cash on Delivery · Safe packaging · Genuine models</p>
-    </div>
-    <div class="hero-display">
-      <div class="hero-visual" data-hero-visual>
-        <div class="hero-window" data-hero-window>
-          <picture class="hero-picture">
-            <source
-              media="(max-width: 42rem)"
-              srcset="
-                /assets/garage/hero-mobile-400.webp 400w,
-                /assets/garage/hero-mobile.webp     600w
-              "
-              sizes="100vw"
-              type="image/webp"
-            />
-            <img
-              class="hero-photo"
-              src="/assets/garage/hero-wide-960.webp"
-              srcset="
-                /assets/garage/hero-wide-960.webp   960w,
-                /assets/garage/hero-wide-1280.webp 1280w,
-                /assets/garage/hero-wide.webp      1664w
-              "
-              sizes="(min-width: 82rem) 640px, (min-width: 56rem) 50vw, 100vw"
-              width="1664"
-              height="936"
-              decoding="async"
-              fetchpriority="high"
-              [attr.aria-hidden]="live() ? 'true' : null"
-              alt="Diecast cars displayed on amber-lit garage shelves."
-            />
-          </picture>
-          <div #stage class="garage-stage" aria-hidden="true"></div>
-        </div>
-        <div class="hero-glow" data-hero-glow aria-hidden="true"></div>
-        <app-garage-ambience mode="hero" />
-      </div>
-      <app-garage-controls
-        data-hero-controls
-        [activeIndex]="activeIndex()"
-        [product]="preview()"
-        [ready]="ready()"
-        (selectZone)="jump($event)"
-        (openProduct)="openProduct($event.product, $event.source)"
+  <div
+    class="hero-content"
+    data-hero-content
+    (pointerdown)="startSwipe($event)"
+    (pointerup)="endSwipe($event)"
+    (pointercancel)="endSwipe($event)"
+  >
+    <picture class="hero-picture">
+      <source
+        media="(max-width: 42rem)"
+        srcset="/assets/garage/hero-mobile-400.webp 400w, /assets/garage/hero-mobile.webp 600w"
+        sizes="100vw"
+        type="image/webp"
       />
+      <img
+        class="hero-photo"
+        src="/assets/garage/hero-wide-960.webp"
+        srcset="
+          /assets/garage/hero-wide-960.webp   960w,
+          /assets/garage/hero-wide-1280.webp 1280w,
+          /assets/garage/hero-wide.webp      1664w
+        "
+        sizes="100vw"
+        width="1664"
+        height="936"
+        decoding="async"
+        fetchpriority="high"
+        [attr.aria-hidden]="live() ? 'true' : null"
+        alt="Diecast cars displayed on lit garage shelves."
+      />
+    </picture>
+    <div #stage class="garage-stage" aria-hidden="true"></div>
+    <div class="hero-shade" aria-hidden="true"></div>
+    <div class="hero-layout">
+      <div class="hero-copy">
+        <p class="hero-label" data-hero-enter>Collector-grade diecast</p>
+        <h1 id="hero-title" tabindex="-1">
+          <span class="hero-title-line"><span data-hero-enter>Built to</span></span>
+          <span class="hero-title-line"><em data-hero-enter>Collect.</em></span>
+        </h1>
+        <p class="hero-description" data-hero-enter>
+          Iconic cars, heavy-duty trucks and precision bikes. Find a scale model worth making room
+          for.
+        </p>
+        <div class="hero-actions" data-hero-enter>
+          <a class="primary-button" routerLink="/catalog">Shop All</a>
+          <a class="hero-skip" href="#featured" (click)="skip($event)">Skip to shop</a>
+        </div>
+        @if (needsOptIn()) {
+          <button
+            class="secondary-button hero-explore"
+            type="button"
+            [disabled]="explorationStatus() !== 'idle'"
+            (click)="exploreGarage()"
+          >
+            @switch (explorationStatus()) {
+              @case ('loading') {
+                Loading the garage…
+              }
+              @case ('live') {
+                3D garage active
+              }
+              @case ('unavailable') {
+                3D garage unavailable
+              }
+              @default {
+                Explore the garage
+              }
+            }
+          </button>
+        }
+      </div>
     </div>
+    <app-garage-controls
+      [activeIndex]="activeIndex()"
+      [product]="preview()"
+      [ready]="ready()"
+      (selectZone)="jump($event)"
+      (openProduct)="openProduct($event.product, $event.source)"
+    />
+    @if (hover(); as hovered) {
+      <div
+        class="hero-model-label"
+        aria-hidden="true"
+        [style.left.px]="hovered.x"
+        [style.top.px]="hovered.y"
+      >
+        {{ hovered.product.name }} ·
+        {{ hovered.product.price | currency: 'INR' : 'symbol' : '1.0-2' }}
+      </div>
+    }
   </div>
-  <a class="hero-skip" href="#featured" (click)="skip($event)">Skip to shop</a>
 </section>

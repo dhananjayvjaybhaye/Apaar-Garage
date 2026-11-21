@@ -33,7 +33,9 @@ import { AmbientBackground } from './ui/ambient-background/ambient-background';
     EngineGauge,
   ],
   template: `
-    <app-ambient-background [calm]="calmBackground()" />
+    @defer (on idle) {
+      <app-ambient-background [calm]="calmBackground()" />
+    }
     <a class="primary-button skip-link" href="#page-content" (click)="skip($event, content)"
       >Skip to content</a
     >
@@ -41,7 +43,9 @@ import { AmbientBackground } from './ui/ambient-background/ambient-background';
     <app-stock-notices />
     <app-mobile-nav />
     <div #content id="page-content" class="route-content" tabindex="-1">
-      <app-garage-ambience mode="site" />
+      @defer (on idle) {
+        <app-garage-ambience mode="site" />
+      }
       <router-outlet />
     </div>
     <app-store-footer />
@@ -49,7 +53,9 @@ import { AmbientBackground } from './ui/ambient-background/ambient-background';
       ><span class="icon icon-chat" aria-hidden="true"></span> Contact us</a
     >
     <app-toasts />
-    <app-cursor-glow />
+    @defer (on idle) {
+      <app-cursor-glow />
+    }
     <app-preview-modal />
     @if (engine(); as status) {
       <app-engine-gauge class="engine-dock" [status]="status" [compact]="true" />

@@ -1,0 +1,227 @@
+:host {
+  display: block;
+}
+
+.category-scenes {
+  position: relative;
+  isolation: isolate;
+}
+
+.category-scene {
+  --scene-accent: #ec9b48;
+  --scene-base: #18130f;
+  position: relative;
+  isolation: isolate;
+  min-block-size: var(--scene-height);
+  margin-block-start: calc(-1 * var(--scene-overlap));
+  padding-block: var(--scene-padding);
+}
+
+.category-scene:first-of-type {
+  margin-block-start: 0;
+}
+
+[data-category='truck'] {
+  --scene-accent: #e95c4d;
+  --scene-base: #1a1113;
+}
+
+[data-category='bike'] {
+  --scene-accent: #e6bb69;
+  --scene-base: #17150e;
+}
+
+[data-category='rc'] {
+  --scene-accent: #51c5ba;
+  --scene-base: #0e1819;
+}
+
+.scene-heading {
+  position: sticky;
+  z-index: 2;
+  top: var(--category-sticky-top, var(--header-offset));
+  background: linear-gradient(
+    var(--scene-base) 72%,
+    color-mix(in srgb, var(--scene-base) 95%, transparent) 93%,
+    transparent
+  );
+}
+
+.scene-heading-inner,
+.scene-products {
+  width: min(calc(100% - 2rem), 96rem);
+  margin-inline: auto;
+}
+
+.scene-heading-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.55rem 1.25rem;
+  padding-block: clamp(0.65rem, 2svh, 1.4rem);
+  border-bottom: 1px solid color-mix(in srgb, var(--scene-accent) 44%, transparent);
+}
+
+.heading-mask {
+  overflow: clip;
+}
+
+.scene-heading h3 {
+  margin: 0 0 0.24rem;
+  color: var(--text);
+  font: 700 clamp(2rem, 5vw, 4.7rem) / 1 var(--display);
+  text-transform: uppercase;
+}
+
+.scene-heading p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.scene-heading a {
+  flex: none;
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+.scene-heading a:hover,
+.scene-catalog-link:hover {
+  border-color: var(--scene-accent);
+}
+
+.scene-products {
+  margin-block-start: clamp(1.3rem, 5svh, 3.75rem);
+}
+
+.scene-grid {
+  --scene-columns: 1;
+  display: grid;
+  grid-template-columns: repeat(var(--scene-columns), minmax(0, 1fr));
+  gap: clamp(1rem, 2.4vw, 2rem);
+  perspective: 950px;
+}
+
+.scene-card {
+  position: relative;
+  display: grid;
+  min-width: 0;
+}
+
+.scene-card-motion {
+  position: relative;
+  display: grid;
+  min-width: 0;
+}
+
+.scene-card:is(:hover, :focus-within) {
+  z-index: 1;
+}
+
+.scene-card:focus-within .scene-card-motion,
+.scene-heading a:focus-visible {
+  transform: none !important;
+  opacity: 1 !important;
+}
+
+.scene-heading:focus-within [data-heading-line] {
+  transform: none !important;
+}
+
+.card-softness {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-large);
+  opacity: 0;
+  backdrop-filter: blur(1.25px);
+  pointer-events: none;
+}
+
+.scene-card:focus-within .card-softness {
+  opacity: 0 !important;
+}
+
+.scene-card.is-moving .scene-card-motion {
+  will-change: transform, opacity;
+}
+
+.scene-catalog-link {
+  display: grid;
+  min-height: 14rem;
+  padding: clamp(1rem, 3vw, 2rem);
+  place-content: center;
+  justify-items: center;
+  gap: 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--scene-accent) 35%, var(--line));
+  border-radius: var(--radius-large);
+  background: radial-gradient(
+    ellipse at 50% 32%,
+    color-mix(in srgb, var(--scene-accent) 17%, var(--panel)),
+    var(--panel) 72%
+  );
+  color: var(--text);
+  text-align: center;
+  text-decoration: none;
+}
+
+.scene-catalog-link strong {
+  font: 650 clamp(1.45rem, 3vw, 2.2rem) / 1.15 var(--display);
+}
+
+.scene-catalog-link > span:last-child,
+.scene-empty {
+  color: var(--muted);
+}
+
+.scene-catalog-arrow {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  aspect-ratio: 1;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  color: var(--scene-accent);
+  font-size: 1.35rem;
+}
+
+.scene-skeleton {
+  min-height: 18rem;
+  aspect-ratio: 3 / 4;
+  border-radius: var(--radius-large);
+}
+
+@media (min-width: 40rem) {
+  .scene-grid {
+    --scene-columns: 2;
+  }
+}
+
+@media (min-width: 64rem) {
+  .scene-grid {
+    --scene-columns: 4;
+  }
+}
+
+@media (width < 40rem) {
+  .card-softness,
+  .scene-beams {
+    display: none;
+  }
+  .scene-skeleton:nth-child(n + 2) {
+    display: none;
+  }
+  .scene-heading-inner {
+    gap: 0.65rem;
+  }
+  .scene-heading p {
+    font-size: 0.86rem;
+  }
+}
+
+@media (40rem <= width < 64rem) {
+  .scene-skeleton:nth-child(n + 3) {
+    display: none;
+  }
+}
+
+
