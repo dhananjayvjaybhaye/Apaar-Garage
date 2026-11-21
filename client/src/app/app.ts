@@ -16,6 +16,8 @@ import { EngineLoading } from './ui/engine-loading';
 import { GarageAmbience } from './ui/garage-ambience';
 import { AmbientBackground } from './ui/ambient-background/ambient-background';
 import { Seo } from './seo/seo';
+import { AfterFirstPaint } from './ui/after-first-paint';
+import { Motion } from './motion/motion';
 
 const calmRoutes = new Set([
   'cart',
@@ -45,7 +47,7 @@ const calmRoutes = new Set([
     EngineGauge,
   ],
   template: `
-    @defer (on idle) {
+    @defer (when decorationsReady()) {
       <app-ambient-background [calm]="calmBackground()" />
     }
     <a class="primary-button skip-link" href="#page-content" (click)="skip($event, content)"
@@ -55,7 +57,7 @@ const calmRoutes = new Set([
     <app-stock-notices />
     <app-mobile-nav />
     <div #content id="page-content" class="route-content" tabindex="-1">
-      @defer (on idle) {
+      @defer (when decorationsReady() && !calmBackground()) {
         @if (!calmBackground()) {
           <app-garage-ambience mode="site" />
         }
@@ -67,8 +69,8 @@ const calmRoutes = new Set([
       ><span class="icon icon-chat" aria-hidden="true"></span> Contact us</a
     >
     <app-toasts />
-    @defer (on idle) {
-      @if (!calmBackground()) {
+    @defer (when decorationsReady() && showCursor()) {
+      @if (showCursor()) {
         <app-cursor-glow />
       }
     }
@@ -87,6 +89,8 @@ export class App {
   }
 
   protected readonly engine = inject(EngineLoading).state;
+  protected readonly decorationsReady = inject(AfterFirstPaint).ready;
+  private readonly motion = inject(Motion);
   private readonly router = inject(Router);
   private readonly url = toSignal(
     this.router.events.pipe(
@@ -99,6 +103,9 @@ export class App {
     const page = this.router.parseUrl(this.url()).root.children[PRIMARY_OUTLET]?.segments[0]?.path;
     return page !== undefined && calmRoutes.has(page);
   });
+  protected readonly showCursor = computed(
+    () => !this.calmBackground() && this.motion.level() === 'full',
+  );
 
   protected skip(event: Event, content: HTMLElement) {
     event.preventDefault();

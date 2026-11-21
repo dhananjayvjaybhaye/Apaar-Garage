@@ -12,6 +12,8 @@ Below the hero, `category-stages-motion.ts` links card entrances and background 
 
 New Arrivals reads the latest products from the same catalog API as the home category sections. The home FAQ selects five questions from `faq-content.ts`, which the support page uses in full. Both use the keyboard-operable `FaqList`. Empty-state artwork only moves while visible and respects the reduced-motion setting. The app shell leaves out the custom cursor and floating shapes on cart, checkout, sign-in, account creation, order, tracking, and admin routes.
 
+The home route fetches the first garage zone immediately. It fetches the other zones after the first paint or as soon as the shopper selects one. The active 3D bench prioritizes its photo and optional GLB. The other bench photos load during idle time, and their models wait until selected. For the RC bench, a sign with the listing name or an empty-catalog message stays visible if there is no usable product photo or model. Phones and constrained devices keep the static hero until the shopper chooses **Explore the garage**.
+
 ## Storefront metadata
 
 `metadata.mjs` defines page titles, summaries, canonical URLs, social previews, and JSON-LD. The Angular SEO service updates them on navigation and when product details arrive. The production SEO command uses the same definitions and public product API to write HTML with metadata already in the head, plus the sitemap and robots link. Angular still renders the interactive storefront. No private routes are included in the sitemap.

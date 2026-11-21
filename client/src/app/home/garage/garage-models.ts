@@ -4,10 +4,8 @@ import {
   Mesh,
   MeshBasicMaterial,
   MeshStandardMaterial,
-  PlaneGeometry,
   PointLight,
   RingGeometry,
-  SRGBColorSpace,
   TextureLoader,
   Vector3,
 } from 'three';
@@ -15,6 +13,8 @@ import { responsiveImage } from '../../ui/responsive-image';
 import { disposeModels } from '../../car-viewer/three-resources';
 import type { Product } from '../../catalog/product';
 import { garageZoneFor, type GarageZone } from './garage-path';
+import { makeBenchCard, rcBenchFallback } from './garage-bench-card';
+import { benchMedia } from '../hero.config';
 
 export interface GarageBay {
   display: Group;
@@ -33,22 +33,29 @@ export function createGarageModels(
   zoneOptions: ReadonlyArray<{ category: GarageZone }>,
   available: () => boolean,
   requestFrame: () => void,
+  document: Document,
 ) {
   const loader = new TextureLoader();
   const center = new Vector3();
+  const view = document.defaultView;
+  const pendingPhotos = new Map<number, () => void>();
+  let cancelIdle: (() => void) | undefined;
   function clear(display: Group) {
     disposeModels([display]);
     display.clear();
   }
 
   let active = 0;
+  const rcBay = zoneOptions.findIndex(({ category }) => category === 'rc');
+  if (rcBay >= 0) bays[rcBay].display.add(rcBenchFallback(document));
+
   function setFeatured(products: readonly Product[]) {
     zoneOptions.forEach(({ category }, index) => {
       const product = products.find((entry) => garageZoneFor(entry) === category);
       const bay = bays[index];
       if (
         bay.product?.slug === product?.slug &&
-        bay.product?.images[0] === product?.images[0] &&
+        bay.product?.images.join('\n') === product?.images.join('\n') &&
         bay.product?.glbUrl === product?.glbUrl
       ) {
         bay.product = product;
@@ -56,39 +63,73 @@ export function createGarageModels(
       }
 
       bay.request?.abort();
+      pendingPhotos.delete(index);
       clear(bay.display);
       bay.product = product;
       bay.hasModel = false;
       bay.loadingModel = false;
+      if (index === rcBay) bay.display.add(rcBenchFallback(document, product?.name));
       if (!product) return;
       const request = new AbortController();
       bay.request = request;
       const live = () => available() && !request.signal.aborted;
+      const photos = [
+        ...new Set(
+          product.images.flatMap((source) => {
+            const small = responsiveImage(source)?.split(' ')[0];
+            return small ? [small, source] : [source];
+          }),
+        ),
+      ];
 
-      if (product.images[0]) {
+      function loadPhoto(index: number) {
+        const source = photos[index];
+        if (!source || !live() || bay.hasModel) return;
         loader.load(
-          responsiveImage(product.images[0])?.split(' ')[0] ?? product.images[0],
+          source,
           (texture) => {
             if (!live() || bay.hasModel) {
               texture.dispose();
               return;
             }
-            texture.colorSpace = SRGBColorSpace;
-            const image = new Mesh(
-              new PlaneGeometry(2.62, 1.94),
-              new MeshBasicMaterial({ map: texture, toneMapped: false }),
-            );
-            image.position.set(0, 1.02, 0.19);
-            bay.display.add(image);
+            clear(bay.display);
+            bay.display.add(makeBenchCard(texture));
             requestFrame();
           },
           undefined,
-          () => {},
+          () => loadPhoto(index + 1),
         );
       }
+      pendingPhotos.set(index, () => loadPhoto(0));
     });
+    loadPhotoAt(active);
     loadActiveModel();
+    scheduleOtherPhotos();
     requestFrame();
+  }
+
+  function loadPhotoAt(index: number) {
+    const load = pendingPhotos.get(index);
+    pendingPhotos.delete(index);
+    load?.();
+  }
+
+  function scheduleOtherPhotos() {
+    if (cancelIdle || !pendingPhotos.size || !view) return;
+    const next = () => {
+      cancelIdle = undefined;
+      const index = pendingPhotos.keys().next().value;
+      if (index === undefined) return;
+      loadPhotoAt(index);
+      scheduleOtherPhotos();
+    };
+    if (typeof view.requestIdleCallback === 'function') {
+      const id = view.requestIdleCallback(next, { timeout: benchMedia.idleTimeout });
+      cancelIdle = () => view.cancelIdleCallback(id);
+    } else {
+      const id = view.setTimeout(next, benchMedia.timerFallback);
+      cancelIdle = () => view.clearTimeout(id);
+    }
   }
 
   function loadActiveModel() {
@@ -154,7 +195,13 @@ export function createGarageModels(
     select(index: number) {
       if (active === index) return;
       active = index;
+      loadPhotoAt(active);
       loadActiveModel();
+    },
+    destroy() {
+      cancelIdle?.();
+      pendingPhotos.clear();
+      for (const bay of bays) bay.request?.abort();
     },
   };
 }

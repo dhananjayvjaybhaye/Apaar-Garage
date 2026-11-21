@@ -52,7 +52,7 @@ export function mountGarage(canvas: HTMLCanvasElement, events: GarageEvents, mob
 
   let drag: { x: number; y: number } | undefined;
   let touch: number | undefined;
-  const models = createGarageModels(bays, heroZones, () => !disposed, requestFrame);
+  const models = createGarageModels(bays, heroZones, () => !disposed, requestFrame, document);
 
   function pick(x: number, y: number) {
     if (!visible || progress > 0.975) return undefined;
@@ -299,7 +299,7 @@ export function mountGarage(canvas: HTMLCanvasElement, events: GarageEvents, mob
       resolution?.removeEventListener('change', watchResolution);
       size.disconnect();
       visibility.disconnect();
-      for (const bay of bays) bay.request?.abort();
+      models.destroy();
       disposeModels([scene]);
       scene.clear();
       renderer.dispose();

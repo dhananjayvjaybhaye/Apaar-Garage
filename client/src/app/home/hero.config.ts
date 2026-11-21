@@ -75,3 +75,6 @@ export const heroScene = {
     neonFace: '#ff9d90',
   },
 } as const;
+
+// Idle callbacks yield between inactive bench photos. Values are milliseconds.
+export const benchMedia = { idleTimeout: 600, timerFallback: 50 } as const;

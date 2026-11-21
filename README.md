@@ -80,6 +80,17 @@ npm.cmd run build:seo
 
 Deploy `client/dist/apaar-garage/browser` and serve generated route files before the Angular fallback. The build writes `sitemap.xml`, links it in `robots.txt`, and adds metadata for sharing without JavaScript. For category-specific sharing previews, internally rewrite `/catalog?category=<id>` to `/_seo/category/<id>/index.html`. Use the equivalent `/_seo/productType/<id>/index.html` for type-only links. Keep the public URL unchanged and never overwrite the site's fallback with a category page. Rebuild after published products, prices, or stock change so the pre-generated metadata stays current.
 
+## Preview and audit a production build
+
+With the local API running, use a separate terminal in `client` and stop any dev server using port 4200.
+
+```powershell
+npm.cmd run build
+npm.cmd run preview
+```
+
+The loopback preview at `http://127.0.0.1:4200` serves the built files with gzip and forwards `/products` and `/api` requests to the local API. Set `PREVIEW_PORT` or `PREVIEW_API` to use another port or API origin. For sign-in and cart writes, include the preview origin in the API's `CORS_ORIGINS`. Audit the home page, `/catalog`, and an existing product URL with Lighthouse in mobile mode. Use a fresh session to include the first-visit garage intro, and keep the same catalog data and throttling when comparing builds. Production hosts should enable Brotli or gzip for scripts, styles, and HTML.
+
 ## Folder structure
 
 - `client/src/app` groups storefront pages into folders such as `home`, `catalog`, `product-detail`, `cart`, and `orders`.

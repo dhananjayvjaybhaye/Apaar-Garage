@@ -3,9 +3,9 @@ import { Magnetic } from '../motion/magnetic';
 import { Parallax } from '../motion/parallax';
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { catchError, filter, firstValueFrom, map, of, startWith, Subject, switchMap } from 'rxjs';
+import { catchError, filter, firstValueFrom, map, merge, of, startWith, Subject, switchMap, take } from 'rxjs';
 import { apiMessage } from '../api-message';
 import { CatalogApi } from '../catalog/catalog-api';
 import type { Product } from '../catalog/product';
@@ -25,6 +25,7 @@ import { CategoryStages } from './category-stages';
 import { categoryScenes } from './category-scenes.config';
 import { HomeArrivals } from './home-arrivals';
 import { HomeAssurance } from './home-assurance';
+import { AfterFirstPaint } from '../ui/after-first-paint';
 
 type FeaturedState = { loading: boolean; items: Product[]; error?: boolean };
 const loading: FeaturedState = { loading: true, items: [] };
@@ -42,6 +43,8 @@ export class Home {
   protected readonly imageSet = responsiveImage;
   protected readonly heroOverlap = heroLayout.overlap;
   private readonly featuredRequest = new Subject<GarageZone>();
+  private readonly secondaryReady = toObservable(inject(AfterFirstPaint).ready).pipe(filter(Boolean));
+  private readonly zoneSelected = new Subject<GarageZone>();
   protected readonly category = signal<GarageZone>('car');
   protected readonly signupInvalid = signal(false);
   protected readonly signupPending = signal(false);
@@ -91,6 +94,7 @@ export class Home {
 
   protected selectCategory(category: GarageZone) {
     this.category.set(category);
+    this.zoneSelected.next(category);
   }
 
   protected retryFeatured() {
@@ -98,9 +102,12 @@ export class Home {
   }
 
   private loadFeatured(category: GarageZone) {
-    return toSignal(this.featuredRequest.pipe(
-      filter((requested) => requested === category),
-      startWith(category),
+    const matching = (requested: GarageZone) => requested === category;
+    const initial = category === 'car' ? of(category) : merge(
+      this.secondaryReady.pipe(map(() => category)),
+      this.zoneSelected.pipe(filter(matching)),
+    ).pipe(take(1));
+    return toSignal(merge(initial, this.featuredRequest.pipe(filter(matching))).pipe(
       switchMap(() => this.api.getProducts({
         ...(category === 'rc' ? { productType: 'rc' as const } : { category }), sort: 'featured', limit: categoryScenes.productLimit,
       }).pipe(
@@ -108,7 +115,7 @@ export class Home {
         catchError(() => of<FeaturedState>({ loading: false, items: [], error: true })),
         startWith(loading),
       )),
-    ), { requireSync: true });
+    ), { initialValue: loading });
   }
 
   protected async subscribe(event: Event, input: HTMLInputElement) {

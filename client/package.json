@@ -6,6 +6,7 @@
     "start": "ng serve",
     "build": "ng build",
     "build:seo": "npm run build && npm run seo:emit",
+    "preview": "node scripts/preview.mjs",
     "seo:emit": "node scripts/seo-build.mjs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
