@@ -1,6 +1,7 @@
 <main class="container success">
   @let state = result();
   @if (state.loading) {
+    <h1 class="visually-hidden">Order confirmation</h1>
     <p class="visually-hidden" role="status">Loading order…</p>
     <div class="skeleton success-skeleton" appAmbientVisible aria-hidden="true"></div>
   } @else if (state.order; as order) {

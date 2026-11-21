@@ -1,6 +1,7 @@
 <main class="container help">
   <h1>FAQ and support</h1>
-  <section appReveal [gentleReveal]="true" aria-label="Frequently asked questions" class="questions">
+  <section appReveal [gentleReveal]="true" aria-labelledby="support-faq-title" class="questions">
+    <h2 id="support-faq-title" class="visually-hidden">Frequently asked questions</h2>
     <app-faq-list [entries]="questions" />
   </section>
 

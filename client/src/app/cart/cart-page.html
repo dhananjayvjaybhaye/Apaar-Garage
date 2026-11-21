@@ -16,7 +16,7 @@
       @for (item of store.cart().items; track item.slug) {
         <li appTilt [tiltDegrees]="2" appReveal [gentleReveal]="true">
           @if (item.image) {
-            <img [src]="item.image" alt="" loading="lazy" />
+            <img [src]="item.image" [alt]="item.name" loading="lazy" />
           }
           <div class="item-info">
             <a [routerLink]="['/product', item.slug]">{{ item.name }}</a>

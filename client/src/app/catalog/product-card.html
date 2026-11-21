@@ -3,14 +3,14 @@
   <a
     class="product-photo"
     [routerLink]="['/product', item.slug]"
+    [attr.aria-label]="'View ' + item.name"
   >
-    <span class="visually-hidden">View {{ item.name }}</span>
     @if (item.images[0]; as image) {
       <img
         [src]="image"
         [attr.srcset]="imageSet(image)"
         [sizes]="imageSizes()"
-        alt=""
+        [alt]="(item.placeholder ? 'Sample illustration of ' : 'Product photo of ') + item.name"
         [loading]="priority() ? 'eager' : 'lazy'"
         [attr.fetchpriority]="priority() ? 'high' : null"
         decoding="async"
@@ -41,9 +41,11 @@
       <p class="brand">{{ item.brand }}</p>
       <app-wishlist-button [product]="item" />
     </div>
-    <h3>
-      <a [routerLink]="['/product', item.slug]">{{ item.name }}</a>
-    </h3>
+    @if (headingLevel() === 4) {
+      <h4 class="product-name"><a [routerLink]="['/product', item.slug]">{{ item.name }}</a></h4>
+    } @else {
+      <h3 class="product-name"><a [routerLink]="['/product', item.slug]">{{ item.name }}</a></h3>
+    }
     @if (item.productType === 'rc') {
       <ul class="rc-badges" aria-label="RC product highlights">
         @if (item.readyToRun) { <li>Ready to Run</li> }

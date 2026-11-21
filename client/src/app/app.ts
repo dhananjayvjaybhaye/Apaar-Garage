@@ -15,6 +15,7 @@ import { EngineGauge } from './ui/engine-gauge';
 import { EngineLoading } from './ui/engine-loading';
 import { GarageAmbience } from './ui/garage-ambience';
 import { AmbientBackground } from './ui/ambient-background/ambient-background';
+import { Seo } from './seo/seo';
 
 const calmRoutes = new Set([
   'cart',
@@ -81,6 +82,10 @@ const calmRoutes = new Set([
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class App {
+  constructor() {
+    inject(Seo);
+  }
+
   protected readonly engine = inject(EngineLoading).state;
   private readonly router = inject(Router);
   private readonly url = toSignal(

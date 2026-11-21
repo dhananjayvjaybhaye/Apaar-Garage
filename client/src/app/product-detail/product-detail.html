@@ -3,7 +3,7 @@
   @let state = detail();
 
   @if (state.status === 'loading') {
-    <p class="visually-hidden" role="status">Loading model…</p>
+    <h1 class="visually-hidden">Product details</h1><p class="visually-hidden" role="status">Loading model…</p>
     <div class="detail-grid" aria-hidden="true">
       <div class="skeleton skeleton-media" appAmbientVisible></div>
       <div class="skeleton skeleton-panel" appAmbientVisible></div>
@@ -11,85 +11,6 @@
   } @else if (state.status === 'ready') {
     @let product = state.product;
     <article class="detail-grid">
-      <div class="media-stack">
-        <app-product-media [product]="product" />
-        <section class="information">
-          <div
-            #tabList
-            class="tabs"
-            role="tablist"
-            aria-label="Product information"
-            (keydown)="moveTab($event, tabList)"
-          >
-            @for (tab of sections; track tab) {
-              <button
-                type="button"
-                role="tab"
-                [id]="'tab-' + tab"
-                [attr.aria-controls]="'panel-' + tab"
-                [attr.aria-selected]="panel() === tab"
-                [attr.tabindex]="panel() === tab ? 0 : -1"
-                (click)="panel.set(tab)"
-              >
-                {{ tab }}
-              </button>
-            }
-          </div>
-          <div
-            class="tab-content"
-            role="tabpanel"
-            tabindex="0"
-            [id]="'panel-' + panel()"
-            [attr.aria-labelledby]="'tab-' + panel()"
-          >
-            @switch (panel()) {
-              @case ('Details') {
-                <p>{{ product.description }}</p>
-              }
-              @case ('Specs') {
-                @if (product.productType === 'rc') {
-                  <app-rc-specs [product]="product" />
-                } @else {
-                <dl>
-                  <div>
-                    <dt>Brand</dt>
-                    <dd>{{ product.brand }}</dd>
-                  </div>
-                  <div>
-                    <dt>Scale</dt>
-                    <dd>{{ product.scale }}</dd>
-                  </div>
-                  <div>
-                    <dt>Category</dt>
-                    <dd>{{ product.category }}</dd>
-                  </div>
-                </dl>
-                }
-              }
-              @case ('Shipping') {
-                <p>Review your delivery estimate and any COD fee at checkout.</p>
-                <a routerLink="/policies/shipping">Shipping</a> · <a routerLink="/policies/returns">Returns</a>
-              }
-            }
-          </div>
-        </section>
-        @if (product.productType === 'rc') {
-          <section class="rc-detail" aria-labelledby="rc-box-title">
-            <h2 id="rc-box-title">What’s in the box</h2>
-            <ul>
-              @for (part of product.boxContents; track $index) { <li>{{ part }}</li> }
-            </ul>
-          </section>
-          <section class="rc-detail" aria-labelledby="rc-safety-title">
-            <h2 id="rc-safety-title">Battery and safety</h2>
-            <p><strong>Recommended for ages {{ product.recommendedAge }} and up.</strong> An adult should supervise children during use. Keep small parts away from younger children.</p>
-            @if (product.batteryType) {
-              <p>Follow the manufacturer’s charging instructions. Use a compatible charger, charge on a nonflammable surface, and stay nearby while it charges. Stop using damaged or swollen batteries.</p>
-            }
-          </section>
-        }
-      </div>
-
       <div class="purchase">
         <p class="kicker">{{ product.brand }} / {{ product.productType === 'rc' ? categoryLabels[product.category] : product.category }}</p>
         <div class="purchase-title"><h1>{{ product.name }}</h1><app-wishlist-button [product]="product" /></div>
@@ -166,6 +87,85 @@
           >
             {{ feedback?.message }}
           </p>
+        }
+      </div>
+
+      <div class="media-stack">
+        <app-product-media [product]="product" />
+        <section class="information">
+          <div
+            #tabList
+            class="tabs"
+            role="tablist"
+            aria-label="Product information"
+            (keydown)="moveTab($event, tabList)"
+          >
+            @for (tab of sections; track tab) {
+              <button
+                type="button"
+                role="tab"
+                [id]="'tab-' + tab"
+                [attr.aria-controls]="'panel-' + tab"
+                [attr.aria-selected]="panel() === tab"
+                [attr.tabindex]="panel() === tab ? 0 : -1"
+                (click)="panel.set(tab)"
+              >
+                {{ tab }}
+              </button>
+            }
+          </div>
+          <div
+            class="tab-content"
+            role="tabpanel"
+            tabindex="0"
+            [id]="'panel-' + panel()"
+            [attr.aria-labelledby]="'tab-' + panel()"
+          >
+            @switch (panel()) {
+              @case ('Details') {
+                <p>{{ product.description }}</p>
+              }
+              @case ('Specs') {
+                @if (product.productType === 'rc') {
+                  <app-rc-specs [product]="product" />
+                } @else {
+                <dl>
+                  <div>
+                    <dt>Brand</dt>
+                    <dd>{{ product.brand }}</dd>
+                  </div>
+                  <div>
+                    <dt>Scale</dt>
+                    <dd>{{ product.scale }}</dd>
+                  </div>
+                  <div>
+                    <dt>Category</dt>
+                    <dd>{{ product.category }}</dd>
+                  </div>
+                </dl>
+                }
+              }
+              @case ('Shipping') {
+                <p>Review your delivery estimate and any COD fee at checkout.</p>
+                <a routerLink="/policies/shipping">Shipping</a> · <a routerLink="/policies/returns">Returns</a>
+              }
+            }
+          </div>
+        </section>
+        @if (product.productType === 'rc') {
+          <section class="rc-detail" aria-labelledby="rc-box-title">
+            <h2 id="rc-box-title">What’s in the box</h2>
+            <ul>
+              @for (part of product.boxContents; track $index) { <li>{{ part }}</li> }
+            </ul>
+          </section>
+          <section class="rc-detail" aria-labelledby="rc-safety-title">
+            <h2 id="rc-safety-title">Battery and safety</h2>
+            <p><strong>Recommended for ages {{ product.recommendedAge }} and up.</strong> An adult should supervise children during use. Keep small parts away from younger children.</p>
+            @if (product.batteryType) {
+              <p>Follow the manufacturer’s charging instructions. Use a compatible charger, charge on a nonflammable surface, and stay nearby while it charges. Stop using damaged or swollen batteries.</p>
+            }
+          </section>
         }
       </div>
     </article>

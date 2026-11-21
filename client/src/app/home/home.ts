@@ -58,24 +58,28 @@ export class Home {
       name: 'Cars',
       note: 'Street icons and track legends',
       image: '/images/editorial/car.jpg',
+      imageAlt: 'Diecast sports cars on a display shelf',
     },
     {
       id: 'truck',
       name: 'Trucks',
       note: 'Heavy haulers and classic pickups',
       image: '/images/editorial/truck.jpg',
+      imageAlt: 'Diecast trucks in a workshop display',
     },
     {
       id: 'bike',
       name: 'Bikes',
       note: 'Sport bikes and road machines',
       image: '/images/editorial/bike.jpg',
+      imageAlt: 'Scale motorcycle models on a dark shelf',
     },
     {
       id: 'rc',
       name: 'RC Toys',
       note: 'Radio-controlled rides, aircraft and accessories',
       image: '/images/rc-sample.png',
+      imageAlt: 'Illustration of a remote-control handset',
     },
   ] as const;
   protected readonly categoryName = computed(() => this.categories.find(({ id }) => id === this.category())?.name ?? '');

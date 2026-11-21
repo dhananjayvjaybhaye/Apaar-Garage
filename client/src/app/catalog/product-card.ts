@@ -23,6 +23,7 @@ import type { Product } from './product';
 })
 export class ProductCard {
   readonly product = input.required<Product>();
+  readonly headingLevel = input<3 | 4>(3);
   protected readonly imageSet = responsiveImage;
   readonly priority = input(false);
   readonly imageSizes = input(

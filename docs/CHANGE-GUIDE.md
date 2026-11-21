@@ -23,6 +23,12 @@ Set `COD_FEE` in `server/.env` to a nonnegative rupee amount with up to two deci
 
 Create a standalone component under the relevant `client/src/app` folder. Register it with `loadComponent` and a title in `app.routes.ts` before the wildcard route. Add a navigation link where shoppers need it. Use the auth guard if the page requires an account. Verify navigation by link and by opening the URL directly.
 
+For a public page, add its title and description in `client/src/app/seo/metadata.mjs`, then regenerate the deployment files and check the URL in `sitemap.xml`. The same file controls canonical catalog categories. Add new category IDs there when adding categories that should be discoverable in search.
+
+## Update the FAQ and New Arrivals
+
+Edit question text and answers in `client/src/app/ui/faq-content.ts`. The home page chooses its questions by ID, and the support page shows the full list. Adjust the New Arrivals count in `client/src/app/home/home-content.config.ts`. Verify that the accordion opens by keyboard and the latest listings still appear first.
+
 ## Tune the ambient background
 
 Edit the layered artwork in `client/src/app/ui/garage-ambience.css` and the SVGs in `client/public/images/ambient`. The reusable `Parallax` directive controls how decorative layers move.

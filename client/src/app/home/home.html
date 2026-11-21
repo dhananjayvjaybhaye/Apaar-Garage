@@ -70,7 +70,7 @@
             [src]="category.image"
             [attr.srcset]="imageSet(category.image)"
             sizes="auto, (min-width: 80rem) 304px, (min-width: 50rem) 25vw, (min-width: 33rem) 50vw, calc(100vw - 2rem)"
-            alt=""
+            [alt]="category.imageAlt"
             width="720"
             height="720"
             loading="lazy"

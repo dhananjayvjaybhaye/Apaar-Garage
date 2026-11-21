@@ -68,6 +68,18 @@ If Angular's optional Windows native chunk optimizer fails to load, retry the pr
 
 Run `npm.cmd run lint`, `npm.cmd run format:check`, and `npm.cmd test` from `server`. The server tests start an isolated MongoDB replica set and never use `server/.env`. The first test run may download a MongoDB binary. Set `MONGOMS_SYSTEM_BINARY` to use an existing compatible binary.
 
+## Generate SEO files for deployment
+
+Start the API against the catalog you plan to publish. Then run these commands from `client` with your public storefront origin. The generator only reads the paginated public product endpoint.
+
+```powershell
+$env:SITE_URL = 'https://shop.example'
+$env:SEO_CATALOG_API = 'http://127.0.0.1:3000'
+npm.cmd run build:seo
+```
+
+Deploy `client/dist/apaar-garage/browser` and serve generated route files before the Angular fallback. The build writes `sitemap.xml`, links it in `robots.txt`, and adds metadata for sharing without JavaScript. For category-specific sharing previews, internally rewrite `/catalog?category=<id>` to `/_seo/category/<id>/index.html`. Use the equivalent `/_seo/productType/<id>/index.html` for type-only links. Keep the public URL unchanged and never overwrite the site's fallback with a category page. Rebuild after published products, prices, or stock change so the pre-generated metadata stays current.
+
 ## Folder structure
 
 - `client/src/app` groups storefront pages into folders such as `home`, `catalog`, `product-detail`, `cart`, and `orders`.

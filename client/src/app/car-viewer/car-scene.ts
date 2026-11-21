@@ -62,18 +62,21 @@ export function mountCarScene(
   let lastFrame = 0;
   let lastInput = performance.now();
   let interacting = false;
-  let visible = false;
+  let visible = typeof IntersectionObserver === 'undefined';
   let disposed = false;
   let pointer: { x: number; y: number } | null = null;
   let pointerChanged = false;
   let leanX = 0;
   let leanY = 0;
 
-  const resizeObserver = new ResizeObserver(resize);
-  const visibilityObserver = new IntersectionObserver(([entry]) => {
-    visible = entry.isIntersecting;
-    updateVisibility();
-  });
+  const resizeObserver = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(resize);
+  const visibilityObserver =
+    typeof IntersectionObserver === 'undefined'
+      ? null
+      : new IntersectionObserver(([entry]) => {
+          visible = entry.isIntersecting;
+          updateVisibility();
+        });
 
   function requestRender() {
     if (frame === null && !disposed && visible && !document.hidden && modelScenes.length > 0) {
@@ -175,8 +178,9 @@ export function mountCarScene(
     disposed = true;
     abort.abort();
     stopRendering();
-    resizeObserver.disconnect();
-    visibilityObserver.disconnect();
+    resizeObserver?.disconnect();
+    visibilityObserver?.disconnect();
+    if (!resizeObserver) window.removeEventListener('resize', resize);
     document.removeEventListener('visibilitychange', updateVisibility);
     for (const query of queries) query?.removeEventListener('change', updateMotion);
     canvas.removeEventListener('pointermove', follow);
@@ -233,8 +237,9 @@ export function mountCarScene(
     for (const query of queries) query?.addEventListener('change', updateMotion);
     canvas.addEventListener('pointermove', follow, { passive: true });
     canvas.addEventListener('pointerleave', leave);
-    resizeObserver.observe(canvas);
-    visibilityObserver.observe(canvas);
+    if (resizeObserver) resizeObserver.observe(canvas);
+    else window.addEventListener('resize', resize);
+    visibilityObserver?.observe(canvas);
     resize();
     void load().catch(fail);
     return dispose;

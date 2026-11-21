@@ -46,7 +46,7 @@
           [sizes]="imageSizes()"
           fetchpriority="high"
           decoding="async"
-          [alt]="item.name + ' photo ' + (imageIndex() + 1)"
+          [alt]="(item.placeholder ? 'Sample illustration of ' : 'Product photo of ') + item.name + (item.images.length > 1 ? ', view ' + (imageIndex() + 1) : '')"
         />
         <button
           type="button"

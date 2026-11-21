@@ -8,6 +8,14 @@ The hero pins while the camera moves through Cars, Trucks, Bikes, and RC Toys. T
 
 Below the hero, `category-stages-motion.ts` links card entrances and background parallax to normal scrolling. Each category uses a CSS sticky heading and the standard product cards.
 
+## Home content and accessibility
+
+New Arrivals reads the latest products from the same catalog API as the home category sections. The home FAQ selects five questions from `faq-content.ts`, which the support page uses in full. Both use the keyboard-operable `FaqList`. Empty-state artwork only moves while visible and respects the reduced-motion setting. The app shell leaves out the custom cursor and floating shapes on cart, checkout, sign-in, account creation, order, tracking, and admin routes.
+
+## Storefront metadata
+
+`metadata.mjs` defines page titles, summaries, canonical URLs, social previews, and JSON-LD. The Angular SEO service updates them on navigation and when product details arrive. The production SEO command uses the same definitions and public product API to write HTML with metadata already in the head, plus the sitemap and robots link. Angular still renders the interactive storefront. No private routes are included in the sitemap.
+
 ## Cart
 
 The Angular cart store refreshes its signals from the API after each write. Guests receive a secure-in-production, HTTP-only guest cookie on their first add. Signed-in customers use a separate HTTP-only session cookie. The server merges eligible guest quantities into the signed-in cart and keeps them within current stock and the quantity limit. Cart values are computed from the current product records.

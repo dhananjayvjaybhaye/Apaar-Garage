@@ -125,14 +125,6 @@
     </ul>
   }
   <h2 class="visually-hidden">Catalog products</h2>
-  @if (chips().length) {
-    <ul class="filter-chips" aria-label="Selected filters">
-      @for (chip of chips(); track chip.key) {
-        <li><button type="button" class="secondary-button" [attr.aria-label]="'Remove filter ' + chip.label" (click)="removeFilter(chip.key)">{{ chip.label }} <span aria-hidden="true">×</span></button></li>
-      }
-    </ul>
-  }
-  <h2 class="visually-hidden">Catalog products</h2>
   @let catalog = state();
   @if (catalog.status === 'loading') {
     <p class="count loading-count" role="status">Loading products…</p>

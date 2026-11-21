@@ -16,7 +16,7 @@
     .secondary-button,
     .contact-float,
     nav a,
-    .product-copy h3 a,
+    .product-copy .product-name a,
     .product-detail-link,
     .wordmark,
     .hero-skip,
@@ -29,11 +29,11 @@
     min-inline-size: var(--mobile-touch-target) !important;
   }
 
-  :is(nav a, .product-copy h3 a, .hero-skip, .mobile-total a, .wordmark) {
+  :is(nav a, .product-copy .product-name a, .hero-skip, .mobile-total a, .wordmark) {
     align-items: center;
   }
 
-  :is(.product-copy h3 a, .mobile-total a) {
+  :is(.product-copy .product-name a, .mobile-total a) {
     display: inline-flex;
   }
 }

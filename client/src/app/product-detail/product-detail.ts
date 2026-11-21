@@ -2,7 +2,7 @@ import { AmbientVisible } from '../motion/ambient-visible';
 import { Magnetic } from '../motion/magnetic';
 import { CurrencyPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, inject, linkedSignal, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, linkedSignal, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, combineLatest, map, of, startWith, switchMap } from 'rxjs';
@@ -20,6 +20,7 @@ import { ProductReviews } from './product-reviews';
 import { StarSummary } from '../catalog/star-summary';
 import { ProductMedia } from './product-media';
 import { RcSpecs } from './rc-specs';
+import { Seo } from '../seo/seo';
 
 type DetailState = { status: 'loading' | 'missing' | 'error' } | { status: 'ready'; product: Product };
 const loading: DetailState = { status: 'loading' };
@@ -64,6 +65,14 @@ export class ProductDetail {
 
   protected readonly reviewRequested = linkedSignal({ source: this.slug, computation: () => false });
   protected readonly reviewSummary = linkedSignal({ source: this.slug, computation: (): RatingSummary | null => null });
+
+  constructor() {
+    const seo = inject(Seo);
+    effect(() => {
+      const state = this.detail();
+      if (state.status === 'ready') seo.setProduct(state.product);
+    });
+  }
 
   protected retry() { this.attempt.update((count) => count + 1); }
 

@@ -13,7 +13,7 @@ import { homeQuestions } from '../ui/faq-content';
       <ul>
         @for (reason of reasons; track reason.title) {
           <li>
-            <span class="icon" aria-hidden="true">{{ reason.icon }}</span>
+            <span class="assurance-mark" aria-hidden="true">{{ reason.icon }}</span>
             <h3>{{ reason.title }}</h3>
             <p>{{ reason.text }}</p>
           </li>
@@ -50,7 +50,7 @@ import { homeQuestions } from '../ui/faq-content';
       border-radius: var(--radius-large);
       background: var(--panel);
     }
-    .icon {
+    .assurance-mark {
       color: var(--amber);
       font-size: 1.4rem;
     }
