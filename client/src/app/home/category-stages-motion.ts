@@ -1,3 +1,4 @@
+import { mediaQuery } from '../ui/media-query';
 import type { gsap } from 'gsap';
 import type { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { categoryScenes as config } from './category-scenes.config';
@@ -11,6 +12,7 @@ const sections = (listing: HTMLElement) =>
 
 export function animateCategoryScenes(listing: HTMLElement, { gsap, ScrollTrigger }: ScrollTools) {
   const view = listing.ownerDocument.defaultView!;
+  if (!mediaQuery('all', view)) return () => undefined;
   const media = gsap.matchMedia(listing);
   media.add(
     {

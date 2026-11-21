@@ -6,6 +6,7 @@ import {
   Vector3,
   WebGLRenderer,
 } from 'three';
+import { mediaQuery } from '../../ui/media-query';
 import type { Product } from '../../catalog/product';
 import { disposeModels } from '../../car-viewer/three-resources';
 import { heroScene } from '../hero.config';
@@ -174,11 +175,11 @@ export function mountGarage(canvas: HTMLCanvasElement, events: GarageEvents, mob
   visibility.observe(surface);
   const updateResolution = () =>
     resize(measured.width || surface.clientWidth, measured.height || surface.clientHeight);
-  let resolution: MediaQueryList;
+  let resolution: MediaQueryList | undefined;
   const watchResolution = () => {
     resolution?.removeEventListener('change', watchResolution);
-    resolution = view.matchMedia('(resolution: ' + view.devicePixelRatio + 'dppx)');
-    resolution.addEventListener('change', watchResolution);
+    resolution = mediaQuery('(resolution: ' + view.devicePixelRatio + 'dppx)', view);
+    resolution?.addEventListener('change', watchResolution);
     updateResolution();
   };
   watchResolution();
@@ -295,7 +296,7 @@ export function mountGarage(canvas: HTMLCanvasElement, events: GarageEvents, mob
       pause();
       if (overlayFrame) cancelAnimationFrame(overlayFrame);
       handlers.abort();
-      resolution.removeEventListener('change', watchResolution);
+      resolution?.removeEventListener('change', watchResolution);
       size.disconnect();
       visibility.disconnect();
       for (const bay of bays) bay.request?.abort();

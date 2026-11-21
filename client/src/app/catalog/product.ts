@@ -36,6 +36,7 @@ interface BaseProduct {
   featured: boolean;
   dimensionsMm?: { length?: number; width?: number; height?: number };
   addedAt?: string;
+  placeholder?: boolean;
 }
 
 export interface RcProduct extends BaseProduct {
@@ -55,7 +56,6 @@ export interface RcProduct extends BaseProduct {
   readyToRun: boolean;
   warrantyDays: number;
   boxContents: string[];
-  placeholder?: boolean;
 }
 
 export type Product = (BaseProduct & { productType: 'diecast'; category: DiecastCategory; scale: string }) | RcProduct;

@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="540" viewBox="0 0 720 540" role="img" aria-labelledby="title">
+  <title id="title">Placeholder illustration of Seabright Grand Touring</title>
+  <defs>
+    <radialGradient id="light" cx=".67" cy=".32" r=".78">
+      <stop stop-color="#ef8454" stop-opacity=".27"/><stop offset="1" stop-color="#10151d" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="paint" x2="0" y2="1">
+      <stop stop-color="#8ed3bc"/><stop offset="1" stop-color="#242733"/>
+    </linearGradient>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M0 32V0h32" fill="none" stroke="#ef8454" opacity=".18"/>
+    </pattern>
+  </defs>
+  <rect width="720" height="540" fill="#11151c"/>
+  <rect width="720" height="540" fill="url(#light)"/>
+  <rect x="28" y="28" width="664" height="484" rx="20" fill="url(#grid)" stroke="#ef8454" stroke-opacity=".45"/>
+  <path d="M54 104h612M54 404h612M54 374h612" fill="none" stroke="#ef8454" stroke-opacity=".46"/>
+  <g font-family="system-ui,sans-serif">
+    <text x="54" y="78" fill="#ef8454" font-size="20" font-weight="800" letter-spacing="4">DIECAST CAR</text>
+    <text x="666" y="78" fill="#d7dbe0" font-size="18" text-anchor="end">1:64 / 04</text>
+    <text x="54" y="450" fill="#f2eee8" font-size="29" font-weight="750">Seabright Grand Touring</text>
+    <text x="54" y="486" fill="#c8cbd3" font-size="16" letter-spacing="3">SAMPLE ARTWORK</text>
+  </g>
+  <ellipse cx="360" cy="364" rx="243" ry="19" fill="#070b10" opacity=".8"/>
+  <g transform="translate(100 108.19999999999999) scale(1 0.93)" stroke-linejoin="round">
+    <path d="M79 225l38-20 44-53q10-12 37-14h119q36 1 66 33l22 23 39 13 11 21v26H72v-16z" fill="url(#paint)" stroke="#ef8454" stroke-width="4"/>
+    <circle cx="138" cy="254" r="32" fill="#111820" stroke="#8ed3bc" stroke-width="4"/>
+    <circle cx="138" cy="254" r="18" fill="#34404b" stroke="#d1d4d9" stroke-width="2"/>
+    <path d="M127.33333333333333 254h21.333333333333332m-10.666666666666666 -10.666666666666666v21.333333333333332" stroke="#9aa4af" stroke-width="2"/>
+    <circle cx="387" cy="254" r="32" fill="#111820" stroke="#8ed3bc" stroke-width="4"/>
+    <circle cx="387" cy="254" r="18" fill="#34404b" stroke="#d1d4d9" stroke-width="2"/>
+    <path d="M376.3333333333333 254h21.333333333333332m-10.666666666666666 -10.666666666666666v21.333333333333332" stroke="#9aa4af" stroke-width="2"/>
+  </g>
+</svg>

@@ -15,7 +15,7 @@ export const ambientConfig = {
   lightScrollFactor: 0.35,
   cornerTravel: 10, // percentage of glow size across a page
   cornerOpacity: 0.32,
-  calmOpacity: 0.11,
+  calmOpacity: 0.07,
   glowDuration: 220, // ms for the glow to catch up while scrolling
 } as const;
 

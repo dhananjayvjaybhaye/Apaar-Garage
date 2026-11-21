@@ -13,6 +13,7 @@ import {
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { parseGltfModel } from './gltf-model';
 import { prefetchedModel } from './model-prefetch';
+import { mediaQuery } from '../ui/media-query';
 import { motionLevel, motionQueries } from '../motion/motion-policy';
 import { createEnvironment, disposeModels } from './three-resources';
 
@@ -30,9 +31,9 @@ export function mountCarScene(
   events: SceneEvents,
   hero = false,
 ) {
-  const queries = motionQueries.map((query) => window.matchMedia(query));
+  const queries = motionQueries.map((query) => mediaQuery(query, canvas.ownerDocument.defaultView ?? undefined));
   let fullMotion = motionLevel(window) === 'full';
-  const mobile = matchMedia('(pointer: coarse)').matches;
+  const mobile = mediaQuery('(pointer: coarse)', canvas.ownerDocument.defaultView ?? undefined)?.matches;
   const abort = new AbortController();
   const renderer = new WebGLRenderer({ canvas, alpha: true, antialias: !mobile });
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, mobile ? 1.25 : 1.75));
@@ -177,7 +178,7 @@ export function mountCarScene(
     resizeObserver.disconnect();
     visibilityObserver.disconnect();
     document.removeEventListener('visibilitychange', updateVisibility);
-    for (const query of queries) query.removeEventListener('change', updateMotion);
+    for (const query of queries) query?.removeEventListener('change', updateMotion);
     canvas.removeEventListener('pointermove', follow);
     canvas.removeEventListener('pointerleave', leave);
     canvas.removeEventListener('webglcontextlost', onContextLost);
@@ -229,7 +230,7 @@ export function mountCarScene(
     controls.addEventListener('end', endInteraction);
     canvas.addEventListener('webglcontextlost', onContextLost);
     document.addEventListener('visibilitychange', updateVisibility);
-    for (const query of queries) query.addEventListener('change', updateMotion);
+    for (const query of queries) query?.addEventListener('change', updateMotion);
     canvas.addEventListener('pointermove', follow, { passive: true });
     canvas.addEventListener('pointerleave', leave);
     resizeObserver.observe(canvas);

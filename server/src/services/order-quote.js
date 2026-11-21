@@ -20,10 +20,16 @@ export function stockError(name) {
   );
 }
 
+export class EmptyCartError extends HttpError {
+  constructor() {
+    super(409, 'Your cart is empty.');
+  }
+}
+
 async function readCartProducts(user, session) {
-  if (!user) throw new HttpError(409, 'Your cart is empty.');
+  if (!user) throw new EmptyCartError();
   const lines = await CartItem.find({ user }).sort({ _id: 1 }).session(session).lean();
-  if (!lines.length) throw new HttpError(409, 'Your cart is empty.');
+  if (!lines.length) throw new EmptyCartError();
 
   const products = await Product.find({
     _id: { $in: lines.map((line) => line.product) },

@@ -1,5 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
+import { prefersReducedMotion } from './media-query';
 import { EngineLoading } from './engine-loading';
 
 const soundFiles = {
@@ -96,7 +97,7 @@ export class GarageSound {
       const stored = this.view?.localStorage.getItem(preferenceKey);
       if (stored === 'true' || stored === 'false') return stored === 'true';
     } catch { /* Storage may be blocked. */ }
-    return this.view?.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    return prefersReducedMotion(this.view ?? undefined);
   }
 
   private activate() {

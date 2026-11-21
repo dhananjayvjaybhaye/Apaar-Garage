@@ -25,6 +25,9 @@
     }
     @if (item.scale) { <span class="scale">{{ item.scale }}</span> }
     <span class="tags">
+      @if (item.placeholder && item.productType !== 'rc') {
+        <span class="sample">Sample listing</span>
+      }
       @if (item.stock > 0 && item.stock <= 5) {
         <span class="low">Only {{ item.stock }} left</span>
       }

@@ -1,6 +1,7 @@
 // Validates startup settings, connects MongoDB, and starts the API.
 import { createApp } from './app.js';
-import { connectDatabase } from './services/database.js';
+import { connectDatabase, DatabaseConnectionError } from './services/database.js';
+import mongoose from 'mongoose';
 import { createOrderMailer, startOrderEmailWorker } from './services/order-email.js';
 import { Order } from './models/order.js';
 import { CartItem } from './models/cart-item.js';
@@ -18,13 +19,19 @@ try {
 
   app.listen(port, bindAddress, (error) => {
     if (error) {
-      console.error(error.message);
-      process.exit(1);
+      console.error('Could not start the API. Check that PORT is available.');
+      process.exitCode = 1;
+      void mongoose.disconnect().catch(() => undefined);
     }
     process.stdout.write(`Apaar Garage API listening at http://${bindAddress}:${port}\n`);
     if (mailer) startOrderEmailWorker(mailer);
   });
 } catch (error) {
-  console.error(error.message);
-  process.exit(1);
+  console.error(
+    error instanceof DatabaseConnectionError
+      ? error.message
+      : 'Could not start the API. Check the server environment settings and database access.',
+  );
+  await mongoose.disconnect().catch(() => undefined);
+  process.exitCode = 1;
 }

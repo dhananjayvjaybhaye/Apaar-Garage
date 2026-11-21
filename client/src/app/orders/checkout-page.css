@@ -104,24 +104,6 @@ address {
 .summary {
   align-self: start;
 }
-.summary ul {
-  list-style: none;
-  margin: 0;
-  padding: 0 0 0.65rem;
-  border-bottom: 1px solid var(--line);
-}
-.summary li {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding-block: 0.3rem;
-}
-.summary li strong {
-  white-space: nowrap;
-}
-.summary-skeleton {
-  min-height: 8rem;
-}
 @media (min-width: 37rem) {
   .fields {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -171,9 +153,6 @@ address {
   width: 1rem;
   min-height: 1rem;
 }
-.mobile-total {
-  display: none;
-}
 .summary {
   scroll-margin-top: 6rem;
 }
@@ -181,38 +160,13 @@ address {
   .checkout {
     padding-bottom: 6rem;
   }
-  .mobile-total {
-    position: fixed;
-    z-index: 16;
-    bottom: var(--mobile-nav-height);
-    left: 0;
-    right: 0;
-    display: flex;
-    gap: 1rem;
-    justify-content: space-between;
-    padding: 0.75rem 1rem max(0.75rem, env(safe-area-inset-bottom));
-    border-top: 1px solid var(--line);
-    background: var(--surface, #171a20);
-  }
 }
 
-.coupon,
 .order-email {
   display: grid;
   gap: 0.35rem;
   margin-block: 0 1rem;
 }
-.coupon-actions {
-  display: flex;
-  gap: 0.45rem;
-}
-.coupon-active {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.45rem;
-}
-.coupon input,
 .order-email input {
   width: 100%;
   min-width: 0;
@@ -226,7 +180,6 @@ address {
 .order-email {
   margin-block: 1rem 0;
 }
-.coupon small.error-text,
 .order-email small.error-text {
   color: var(--error);
 }

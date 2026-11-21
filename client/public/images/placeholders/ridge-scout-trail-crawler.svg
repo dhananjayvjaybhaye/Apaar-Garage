@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="540" viewBox="0 0 720 540" role="img" aria-labelledby="title">
+  <title id="title">Placeholder illustration of Ridge Scout Trail Crawler</title>
+  <defs>
+    <radialGradient id="light" cx=".67" cy=".32" r=".78">
+      <stop stop-color="#f0964a" stop-opacity=".27"/><stop offset="1" stop-color="#10151d" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="paint" x2="0" y2="1">
+      <stop stop-color="#e9c774"/><stop offset="1" stop-color="#242733"/>
+    </linearGradient>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M0 32V0h32" fill="none" stroke="#f0964a" opacity=".18"/>
+    </pattern>
+  </defs>
+  <rect width="720" height="540" fill="#11151c"/>
+  <rect width="720" height="540" fill="url(#light)"/>
+  <rect x="28" y="28" width="664" height="484" rx="20" fill="url(#grid)" stroke="#f0964a" stroke-opacity=".45"/>
+  <path d="M54 104h612M54 404h612M54 374h612" fill="none" stroke="#f0964a" stroke-opacity=".46"/>
+  <g font-family="system-ui,sans-serif">
+    <text x="54" y="78" fill="#f0964a" font-size="20" font-weight="800" letter-spacing="4">RC TRUCK</text>
+    <text x="666" y="78" fill="#d7dbe0" font-size="18" text-anchor="end">1:18 / 17</text>
+    <text x="54" y="450" fill="#f2eee8" font-size="29" font-weight="750">Ridge Scout Trail Crawler</text>
+    <text x="54" y="486" fill="#c8cbd3" font-size="16" letter-spacing="3">SAMPLE ARTWORK</text>
+  </g>
+  <ellipse cx="360" cy="364" rx="229" ry="19" fill="#070b10" opacity=".8"/>
+  <g transform="translate(100 118.6) scale(1 0.89)" stroke-linejoin="round">
+    <path d="M78 194l45-13h126l25-62h88l68 52 21 26v26H78z" fill="url(#paint)" stroke="#f0964a" stroke-width="4"/>
+    <circle cx="133" cy="239" r="48" fill="#111820" stroke="#e9c774" stroke-width="4"/>
+    <circle cx="133" cy="239" r="27" fill="#34404b" stroke="#d1d4d9" stroke-width="2"/>
+    <path d="M117 239h32m-16 -16v32" stroke="#9aa4af" stroke-width="2"/>
+    <circle cx="393" cy="239" r="48" fill="#111820" stroke="#e9c774" stroke-width="4"/>
+    <circle cx="393" cy="239" r="27" fill="#34404b" stroke="#d1d4d9" stroke-width="2"/>
+    <path d="M377 239h32m-16 -16v32" stroke="#9aa4af" stroke-width="2"/>
+  </g>
+</svg>

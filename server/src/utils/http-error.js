@@ -14,9 +14,23 @@ export function validate(schema, value) {
   return result.data;
 }
 
-export function errorHandler(error, _req, res, next) {
+function logUnexpected(req, res) {
+  // Express route templates are defined by the app, unlike request URLs and error text.
+  const path = typeof req.route?.path === 'string' ? req.baseUrl + req.route.path : '(middleware)';
+  console.error(
+    JSON.stringify({
+      message: 'Unhandled API error',
+      status: 500,
+      route: req.method + ' ' + path,
+      requestId: res.locals.requestId,
+    }),
+  );
+}
+
+export function errorHandler(error, req, res, _next) {
   if (res.headersSent) {
-    return next(error);
+    logUnexpected(req, res);
+    return res.destroy();
   }
 
   if (error instanceof HttpError) {
@@ -35,6 +49,6 @@ export function errorHandler(error, _req, res, next) {
     return res.status(400).json({ message: 'Invalid request URL.' });
   }
 
-  console.error('Unhandled API error:', error);
+  logUnexpected(req, res);
   return res.status(500).json({ message: 'Something went wrong. Try again later.' });
 }

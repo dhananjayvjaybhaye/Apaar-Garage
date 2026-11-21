@@ -96,6 +96,11 @@ test('store HTTP contracts', async (t) => {
     assert.equal(detail.value.name, model.name);
     assert.equal(detail.headers.get('cache-control'), 'public, no-cache');
     await buyer('/products/unknown', { status: 404 });
+    for (const slug of ['Bad%20Slug', 'a'.repeat(151)]) {
+      const invalid = await buyer('/products/' + slug, { status: 400 });
+      assert.deepEqual(invalid.value, { message: 'Invalid product slug.' });
+      assert.match(invalid.headers.get('x-request-id'), /^[0-9a-f-]{36}$/);
+    }
   });
 
   await t.test('registration, session, login and logout retain their contracts', async () => {
@@ -152,6 +157,8 @@ test('store HTTP contracts', async (t) => {
   });
 
   await t.test('COD checkout clears the cart and reduces stock exactly once', async () => {
+    await shopper(origin)('/orders/quote', { status: 409 });
+    assert.deepEqual((await shopper(origin)('/orders/quote?empty=ok')).value, { empty: true });
     await buyer('/cart/items', { method: 'POST', body: { slug: model.slug, quantity: 2 } });
     const { value: quote } = await buyer('/orders/quote?pincode=' + address.pincode);
     assert.equal(quote.codFeePaise, 3000);

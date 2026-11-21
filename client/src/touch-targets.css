@@ -1,0 +1,39 @@
+:root {
+  /* Minimum size of standalone mobile controls in CSS pixels. */
+  --mobile-touch-target: 44px;
+}
+
+@media (width < 52rem), (pointer: coarse) {
+  :is(
+    button,
+    select,
+    textarea,
+    summary,
+    [role='button'],
+    [role='tab'],
+    input:not([type='hidden'], [type='checkbox'], [type='radio']),
+    .primary-button,
+    .secondary-button,
+    .contact-float,
+    nav a,
+    .product-copy h3 a,
+    .product-detail-link,
+    .wordmark,
+    .hero-skip,
+    .mobile-total a,
+    .saved-address,
+    .stock-filter,
+    .save-address
+  ) {
+    min-block-size: var(--mobile-touch-target) !important;
+    min-inline-size: var(--mobile-touch-target) !important;
+  }
+
+  :is(nav a, .product-copy h3 a, .hero-skip, .mobile-total a, .wordmark) {
+    align-items: center;
+  }
+
+  :is(.product-copy h3 a, .mobile-total a) {
+    display: inline-flex;
+  }
+}

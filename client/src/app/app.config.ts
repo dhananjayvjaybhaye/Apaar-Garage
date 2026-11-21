@@ -2,6 +2,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter, withViewTransitions } from '@angular/router';
 import { routes } from './app.routes';
+import { prefersReducedMotion } from './ui/media-query';
 import { engineRequests } from './ui/engine-loading';
 
 export const appConfig: ApplicationConfig = {
@@ -13,7 +14,7 @@ export const appConfig: ApplicationConfig = {
       withViewTransitions({
         skipInitialTransition: true,
         onViewTransitionCreated: ({ transition }) => {
-          if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          if (prefersReducedMotion()) {
             transition.skipTransition();
           }
         },

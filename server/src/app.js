@@ -14,7 +14,7 @@ import { createReviewsRouter } from './routes/reviews.js';
 import { productsRouter } from './routes/products.js';
 import { createShopper } from './middleware/shopper.js';
 import { deliveryHandler } from './controllers/delivery.js';
-import { protectWrites, requestLimit } from './middleware/http.js';
+import { identifyRequest, protectWrites, requestLimit } from './middleware/http.js';
 import { createShopAccountRouter } from './routes/shop-account.js';
 import { createSession } from './middleware/session.js';
 
@@ -25,6 +25,7 @@ export function createApp({ orderEmailEnabled = false } = {}) {
   const shopper = createShopper(session, secret, production);
   const payment = { ...paymentOptions, orderEmailEnabled };
 
+  app.use(identifyRequest);
   app.use(
     helmet({
       strictTransportSecurity: production ? undefined : false,

@@ -17,6 +17,11 @@ export const controlTypes = ['2.4GHz', 'Wi-Fi', 'app'];
 export const terrains = ['indoor', 'outdoor', 'all-terrain'];
 export const skillLevels = ['beginner', 'intermediate', 'expert'];
 export const maxRecommendedAge = 99;
+// Slugs are URL path segments, capped to the same length as cart slugs.
+export const productSlug = z
+  .string()
+  .max(150, 'Invalid product slug.')
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Invalid product slug.');
 
 const scale = z
   .string()
@@ -35,6 +40,7 @@ const common = z.object({
   glbUrl: text.optional(),
   description: text,
   featured: z.boolean().default(false),
+  placeholder: z.boolean().optional(),
   dimensionsMm: z
     .object({
       length: positive.optional(),
@@ -64,6 +70,5 @@ export const productInput = z.discriminatedUnion('productType', [
     readyToRun: z.boolean(),
     warrantyDays: whole,
     boxContents: z.array(text).nonempty(),
-    placeholder: z.boolean().optional(),
   }),
 ]);

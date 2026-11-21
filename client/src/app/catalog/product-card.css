@@ -119,6 +119,10 @@
   background: #322616;
   color: #ffd293;
 }
+.sample {
+  background: #1d252d;
+  color: var(--text);
+}
 .new {
   background: #7d1210;
   color: white;

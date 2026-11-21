@@ -2,6 +2,7 @@ import type { Renderer2 } from '@angular/core';
 import type { gsap } from 'gsap';
 import type { Product } from '../../catalog/product';
 import type { Motion } from '../../motion/motion';
+import { mediaQuery } from '../../ui/media-query';
 import { motionQueries } from '../../motion/motion-policy';
 import type { PreviewPoint } from '../../product-preview/product-preview';
 import { prefetchProductMedia } from '../../product-preview/prefetch-product-media';
@@ -38,7 +39,7 @@ export function observeGarage(options: SessionOptions) {
     options.onUnavailable?.();
     return;
   }
-  const desktop = view.matchMedia(motionQueries[2] + ' and (pointer: fine)');
+  const desktop = mediaQuery(motionQueries[2] + ' and (pointer: fine)', view);
   const device = view.navigator as Navigator & {
     deviceMemory?: number;
     connection?: { saveData?: boolean };
@@ -62,7 +63,7 @@ export function observeGarage(options: SessionOptions) {
     if (
       !disposed &&
       (options.manual ||
-        (desktop.matches &&
+        (desktop?.matches &&
           enoughCores &&
           !device.connection?.saveData &&
           (device.deviceMemory ?? 4) > 2))
@@ -92,7 +93,7 @@ export function observeGarage(options: SessionOptions) {
             view,
             world.mountGarage,
             tools.gsap,
-            options.manual || !desktop.matches,
+            options.manual || !desktop?.matches,
             () => loadingJob.finish(),
           ),
         );
@@ -103,7 +104,7 @@ export function observeGarage(options: SessionOptions) {
       });
   });
   motion.zone.runOutsideAngular(() => {
-    desktop.addEventListener('change', refresh);
+    desktop?.addEventListener('change', refresh);
     refresh();
   });
   return {
@@ -112,7 +113,7 @@ export function observeGarage(options: SessionOptions) {
       session?.inspect(...args),
     destroy() {
       disposed = true;
-      desktop.removeEventListener('change', refresh);
+      desktop?.removeEventListener('change', refresh);
       observer.disconnect();
       stop();
     },

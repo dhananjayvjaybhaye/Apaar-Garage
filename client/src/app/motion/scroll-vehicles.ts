@@ -1,5 +1,6 @@
 import { afterNextRender, DestroyRef, Directive, ElementRef, inject, NgZone } from '@angular/core';
 import { AmbientViewport } from './ambient-viewport';
+import { mediaQuery } from '../ui/media-query';
 import { motionQueries } from './motion-policy';
 
 const trackMotion = {
@@ -21,15 +22,15 @@ export class ScrollVehicles {
       const car = stage.querySelector<HTMLElement>('[data-pit-car]');
       const plane = stage.querySelector<HTMLElement>('[data-pit-plane]');
       const view = stage.ownerDocument.defaultView;
-      if (!view?.matchMedia || !car || !plane) return;
+      if (!view || !car || !plane) return;
 
-      const reduced = view.matchMedia(motionQueries[0]);
+      const reduced = mediaQuery(motionQueries[0], view);
       let visible = false;
       let scrollEvents: AbortController | undefined;
       let frame = 0;
 
       const updatePosition = () => {
-        if (!visible || reduced.matches) return;
+        if (!visible || reduced?.matches) return;
         const { top, width } = stage.getBoundingClientRect();
         const { innerHeight } = view;
         const distance = innerHeight * (trackMotion.startAt - trackMotion.finishAt);
@@ -62,7 +63,7 @@ export class ScrollVehicles {
         frame = 0;
       };
       const sync = () => {
-        if (reduced.matches) {
+        if (reduced?.matches) {
           pause();
           stage.classList.remove('scroll-positioned');
           car.style.removeProperty('transform');
@@ -84,11 +85,11 @@ export class ScrollVehicles {
         if (shown) sync();
         else pause();
       });
-      zone.runOutsideAngular(() => reduced.addEventListener('change', sync));
+      zone.runOutsideAngular(() => reduced?.addEventListener('change', sync));
       lifetime.onDestroy(() => {
         unobserve();
         pause();
-        reduced.removeEventListener('change', sync);
+        reduced?.removeEventListener('change', sync);
       });
     });
   }

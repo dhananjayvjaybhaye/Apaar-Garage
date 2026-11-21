@@ -1,6 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { DestroyRef, inject, Injectable, NgZone, signal } from '@angular/core';
 import { NavigationStart, Router } from '@angular/router';
+import { mediaQuery } from '../ui/media-query';
 import type { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { motionLevel, motionQueries } from './motion-policy';
 
@@ -37,7 +38,7 @@ export class Motion {
 
   constructor() {
     const view = this.view;
-    if (!view?.matchMedia) return;
+    if (!view) return;
     const lifetime = inject(DestroyRef);
     const routes = inject(Router, { optional: true })?.events.subscribe((event) => {
       if (event instanceof NavigationStart) this.reset();
@@ -46,8 +47,8 @@ export class Motion {
     const signal = events.signal;
     this.zone.runOutsideAngular(() => {
       for (const query of motionQueries) {
-        const media = view.matchMedia(query);
-        media.addEventListener('change', this.refreshPolicy, { signal });
+        const media = mediaQuery(query, view);
+        media?.addEventListener('change', this.refreshPolicy, { signal });
       }
       this.refreshPolicy();
       this.document.addEventListener('pointermove', this.move, { signal, passive: true });
@@ -97,6 +98,7 @@ export class Motion {
   }
 
   loadScrollTools() {
+    if (!mediaQuery('all', this.view ?? undefined)) return Promise.resolve(null);
     return (this.scrollPlugin ??= Promise.all([import('gsap'), import('gsap/ScrollTrigger')])
       .then(([{ gsap }, { ScrollTrigger }]) => {
         gsap.registerPlugin(ScrollTrigger);

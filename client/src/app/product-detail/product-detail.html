@@ -98,8 +98,8 @@
           <a [routerLink]="[]" fragment="reviews" (click)="reviewRequested.set(true)">Read reviews</a>
         </div>
         <p class="price">{{ product.price | currency: 'INR' : 'symbol' : '1.0-2' }}</p>
-        @if (product.productType === 'rc' && product.placeholder) {
-          <p class="sample-notice">Sample listing. Photos, specs and pricing are for demonstration.</p>
+        @if (product.placeholder) {
+          <p class="sample-notice">Sample listing. Artwork, specs and pricing are for demonstration.</p>
         }
         <dl class="purchase-facts">
           @if (product.scale) {

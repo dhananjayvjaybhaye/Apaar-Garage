@@ -1,205 +1,140 @@
 <main class="container checkout">
-  <a routerLink="/cart">Back to cart</a>
-  <h1>Checkout</h1>
-  @if (auth.status() === 'signed-out') {
-    <p>
-      Checking out as a guest.
-      <a routerLink="/login" [queryParams]="{ returnUrl: '/checkout' }">Sign in</a> to use saved
-      addresses and order history.
-    </p>
-  }
+  @if (delivery.emptyCart()) {
+    <h1>Your cart is empty</h1>
+    <app-shop-state
+      title="Find something for your garage"
+      message="Add a model to your cart before checking out."
+      link="/catalog"
+      action="Back to shop"
+      illustration="garage"
+    />
+  } @else {
+    <a routerLink="/cart">Back to cart</a>
+    <h1>Checkout</h1>
+    @if (auth.status() === 'signed-out') {
+      <p>
+        Checking out as a guest.
+        <a routerLink="/login" [queryParams]="{ returnUrl: '/checkout' }">Sign in</a> to use saved
+        addresses and order history.
+      </p>
+    }
 
-  <div class="checkout-grid">
-    <section appReveal [gentleReveal]="true" class="panel">
-      <h2>Shipping address</h2>
-      @if (addresses.hasValue() && addresses.value().length) {
-        <label class="saved-address"
-          >Saved address
-          <select #saved (change)="applyAddress(saved.value)" [disabled]="placing()">
-            <option value="">Choose an address</option>
-            @for (entry of addresses.value(); track entry.id) {
-              <option [value]="entry.id">
-                {{ entry.addressLine1 }}, {{ entry.city }} {{ entry.pincode }}
-              </option>
+    <div class="checkout-grid">
+      <section appReveal [gentleReveal]="true" class="panel">
+        <h2>Shipping address</h2>
+        @if (shipping.addresses.hasValue() && shipping.addresses.value().length) {
+          <label class="saved-address"
+            >Saved address
+            <select
+              #saved
+              (change)="shipping.applyAddress(saved.value)"
+              [disabled]="submit.placing()"
+            >
+              <option value="">Choose an address</option>
+              @for (entry of shipping.addresses.value(); track entry.id) {
+                <option [value]="entry.id">
+                  {{ entry.addressLine1 }}, {{ entry.city }} {{ entry.pincode }}
+                </option>
+              }
+            </select>
+          </label>
+        }
+        <form
+          #checkoutForm
+          [formGroup]="shipping.form"
+          (ngSubmit)="submit.place(checkoutForm)"
+          novalidate
+        >
+          <fieldset [disabled]="submit.placing()">
+            <div class="fields">
+              @for (field of fields; track field.key) {
+                @let warning = shipping.fieldError(field.key);
+                <div class="field" [class.wide]="field.wide">
+                  <label [attr.for]="'shipping-' + field.key">{{ field.label }}</label>
+                  <input
+                    [id]="'shipping-' + field.key"
+                    [formControlName]="field.key"
+                    [attr.autocomplete]="'shipping ' + field.autocomplete"
+                    [type]="field.key === 'phone' ? 'tel' : 'text'"
+                    [attr.inputmode]="field.mode ?? null"
+                    [attr.maxlength]="field.max"
+                    [attr.aria-required]="field.key !== 'addressLine2'"
+                    [attr.aria-invalid]="warning ? 'true' : null"
+                    [attr.aria-describedby]="warning || field.hint ? 'help-' + field.key : null"
+                  />
+                  @if (warning || field.hint) {
+                    <small [class.error-text]="warning" [id]="'help-' + field.key">{{
+                      warning || field.hint
+                    }}</small>
+                  }
+                </div>
+              }
+              <p class="country"><span>Country</span><strong>India</strong></p>
+            </div>
+            @if (auth.user()) {
+              <label class="save-address"
+                ><input type="checkbox" [formControl]="shipping.saveAddress" /> Save this address
+                for future orders</label
+              >
             }
-          </select>
-        </label>
-      }
-      <form #checkoutForm [formGroup]="address" (ngSubmit)="place(checkoutForm)" novalidate>
-        <fieldset [disabled]="placing()">
-          <div class="fields">
-            @for (field of fields; track field.key) {
-              @let warning = fieldError(field.key);
-              <div class="field" [class.wide]="field.wide">
-                <label [attr.for]="'shipping-' + field.key">{{ field.label }}</label>
+            @if (!auth.user() && delivery.quote()?.emailUpdates) {
+              <div class="order-email">
+                <label for="order-email">Email for order updates (optional)</label>
                 <input
-                  [id]="'shipping-' + field.key"
-                  [formControlName]="field.key"
-                  [attr.autocomplete]="'shipping ' + field.autocomplete"
-                  [type]="field.key === 'phone' ? 'tel' : 'text'"
-                  [attr.inputmode]="field.mode ?? null"
-                  [attr.maxlength]="field.max"
-                  [attr.aria-required]="field.key !== 'addressLine2'"
-                  [attr.aria-invalid]="warning ? 'true' : null"
-                  [attr.aria-describedby]="warning || field.hint ? 'help-' + field.key : null"
+                  id="order-email"
+                  type="email"
+                  autocomplete="email"
+                  inputmode="email"
+                  maxlength="254"
+                  [formControl]="shipping.email"
+                  [attr.aria-invalid]="shipping.email.touched && shipping.email.invalid"
+                  [attr.aria-describedby]="
+                    shipping.email.touched && shipping.email.invalid ? 'order-email-error' : null
+                  "
                 />
-                @if (warning || field.hint) {
-                  <small [class.error-text]="warning" [id]="'help-' + field.key">{{
-                    warning || field.hint
-                  }}</small>
+                @if (shipping.email.touched && shipping.email.invalid) {
+                  <small id="order-email-error" class="error-text"
+                    >Enter a valid email address.</small
+                  >
                 }
               </div>
             }
-            <p class="country"><span>Country</span><strong>India</strong></p>
-          </div>
-          @if (auth.user()) {
-            <label class="save-address"
-              ><input type="checkbox" [formControl]="saveAddress" /> Save this address for future
-              orders</label
-            >
-          }
-          @if (!auth.user() && quote()?.emailUpdates) {
-            <div class="order-email">
-              <label for="order-email">Email for order updates (optional)</label>
-              <input
-                id="order-email"
-                type="email"
-                autocomplete="email"
-                inputmode="email"
-                maxlength="254"
-                [formControl]="email"
-                [attr.aria-invalid]="email.touched && email.invalid"
-                [attr.aria-describedby]="
-                  email.touched && email.invalid ? 'order-email-error' : null
-                "
-              />
-              @if (email.touched && email.invalid) {
-                <small id="order-email-error" class="error-text"
-                  >Enter a valid email address.</small
-                >
-              }
-            </div>
-          }
-        </fieldset>
-        <div class="place">
-          <p class="kicker">Cash on Delivery</p>
-          <p>Pay in cash when your order arrives.</p>
-          @if (error()) {
-            <p role="alert" class="error-text">{{ error() }}</p>
-          }
-          <button
-            appMagnetic
-            class="primary-button"
-            type="submit"
-            [disabled]="placing() || (!updatingDelivery() && !quote())"
-            [attr.aria-disabled]="updatingDelivery() ? 'true' : null"
-          >
-            @if (updatingDelivery()) {
-              <span class="delivery-spinner" aria-hidden="true"></span> Updating delivery…
-            } @else {
-              {{ placing() ? 'Placing order…' : 'Place Order (Cash on Delivery)' }}
-            }
-          </button>
-          @if (queued()) {
-            <p role="status">We’ll place your order when delivery is updated.</p>
-          }
-        </div>
-      </form>
-    </section>
-
-    <section
-      appTilt
-      [tiltDegrees]="2"
-      class="panel summary"
-      id="checkout-summary"
-      #summaryPanel
-      tabindex="-1"
-      aria-label="Order summary"
-    >
-      <h2>Order summary</h2>
-      <form class="coupon" (submit)="applyCoupon($event, couponInput)" novalidate>
-        <label for="coupon-code">Coupon code</label>
-        <div class="coupon-actions">
-          <input
-            #couponInput
-            id="coupon-code"
-            type="text"
-            maxlength="24"
-            autocomplete="off"
-            autocapitalize="characters"
-            spellcheck="false"
-            [disabled]="placing()"
-            (input)="couponInputError.set('')"
-            [attr.aria-invalid]="!!couponError()"
-            [attr.aria-describedby]="couponError() ? 'coupon-error' : null"
-          />
-          <button class="secondary-button" type="submit" [disabled]="placing()">Apply</button>
-        </div>
-        @if (coupon(); as code) {
-          <div class="coupon-active">
-            @if (quote()?.discountCode === code) {
-              <span role="status">{{ code }} applied</span>
+          </fieldset>
+          <div class="place">
+            <p class="kicker">Cash on Delivery</p>
+            <p>Pay in cash when your order arrives.</p>
+            @if (submit.error()) {
+              <p role="alert" class="error-text">{{ submit.error() }}</p>
             }
             <button
-              type="button"
-              class="secondary-button"
-              [disabled]="placing()"
-              [attr.aria-label]="'Remove coupon ' + code"
-              (click)="removeCoupon(couponInput)"
+              appMagnetic
+              class="primary-button"
+              type="submit"
+              [disabled]="submit.placing() || (!delivery.updatingDelivery() && !delivery.quote())"
+              [attr.aria-disabled]="delivery.updatingDelivery() ? 'true' : null"
             >
-              Remove
+              @if (delivery.updatingDelivery()) {
+                <span class="delivery-spinner" aria-hidden="true"></span> Updating delivery…
+              } @else {
+                {{ submit.placing() ? 'Placing order…' : 'Place Order (Cash on Delivery)' }}
+              }
             </button>
+            @if (submit.queued()) {
+              <p role="status">We’ll place your order when delivery is updated.</p>
+            }
           </div>
-        }
-        @if (couponError(); as message) {
-          <small id="coupon-error" class="error-text" role="alert">{{ message }}</small>
-        }
-      </form>
-      @if (auth.status() === 'signed-out' && quote()?.firstOrderPercent && !coupon()) {
-        <p class="muted">Sign in to check for a first-order discount.</p>
-      }
-      @if (updatingDelivery()) {
-        <p role="status">Updating order summary…</p>
-        <div class="skeleton summary-skeleton" appAmbientVisible aria-hidden="true"></div>
-      } @else if (quote(); as order) {
-        <ul appReveal [gentleReveal]="true">
-          @for (item of order.items; track item.slug) {
-            <li>
-              <span>{{ item.name }} × {{ item.quantity }}</span>
-              <strong>{{
-                (item.unitPricePaise * item.quantity) / 100 | currency: 'INR' : 'symbol' : '1.2-2'
-              }}</strong>
-            </li>
-          }
-        </ul>
-        <app-order-totals [summary]="order" />
-        <p class="muted">{{ order.deliveryEstimate }}</p>
-        <div class="mobile-total">
-          <span
-            >Total
-            <strong>{{
-              order.totalPaise / 100 | currency: 'INR' : 'symbol' : '1.2-2'
-            }}</strong></span
-          >
-          <a
-            href="#checkout-summary"
-            (click)="
-              $event.preventDefault();
-              summaryPanel.scrollIntoView({ block: 'start' });
-              summaryPanel.focus({ preventScroll: true })
-            "
-            >View summary</a
-          >
-        </div>
-      } @else {
-        @if (!couponError()) {
-          <p class="error-text" role="alert">{{ quoteError() }}</p>
-        }
-        <button class="secondary-button" type="button" (click)="refreshQuote()">
-          Refresh summary
-        </button>
-        <a class="secondary-button" routerLink="/cart">Review cart</a>
-      }
-    </section>
-  </div>
+        </form>
+      </section>
+
+      <section
+        appCheckoutSummary
+        appTilt
+        [tiltDegrees]="2"
+        class="panel summary"
+        id="checkout-summary"
+        tabindex="-1"
+        aria-label="Order summary"
+      ></section>
+    </div>
+  }
 </main>

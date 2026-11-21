@@ -5,6 +5,18 @@ import { Product } from '../src/models/product.js';
 import { productInput } from '../src/utils/product-input.js';
 import { seedProducts } from './products.js';
 import { rcSamples } from './rc-products.js';
+import { legacyDiecast } from './legacy-diecast.js';
+
+function oldSample(item) {
+  if (item.productType === 'diecast') return legacyDiecast[item.slug];
+  return {
+    name: item.name,
+    brand: 'Apaar RC Samples',
+    description: item.description,
+    images: ['/images/rc-sample.png'],
+    placeholder: true,
+  };
+}
 
 try {
   await connectDatabase();
@@ -24,11 +36,31 @@ try {
       },
     })),
   );
-  for (const { slug, glbUrl } of seedProducts.filter((item) => item.glbUrl)) {
-    await Product.updateOne({ slug, glbUrl: { $exists: false } }, { $set: { glbUrl } });
+  // Refresh only untouched legacy sample artwork and copy. Keep stock, prices and existing links.
+  const refresh = await Product.bulkWrite(
+    samples.map((item) => ({
+      updateOne: {
+        filter: { slug: item.slug, ...oldSample(item) },
+        update: {
+          $set: {
+            name: item.name,
+            brand: item.brand,
+            description: item.description,
+            images: item.images,
+            placeholder: true,
+          },
+        },
+      },
+    })),
+  );
+  for (const { slug, glbUrl, images } of seedProducts.filter((item) => item.glbUrl)) {
+    await Product.updateOne(
+      { slug, images, placeholder: true, glbUrl: { $exists: false } },
+      { $set: { glbUrl } },
+    );
   }
   process.stdout.write(
-    `Added ${result.upsertedCount} sample products. ${result.matchedCount} already existed.\n`,
+    `Added ${result.upsertedCount} samples. Refreshed ${refresh.modifiedCount} legacy samples.\n`,
   );
 } catch (error) {
   console.error(error.message);

@@ -16,6 +16,17 @@ import { EngineLoading } from './ui/engine-loading';
 import { GarageAmbience } from './ui/garage-ambience';
 import { AmbientBackground } from './ui/ambient-background/ambient-background';
 
+const calmRoutes = new Set([
+  'cart',
+  'checkout',
+  'login',
+  'register',
+  'auth',
+  'orders',
+  'track-order',
+  'admin',
+]);
+
 @Component({
   selector: 'app-root',
   imports: [
@@ -44,7 +55,9 @@ import { AmbientBackground } from './ui/ambient-background/ambient-background';
     <app-mobile-nav />
     <div #content id="page-content" class="route-content" tabindex="-1">
       @defer (on idle) {
-        <app-garage-ambience mode="site" />
+        @if (!calmBackground()) {
+          <app-garage-ambience mode="site" />
+        }
       }
       <router-outlet />
     </div>
@@ -54,7 +67,9 @@ import { AmbientBackground } from './ui/ambient-background/ambient-background';
     >
     <app-toasts />
     @defer (on idle) {
-      <app-cursor-glow />
+      @if (!calmBackground()) {
+        <app-cursor-glow />
+      }
     }
     <app-preview-modal />
     @if (engine(); as status) {
@@ -77,7 +92,7 @@ export class App {
   );
   protected readonly calmBackground = computed(() => {
     const page = this.router.parseUrl(this.url()).root.children[PRIMARY_OUTLET]?.segments[0]?.path;
-    return page === 'cart' || page === 'checkout' || page === 'login' || page === 'register';
+    return page !== undefined && calmRoutes.has(page);
   });
 
   protected skip(event: Event, content: HTMLElement) {

@@ -1,6 +1,7 @@
 // Adapts catalog queries and product lookups to HTTP responses.
 import { validate } from '../utils/http-error.js';
 import { productFilters } from '../utils/product-filters.js';
+import { productSlug } from '../utils/product-input.js';
 import { findProduct, listProducts } from '../services/product-catalog.js';
 
 export async function getProducts(req, res) {
@@ -11,6 +12,6 @@ export async function getProducts(req, res) {
 }
 
 export async function getProduct(req, res) {
-  const product = await findProduct(req.params.slug);
+  const product = await findProduct(validate(productSlug, req.params.slug));
   res.set('Cache-Control', 'public, no-cache').json(product);
 }

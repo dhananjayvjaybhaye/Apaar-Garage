@@ -7,6 +7,7 @@
     "start": "node --env-file=.env src/index.js",
     "dev": "node --watch --env-file=.env src/index.js",
     "seed": "node --env-file=.env scripts/seed.js",
+    "seed:images": "node scripts/generate-placeholder-images.js",
     "test": "node --test",
     "lint": "eslint --max-warnings 0 src scripts test",
     "format": "prettier --write \"{src,scripts,test}/**/*.js\" eslint.config.mjs",

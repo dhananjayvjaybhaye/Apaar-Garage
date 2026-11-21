@@ -1,3 +1,5 @@
+import { placeholderPath } from './placeholder-path.js';
+
 const vehicleKit = [
   'RC vehicle',
   'Handheld controller',
@@ -252,9 +254,9 @@ const samples = [
 
 export const rcSamples = samples.map((sample) => ({
   productType: 'rc',
-  brand: 'Apaar RC Samples',
+  brand: 'Radio Control Series',
   stock: 8,
-  images: ['/images/rc-sample.png'],
+  images: [placeholderPath(sample.name)],
   batteryType: 'Rechargeable Li-ion pack',
   batteryIncluded: true,
   chargeTime: 60,

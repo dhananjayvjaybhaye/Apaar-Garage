@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="540" viewBox="0 0 720 540" role="img" aria-labelledby="title">
+  <title id="title">Placeholder illustration of Field Wing Trainer</title>
+  <defs>
+    <radialGradient id="light" cx=".67" cy=".32" r=".78">
+      <stop stop-color="#a6b5fb" stop-opacity=".27"/><stop offset="1" stop-color="#10151d" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="paint" x2="0" y2="1">
+      <stop stop-color="#a4ccd4"/><stop offset="1" stop-color="#242733"/>
+    </linearGradient>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M0 32V0h32" fill="none" stroke="#a6b5fb" opacity=".18"/>
+    </pattern>
+  </defs>
+  <rect width="720" height="540" fill="#11151c"/>
+  <rect width="720" height="540" fill="url(#light)"/>
+  <rect x="28" y="28" width="664" height="484" rx="20" fill="url(#grid)" stroke="#a6b5fb" stroke-opacity=".45"/>
+  <path d="M54 104h612M54 404h612M54 374h612" fill="none" stroke="#a6b5fb" stroke-opacity=".46"/>
+  <g font-family="system-ui,sans-serif">
+    <text x="54" y="78" fill="#a6b5fb" font-size="20" font-weight="800" letter-spacing="4">RC PLANE</text>
+    <text x="666" y="78" fill="#d7dbe0" font-size="18" text-anchor="end">HOBBY SERIES / 21</text>
+    <text x="54" y="450" fill="#f2eee8" font-size="29" font-weight="750">Field Wing Trainer</text>
+    <text x="54" y="486" fill="#c8cbd3" font-size="16" letter-spacing="3">SAMPLE ARTWORK</text>
+  </g>
+  <ellipse cx="360" cy="364" rx="222" ry="19" fill="#070b10" opacity=".8"/>
+  <g transform="translate(100 90) scale(1 1)" stroke-linejoin="round">
+    <path d="M63 177l26-11 37 11 57-3 64-70 56-7-31 72 153-7 31 10-22 18-157 18-18 60-39 6 10-62-98-3-47 21-28-6 36-35z" fill="url(#paint)" stroke="#a6b5fb" stroke-width="4"/>
+    
+  </g>
+</svg>

@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthStore } from '../auth/auth-store';
 import { CartStore } from '../cart/cart-store';
 import { CheckoutPage } from './checkout-page';
@@ -33,8 +33,9 @@ function quote(token: string): OrderQuote {
 }
 
 describe('Checkout delivery quote', () => {
-  it('queues one submit while delivery updates and places it with the matching quote', async () => {
-    const reloadCart = vi.fn();
+  const reloadCart = vi.fn();
+  beforeEach(() => {
+    reloadCart.mockClear();
     TestBed.configureTestingModule({
       imports: [CheckoutPage],
       providers: [
@@ -45,12 +46,16 @@ describe('Checkout delivery quote', () => {
         { provide: CartStore, useValue: { reload: reloadCart } },
       ],
     });
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('queues one submit while delivery updates and places it with the matching quote', async () => {
     const http = TestBed.inject(HttpTestingController);
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     const fixture = TestBed.createComponent(CheckoutPage);
     const page = fixture.nativeElement as HTMLElement;
     fixture.detectChanges();
-    http.expectOne('/api/orders/quote').flush(quote('general-quote'));
+    http.expectOne('/api/orders/quote?empty=ok').flush(quote('general-quote'));
     await fixture.whenStable();
 
     for (const [key, value] of Object.entries(address)) {
@@ -70,7 +75,9 @@ describe('Checkout delivery quote', () => {
     );
     http.expectNone('/api/orders');
 
-    const delivery = await vi.waitFor(() => http.expectOne('/api/orders/quote?pincode=411001'));
+    const delivery = await vi.waitFor(() =>
+      http.expectOne('/api/orders/quote?empty=ok&pincode=411001'),
+    );
     http.expectNone('/api/orders');
     delivery.flush(quote('matching-quote'));
 
@@ -86,6 +93,20 @@ describe('Checkout delivery quote', () => {
     expect(navigate).toHaveBeenCalledWith(['/checkout/success', 'AG-0123456789ABCD'], {
       replaceUrl: true,
     });
+    http.verify();
+  });
+
+  it('shows an empty cart without requiring matchMedia or an HTTP error', async () => {
+    vi.stubGlobal('matchMedia', undefined);
+    const fixture = TestBed.createComponent(CheckoutPage);
+    const http = TestBed.inject(HttpTestingController);
+    fixture.detectChanges();
+    http.expectOne('/api/orders/quote?empty=ok').flush({ empty: true });
+    await fixture.whenStable();
+    const page = fixture.nativeElement as HTMLElement;
+    expect(page.querySelector('h1')?.textContent).toBe('Your cart is empty');
+    expect(page.querySelector('a[href="/catalog"]')?.textContent).toContain('Back to shop');
+    expect(page.querySelector('form')).toBeNull();
     http.verify();
   });
 });

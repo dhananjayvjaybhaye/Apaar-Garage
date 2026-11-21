@@ -1,5 +1,6 @@
 // Shared HTTP middleware for private responses, rate limits, and JSON writes.
 import { rateLimit } from 'express-rate-limit';
+import { randomUUID } from 'node:crypto';
 import { HttpError } from '../utils/http-error.js';
 
 const rateLimitWindowMs = 15 * 60 * 1000;
@@ -8,6 +9,13 @@ const jsonWriteMethods = new Set(['POST', 'PUT', 'PATCH']);
 
 export function noStore(_req, res, next) {
   res.set('Cache-Control', 'no-store');
+  next();
+}
+
+export function identifyRequest(_req, res, next) {
+  const id = randomUUID();
+  res.locals.requestId = id;
+  res.set('X-Request-Id', id);
   next();
 }
 

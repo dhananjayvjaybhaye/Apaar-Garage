@@ -5,7 +5,7 @@ import { pincode } from '../services/delivery.js';
 import { couponCode } from '../services/discounts.js';
 import { orderStatuses } from '../models/order.js';
 import { cancelOrder, placeOrder } from '../services/order-service.js';
-import { quoteCart } from '../services/order-quote.js';
+import { EmptyCartError, quoteCart } from '../services/order-quote.js';
 import { customerCancellable, publicItems, publicOrder } from '../utils/order-response.js';
 import {
   findCustomerOrder,
@@ -54,6 +54,7 @@ const pageQuery = z.object({
 });
 const orderTransition = z.strictObject({ status: z.enum(orderStatuses) });
 const collection = z.strictObject({ paymentStatus: z.literal('collected') });
+const allowEmptyQuote = z.literal('ok').optional();
 
 function validateOnlinePayment(input, options) {
   if (input.paymentMethod !== 'online') return;
@@ -86,12 +87,16 @@ export function createOrdersController(options) {
     async quote(req, res) {
       const pin = validate(pincode.optional(), req.query.pincode);
       const coupon = validate(couponCode.optional(), req.query.coupon);
+      const empty = validate(allowEmptyQuote, req.query.empty);
       const { id, user } = res.locals.shopper;
-      const {
-        lines: _lines,
-        items,
-        ...quote
-      } = await quoteCart(id, options, { pin, coupon, guest: !user });
+      let result;
+      try {
+        result = await quoteCart(id, options, { pin, coupon, guest: !user });
+      } catch (error) {
+        if (empty === 'ok' && error instanceof EmptyCartError) return res.json({ empty: true });
+        throw error;
+      }
+      const { lines: _lines, items, ...quote } = result;
       res.json({
         ...quote,
         items: publicItems(items),

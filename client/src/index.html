@@ -14,7 +14,7 @@
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23100e10'/%3E%3Cpath d='M9 23l5-14m1 14l5-14m1 14l5-14' stroke='%23efb074' stroke-width='3'/%3E%3C/svg%3E" />
     <script>
       if (location.pathname === new URL(document.baseURI).pathname) {
-        const mobile = matchMedia('(max-width: 42rem)').matches;
+        const mobile = typeof window.matchMedia === 'function' ? window.matchMedia('(max-width: 42rem)').matches : window.innerWidth <= 672;
         const preload = document.createElement('link');
         preload.rel = 'preload';
         preload.as = 'image';

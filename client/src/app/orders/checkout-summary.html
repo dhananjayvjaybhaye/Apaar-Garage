@@ -1,0 +1,74 @@
+<h2>Order summary</h2>
+<form class="coupon" (submit)="applyCoupon($event, couponInput)" novalidate>
+  <label for="coupon-code">Coupon code</label>
+  <div class="coupon-actions">
+    <input
+      #couponInput
+      id="coupon-code"
+      type="text"
+      maxlength="24"
+      autocomplete="off"
+      autocapitalize="characters"
+      spellcheck="false"
+      [disabled]="submit.placing()"
+      (input)="couponInputError.set('')"
+      [attr.aria-invalid]="!!couponError()"
+      [attr.aria-describedby]="couponError() ? 'coupon-error' : null"
+    />
+    <button class="secondary-button" type="submit" [disabled]="submit.placing()">Apply</button>
+  </div>
+  @if (delivery.coupon(); as code) {
+    <div class="coupon-active">
+      @if (delivery.quote()?.discountCode === code) {
+        <span role="status">{{ code }} applied</span>
+      }
+      <button
+        type="button"
+        class="secondary-button"
+        [disabled]="submit.placing()"
+        [attr.aria-label]="'Remove coupon ' + code"
+        (click)="removeCoupon(couponInput)"
+      >
+        Remove
+      </button>
+    </div>
+  }
+  @if (couponError(); as message) {
+    <small id="coupon-error" class="error-text" role="alert">{{ message }}</small>
+  }
+</form>
+@if (auth.status() === 'signed-out' && delivery.quote()?.firstOrderPercent && !delivery.coupon()) {
+  <p class="muted">Sign in to check for a first-order discount.</p>
+}
+@if (delivery.updatingDelivery()) {
+  <p role="status">Updating order summary…</p>
+  <div class="skeleton summary-skeleton" appAmbientVisible aria-hidden="true"></div>
+} @else if (delivery.quote(); as order) {
+  <ul appReveal [gentleReveal]="true">
+    @for (item of order.items; track item.slug) {
+      <li>
+        <span>{{ item.name }} × {{ item.quantity }}</span>
+        <strong>{{
+          (item.unitPricePaise * item.quantity) / 100 | currency: 'INR' : 'symbol' : '1.2-2'
+        }}</strong>
+      </li>
+    }
+  </ul>
+  <app-order-totals [summary]="order" />
+  <p class="muted">{{ order.deliveryEstimate }}</p>
+  <div class="mobile-total">
+    <span
+      >Total
+      <strong>{{ order.totalPaise / 100 | currency: 'INR' : 'symbol' : '1.2-2' }}</strong></span
+    >
+    <a href="#checkout-summary" (click)="showSummary($event)">View summary</a>
+  </div>
+} @else {
+  @if (!couponError()) {
+    <p class="error-text" role="alert">{{ quoteError() }}</p>
+  }
+  <button class="secondary-button" type="button" (click)="delivery.refreshQuote()">
+    Refresh summary
+  </button>
+  <a class="secondary-button" routerLink="/cart">Review cart</a>
+}
