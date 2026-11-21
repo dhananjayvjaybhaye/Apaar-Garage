@@ -46,25 +46,6 @@ export class CategoryStages {
       const ready = this.stops().some((stop) => !stop.loading);
       let alive = true;
       let dispose: (() => void) | undefined;
-      let measureFrame = 0;
-      const header = listing.ownerDocument.querySelector('app-store-header');
-      const measure = () =>
-        listing.style.setProperty(
-          '--category-sticky-top',
-          (header?.getBoundingClientRect().height ?? 0) + categoryScenes.stickyGapPx + 'px',
-        );
-      const sizes =
-        header && typeof ResizeObserver !== 'undefined'
-          ? new ResizeObserver(() => {
-              if (!measureFrame)
-                measureFrame = view.requestAnimationFrame(() => {
-                  measureFrame = 0;
-                  measure();
-                });
-            })
-          : undefined;
-      if (header) sizes?.observe(header);
-      measure();
       const loadMotion = () =>
         void this.motion.loadScrollTools().then((tools) => {
           if (alive && tools)
@@ -89,8 +70,6 @@ export class CategoryStages {
         alive = false;
         dispose?.();
         near?.disconnect();
-        sizes?.disconnect();
-        view.cancelAnimationFrame(measureFrame);
       });
     });
   }

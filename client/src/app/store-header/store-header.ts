@@ -7,6 +7,7 @@ import { ShopSearch } from './shop-search';
 import { MiniCart } from '../cart/mini-cart';
 import { categoryLabels, rcCategories } from '../catalog/product';
 import { GarageSound } from '../ui/garage-sound';
+import { StoreHeaderSize } from './store-header-size';
 
 @Component({
   selector: 'app-store-header',
@@ -23,6 +24,7 @@ export class StoreHeader {
   protected readonly error = signal('');
 
   constructor() {
+    inject(StoreHeaderSize);
     void this.auth.ensureSession();
   }
 

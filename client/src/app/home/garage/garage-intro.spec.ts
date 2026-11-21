@@ -50,6 +50,7 @@ describe('Garage intro', () => {
     const closed = vi.fn();
     fixture.componentInstance.closed.subscribe(closed);
     fixture.detectChanges();
+    vi.advanceTimersToNextFrame();
     const root = fixture.nativeElement as HTMLElement;
     expect(root.querySelector('dialog')?.open).toBe(true);
     expect(document.documentElement.classList.contains('garage-intro-open')).toBe(true);

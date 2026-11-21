@@ -26,6 +26,7 @@ import { observeGarage } from './garage/garage-session';
 import { heroZoneAt, heroZones } from './garage/hero-garage-camera';
 import { heroLayout, heroMotion } from './hero.config';
 import { attachHeroScroll, playHeroEntrance } from './hero-scroll';
+import { StoreHeaderSize } from '../store-header/store-header-size';
 
 @Component({
   selector: 'app-home-hero',
@@ -44,6 +45,7 @@ export class HomeHero {
   private readonly hero = viewChild.required<ElementRef<HTMLElement>>('hero');
   private readonly stage = viewChild.required<ElementRef<HTMLElement>>('stage');
   private readonly motion = inject(Motion);
+  private readonly headerHeight = inject(StoreHeaderSize).height;
   private readonly dom = inject(Renderer2);
   private readonly previewDialog = inject(ProductPreview);
   private readonly loading = inject(EngineLoading);
@@ -51,7 +53,7 @@ export class HomeHero {
     const request = this.previewDialog.request();
     return Boolean(request && !request.viewerAvailable);
   });
-  private readonly rendered = signal(false);
+  private readonly firstPaint = signal(false);
   private readonly entered = signal(false);
   private readonly supported = signal(false);
   private readonly reduced = computed(() => this.motion.level() === 'reduced');
@@ -61,6 +63,7 @@ export class HomeHero {
   private garage?: ReturnType<typeof observeGarage>;
   private scroll?: ReturnType<typeof attachHeroScroll>;
   private cancelEntrance?: () => void;
+  private cancelSkip?: () => void;
   private progress = 0;
   private pendingZone?: number;
   private swipe?: { id: number; x: number; y: number };
@@ -87,27 +90,6 @@ export class HomeHero {
       const hero = this.hero().nativeElement;
       const view = hero.ownerDocument.defaultView;
       if (!view) return;
-      const header = hero.ownerDocument.querySelector('app-store-header');
-      let resizeFrame = 0;
-      const updateHeight = () => {
-        const height = header?.getBoundingClientRect().height ?? 0;
-        hero.style.setProperty('--hero-header-height', height + 'px');
-        this.scroll?.refresh();
-      };
-      const size =
-        typeof ResizeObserver !== 'undefined'
-          ? new ResizeObserver(() => {
-              if (resizeFrame) return;
-              // A pin refresh can change scrollbar width. Keep it out of the resize delivery cycle.
-              resizeFrame = view.requestAnimationFrame(() => {
-                resizeFrame = 0;
-                updateHeight();
-              });
-            })
-          : undefined;
-      if (header) size?.observe(header);
-      updateHeight();
-      this.rendered.set(true);
       let secondFrame = 0;
       let idle = 0;
       let timer = 0;
@@ -115,6 +97,7 @@ export class HomeHero {
         if (!hero.ownerDocument.documentElement.classList.contains('garage-intro-open'))
           this.enter();
         secondFrame = view.requestAnimationFrame(() => {
+          this.firstPaint.set(true);
           const enable = () => this.idleReady.set(true);
           if (typeof view.requestIdleCallback === 'function') {
             idle = view.requestIdleCallback(enable, { timeout: 1600 });
@@ -128,16 +111,23 @@ export class HomeHero {
         view.cancelAnimationFrame(secondFrame);
         if (idle) view.cancelIdleCallback(idle);
         if (timer) view.clearTimeout(timer);
-        view.cancelAnimationFrame(resizeFrame);
-        size?.disconnect();
         this.cancelEntrance?.();
+        this.cancelSkip?.();
       });
+    });
+
+    effect((cleanup) => {
+      if (!this.headerHeight() || !this.scroll) return;
+      const view = this.hero().nativeElement.ownerDocument.defaultView;
+      if (!view) return;
+      const frame = view.requestAnimationFrame(() => this.scroll?.refresh());
+      cleanup(() => view.cancelAnimationFrame(frame));
     });
 
     effect((cleanup) => {
       const manual = this.explore();
       if (
-        !this.rendered() ||
+        !this.firstPaint() ||
         !this.entered() ||
         this.reduced() ||
         this.plainPreview() ||
@@ -178,13 +168,11 @@ export class HomeHero {
     effect((cleanup) => {
       if (!this.entered() || !this.supported() || this.reduced()) return;
       const hero = this.hero().nativeElement;
-      const headerHeight = () =>
-        Number.parseFloat(hero.style.getPropertyValue('--hero-header-height')) || 0;
       let active = true;
       void this.motion.loadScrollTools().then((tools) => {
         if (!active || !tools) return;
         this.motion.zone.runOutsideAngular(() => {
-          this.scroll = attachHeroScroll(hero, tools, headerHeight, (progress) => {
+          this.scroll = attachHeroScroll(hero, tools, this.headerHeight, (progress) => {
             this.progress = progress;
             const index = heroZoneAt(progress);
             this.garage?.scrollTo(progress, index);
@@ -269,8 +257,33 @@ export class HomeHero {
     const target = this.hero().nativeElement.ownerDocument.getElementById('featured');
     if (!target) return;
     event.preventDefault();
+    this.cancelSkip?.();
     target.focus({ preventScroll: true });
-    target.scrollIntoView({ block: 'start', behavior: this.reduced() ? 'instant' : 'smooth' });
+    const view = target.ownerDocument.defaultView;
+    if (!view || this.reduced()) {
+      target.scrollIntoView({ block: 'start', behavior: 'instant' });
+      return;
+    }
+    const input = new AbortController();
+    const cancel = () => {
+      input.abort();
+      view.clearTimeout(timer);
+    };
+    const settle = () => {
+      cancel();
+      if (target.ownerDocument.activeElement !== target) return;
+      const { top } = target.getBoundingClientRect();
+      // Loading a category grid or refreshing the garage's pin can interrupt the smooth jump.
+      if (top < 0 || top >= view.innerHeight)
+        target.scrollIntoView({ block: 'start', behavior: 'instant' });
+    };
+    const timer = view.setTimeout(settle, heroMotion.skipSettleMs);
+    this.cancelSkip = cancel;
+    target.ownerDocument.addEventListener('scrollend', settle, { once: true, signal: input.signal });
+    for (const name of ['wheel', 'pointerdown', 'keydown']) {
+      view.addEventListener(name, cancel, { passive: true, signal: input.signal });
+    }
+    target.scrollIntoView({ block: 'start', behavior: 'smooth' });
   }
 
   protected openProduct(product: Product, source?: HTMLElement, point?: PreviewPoint) {

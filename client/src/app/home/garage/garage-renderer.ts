@@ -2,6 +2,7 @@ import {
   ACESFilmicToneMapping,
   PerspectiveCamera,
   Raycaster,
+  Scene,
   Vector2,
   Vector3,
   WebGLRenderer,
@@ -10,7 +11,7 @@ import { mediaQuery } from '../../ui/media-query';
 import type { Product } from '../../catalog/product';
 import { disposeModels } from '../../car-viewer/three-resources';
 import { heroScene } from '../hero.config';
-import { createGarageModels } from './garage-models';
+import { createGarageModels, type GarageBay } from './garage-models';
 import { heroCameraAt, heroZoneAt, heroZones } from './hero-garage-camera';
 import { createHeroGarage } from './hero-garage-scene';
 
@@ -27,14 +28,13 @@ export function mountGarage(canvas: HTMLCanvasElement, events: GarageEvents, mob
   const document = canvas.ownerDocument;
   const view = document.defaultView;
   if (!surface || !view) return null;
-  const context = canvas.getContext('webgl2', { antialias: !mobile, powerPreference: 'low-power' });
-  if (!context) return null;
-  const renderer = new WebGLRenderer({ canvas, context, antialias: !mobile });
-  renderer.toneMapping = ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.23;
-
+  let renderer: WebGLRenderer | undefined;
+  const scene = new Scene();
+  let bays: GarageBay[] = [];
+  let animate: ((time: number, active: number, blend: number) => void) | undefined;
+  let models: ReturnType<typeof createGarageModels> | undefined;
+  let featured: readonly Product[] = [];
   const camera = new PerspectiveCamera(heroScene.fieldOfView, 1, 0.1, 85);
-  const { scene, bays, animate } = createHeroGarage(document, mobile);
   const ray = new Raycaster();
   const ndc = new Vector2();
   let disposed = false;
@@ -47,15 +47,45 @@ export function mountGarage(canvas: HTMLCanvasElement, events: GarageEvents, mob
   let my = 0;
   let hover: Product | undefined;
   let painted = false;
+  let mediaReady = false;
   let inspection: { x: number; amount: number } | undefined;
   let pressed: { x: number; y: number } | undefined;
 
   let drag: { x: number; y: number } | undefined;
   let touch: number | undefined;
-  const models = createGarageModels(bays, heroZones, () => !disposed, requestFrame, document);
+  function* prepare() {
+    const context = canvas.getContext('webgl2', {
+      antialias: !mobile,
+      powerPreference: 'low-power',
+    });
+    if (!context) throw new Error('WebGL 2 is unavailable.');
+    renderer = new WebGLRenderer({ canvas, context, antialias: !mobile });
+    renderer.toneMapping = ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.23;
+    resize();
+    yield;
+    ({ bays, animate } = yield* createHeroGarage(scene, document, mobile));
+    yield;
+    models = createGarageModels(bays, heroZones, () => !disposed, requestFrame, document, mobile);
+    models.select(activeZone ?? heroZoneAt(progress));
+    // Paint the scene before starting media work. The original photo stays visible until then.
+  }
+
+  const preparation = prepare();
+  let preparationFrame = view.requestAnimationFrame(prepareFrame);
+
+  function prepareFrame() {
+    if (disposed) return;
+    try {
+      if (!preparation.next().done) preparationFrame = view!.requestAnimationFrame(prepareFrame);
+      else requestFrame();
+    } catch {
+      events.failed();
+    }
+  }
 
   function pick(x: number, y: number) {
-    if (!visible || progress > 0.975) return undefined;
+    if (!painted || !visible || progress > 0.975) return undefined;
     const rect = canvas.getBoundingClientRect();
     if (!rect.width || !rect.height) return undefined;
     ndc.set(((x - rect.left) / rect.width) * 2 - 1, (1 - (y - rect.top) / rect.height) * 2 - 1);
@@ -71,7 +101,7 @@ export function mountGarage(canvas: HTMLCanvasElement, events: GarageEvents, mob
   let overlayFrame = 0;
 
   function requestFrame() {
-    if (!frame && !overlayFrame && !disposed && visible && !document.hidden)
+    if (models && !frame && !overlayFrame && !disposed && visible && !document.hidden)
       frame = requestAnimationFrame(render);
   }
 
@@ -87,7 +117,7 @@ export function mountGarage(canvas: HTMLCanvasElement, events: GarageEvents, mob
 
   function render(time: number) {
     frame = 0;
-    if (!visible || disposed || document.hidden) return;
+    if (!renderer || !visible || disposed || document.hidden) return;
     const targetX = pointer ? (pointer.x / canvas.clientWidth) * 2 - 1 : (drag?.x ?? 0);
     const targetY = pointer ? (pointer.y / canvas.clientHeight) * 2 - 1 : (drag?.y ?? 0);
     mx += (targetX - mx) * 0.18;
@@ -129,23 +159,29 @@ export function mountGarage(canvas: HTMLCanvasElement, events: GarageEvents, mob
       const hovered = Boolean(hover && hover.slug === bay.product?.slug);
       const intensity =
         (lit ? heroScene.activeLight : heroScene.idleLight) + (hovered ? heroScene.hoverLight : 0);
-      bay.light.intensity += (intensity - bay.light.intensity) * 0.19;
-      bay.rail.emissiveIntensity = 0.14 + bay.light.intensity / 26;
+      bay.lightIntensity += (intensity - bay.lightIntensity) * 0.19;
+      if (bay.light) bay.light.intensity = bay.lightIntensity;
+      bay.rail.emissiveIntensity = 0.14 + bay.lightIntensity / 26;
       const opacity = hovered ? 0.95 : lit ? 0.25 : 0.06;
       bay.halo.material.opacity += (opacity - bay.halo.material.opacity) * 0.2;
     });
-    animate(time, index, blend);
+    animate?.(time, index, blend);
     renderer.render(scene, camera);
     if (!painted) {
       painted = true;
       events.ready?.();
+      preparationFrame = view!.requestAnimationFrame(() => {
+        if (disposed) return;
+        mediaReady = true;
+        models?.setFeatured(featured);
+      });
     }
     requestFrame();
   }
 
   let measured = { width: 0, height: 0, ratio: 0 };
   function resize(width = surface!.clientWidth, height = surface!.clientHeight) {
-    if (disposed || !width || !height) return;
+    if (!renderer || disposed || !width || !height) return;
     const ratio = Math.min(
       view!.devicePixelRatio || 1,
       mobile ? heroScene.mobileDpr : heroScene.desktopDpr,
@@ -265,9 +301,12 @@ export function mountGarage(canvas: HTMLCanvasElement, events: GarageEvents, mob
   return {
     prioritizeOverlay,
     productAt: pick,
-    setFeatured: models.setFeatured,
+    setFeatured(products: readonly Product[]) {
+      featured = products;
+      if (mediaReady) models?.setFeatured(products);
+    },
     setScrollFrame(value: number, index: number) {
-      models.select(index);
+      models?.select(index);
       progress = value;
       activeZone = index;
       requestFrame();
@@ -287,23 +326,25 @@ export function mountGarage(canvas: HTMLCanvasElement, events: GarageEvents, mob
       };
     },
     photograph() {
-      if (!painted || disposed) return undefined;
+      if (!renderer || !painted || disposed) return undefined;
       renderer.render(scene, camera);
       return canvas.toDataURL('image/jpeg', 0.84);
     },
     destroy() {
       disposed = true;
       pause();
+      view.cancelAnimationFrame(preparationFrame);
+      preparation.return();
       if (overlayFrame) cancelAnimationFrame(overlayFrame);
       handlers.abort();
       resolution?.removeEventListener('change', watchResolution);
       size.disconnect();
       visibility.disconnect();
-      models.destroy();
+      models?.destroy();
       disposeModels([scene]);
       scene.clear();
-      renderer.dispose();
-      renderer.forceContextLoss();
+      renderer?.dispose();
+      renderer?.forceContextLoss();
     },
   };
 }

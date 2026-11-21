@@ -13,10 +13,13 @@
   isolation: isolate;
   color: #f8ede3;
   background: transparent;
-}
-.garage-intro[open] {
   display: grid;
   place-items: center;
+}
+
+.garage-intro:not([open]) {
+  z-index: 20;
+  pointer-events: none;
 }
 .garage-intro::backdrop {
   background: transparent;

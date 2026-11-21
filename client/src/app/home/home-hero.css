@@ -3,7 +3,7 @@
 }
 
 .hero {
-  --hero-header-height: 4.5rem;
+  --hero-header-height: var(--store-header-height, 4.5rem);
   position: relative;
   isolation: isolate;
   overflow: clip;

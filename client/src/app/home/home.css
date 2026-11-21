@@ -1,6 +1,11 @@
 .section {
   padding-block: clamp(2rem, 5vw, 4.6rem);
 }
+.category-scenes-placeholder {
+  min-block-size: calc(
+    var(--scene-height) * var(--scene-count) - var(--scene-overlap) * (var(--scene-count) - 1)
+  );
+}
 .section-heading {
   display: flex;
   justify-content: space-between;

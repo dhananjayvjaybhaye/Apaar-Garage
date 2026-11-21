@@ -43,7 +43,10 @@ export class Home {
   protected readonly imageSet = responsiveImage;
   protected readonly heroOverlap = heroLayout.overlap;
   private readonly featuredRequest = new Subject<GarageZone>();
-  private readonly secondaryReady = toObservable(inject(AfterFirstPaint).ready).pipe(filter(Boolean));
+  private readonly paint = inject(AfterFirstPaint);
+  protected readonly tourReady = this.paint.idle;
+  protected readonly tourLayout = categoryScenes;
+  private readonly secondaryReady = toObservable(this.paint.ready).pipe(filter(Boolean));
   private readonly zoneSelected = new Subject<GarageZone>();
   protected readonly category = signal<GarageZone>('car');
   protected readonly signupInvalid = signal(false);

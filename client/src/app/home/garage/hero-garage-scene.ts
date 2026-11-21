@@ -38,21 +38,31 @@ function box(
   return mesh;
 }
 
-export function createHeroGarage(document: Document, compact: boolean) {
-  const scene = new Scene();
+export function* createHeroGarage(scene: Scene, document: Document, compact: boolean) {
   scene.background = new Color(colors.haze);
   scene.fog = new Fog(colors.haze, 19, compact ? 82 : 62);
   addRoom(scene);
-  const animateLights = addHeroLighting(scene, document, compact);
-  const bays = heroZones.map(({ x, sign }) => createBay(scene, document, x, sign));
+  yield;
+  const animateLights = yield* addHeroLighting(scene, document, compact);
+  const bays: GarageBay[] = [];
+  for (const { x, sign } of heroZones) {
+    bays.push(createBay(scene, document, x, sign, compact));
+    yield;
+  }
   const rc = heroZones.find(({ category }) => category === 'rc');
   const animatePlane = rc && addRcDisplayDetails(scene, rc.x);
+  const zoneLight = compact ? makeBayLight() : undefined;
+  if (zoneLight) scene.add(zoneLight);
   return {
-    scene,
     bays,
     animate(time: number, active: number, blend: number) {
       animateLights(time, active, blend);
       animatePlane?.(time);
+      if (zoneLight) {
+        const position = heroZones[active].x;
+        zoneLight.position.x += (position - zoneLight.position.x) * 0.19;
+        zoneLight.intensity = bays[active].lightIntensity;
+      }
     },
   };
 }
@@ -93,7 +103,19 @@ function addRoom(scene: Scene) {
   }
 }
 
-function createBay(scene: Scene, document: Document, x: number, label: string): GarageBay {
+function makeBayLight() {
+  const light = new PointLight(colors.warm, heroScene.idleLight, 9, 1.6);
+  light.position.set(0, 3.15, -0.54);
+  return light;
+}
+
+function createBay(
+  scene: Scene,
+  document: Document,
+  x: number,
+  label: string,
+  compact: boolean,
+): GarageBay {
   const bay = new Group();
   bay.position.x = x;
   scene.add(bay);
@@ -116,13 +138,12 @@ function createBay(scene: Scene, document: Document, x: number, label: string): 
     for (const depth of [-2.81, -0.38]) box(bay, side, 1.7, depth, 0.14, 3.4, 0.16, metal);
     box(bay, side, 2.27, -1.58, 0.018, 2.22, 2.3, glass);
   }
-  const sign = garageSign(document, label, 2.34, 0.42);
+  const sign = garageSign(document, label, 2.34, 0.42, compact);
   sign.position.set(0, 3.73, -0.48);
   bay.add(sign);
 
-  const light = new PointLight(colors.warm, heroScene.idleLight, 9, 1.6);
-  light.position.set(0, 3.15, -0.54);
-  bay.add(light);
+  const light = compact ? undefined : makeBayLight();
+  if (light) bay.add(light);
   const halo = new Mesh(
     new RingGeometry(0.97, 1.07, 32),
     new MeshBasicMaterial({
@@ -151,5 +172,5 @@ function createBay(scene: Scene, document: Document, x: number, label: string): 
       depthWrite: false,
     }),
   );
-  return { display, hit, halo, light, rail, hasModel: false };
+  return { display, hit, halo, light, lightIntensity: heroScene.idleLight, rail, hasModel: false };
 }

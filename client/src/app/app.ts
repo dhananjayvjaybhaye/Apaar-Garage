@@ -89,7 +89,7 @@ export class App {
   }
 
   protected readonly engine = inject(EngineLoading).state;
-  protected readonly decorationsReady = inject(AfterFirstPaint).ready;
+  protected readonly decorationsReady = inject(AfterFirstPaint).idle;
   private readonly motion = inject(Motion);
   private readonly router = inject(Router);
   private readonly url = toSignal(

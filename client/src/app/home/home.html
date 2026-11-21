@@ -8,7 +8,17 @@
     (categorySelected)="selectCategory($event)"
   />
   <app-garage-intro (closed)="garageHero.focusHeading($event)" />
-  <app-category-stages [stops]="categoryStages()" />
+  @defer (on viewport; when tourReady()) {
+    <app-category-stages [stops]="categoryStages()" />
+  } @placeholder {
+    <div
+      class="category-scenes-placeholder"
+      [style.--scene-height]="tourLayout.sectionHeight"
+      [style.--scene-overlap]="tourLayout.overlap"
+      [style.--scene-count]="categories.length"
+      aria-hidden="true"
+    ></div>
+  }
 
   <section
     id="featured"

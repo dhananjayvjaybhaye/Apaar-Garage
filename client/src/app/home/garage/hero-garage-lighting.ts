@@ -3,6 +3,7 @@ import {
   AmbientLight,
   BufferGeometry,
   CanvasTexture,
+  Color,
   Float32BufferAttribute,
   HemisphereLight,
   Mesh,
@@ -22,11 +23,12 @@ function paintedPlane(
   document: Document,
   width: number,
   height: number,
+  compact: boolean,
   paint: (context: CanvasRenderingContext2D, width: number, height: number) => void,
 ) {
   const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = Math.round((512 * height) / width);
+  canvas.width = compact ? heroScene.mobileTextureWidth : heroScene.desktopTextureWidth;
+  canvas.height = Math.round((canvas.width * height) / width);
   const context = canvas.getContext('2d');
   if (context) paint(context, canvas.width, canvas.height);
   const map = new CanvasTexture(canvas);
@@ -47,9 +49,10 @@ export function garageSign(
   text: string,
   width: number,
   height: number,
+  compact: boolean,
   neon = false,
 ) {
-  return paintedPlane(document, width, height, (brush, w, h) => {
+  return paintedPlane(document, width, height, compact, (brush, w, h) => {
     if (!neon) {
       brush.fillStyle = colors.metal;
       brush.fillRect(0, 0, w, h);
@@ -60,53 +63,65 @@ export function garageSign(
     brush.fillStyle = neon ? colors.neonFace : colors.warm;
     if (neon) {
       brush.shadowColor = colors.neon;
-      brush.shadowBlur = 30;
+      brush.shadowBlur = compact ? 15 : 30;
       brush.fillText(text, w / 2, h / 2, w * 0.83);
-      brush.shadowBlur = 10;
+      brush.shadowBlur = compact ? 5 : 10;
     }
     brush.fillText(text, w / 2, h / 2, w * 0.83);
   });
 }
 
-export function addHeroLighting(scene: Scene, document: Document, compact: boolean) {
-  scene.add(
-    new HemisphereLight(colors.ambient, colors.floor, 1.45),
-    new AmbientLight(colors.ambient, 0.4),
-  );
-  const sign = garageSign(document, 'APAAR GARAGE', 7.4, 1.85, true);
+export function* addHeroLighting(scene: Scene, document: Document, compact: boolean) {
+  const hemisphere = new HemisphereLight(colors.ambient, colors.floor, 1.45);
+  if (compact) {
+    // Combine ambient and hemisphere fill without changing the sky or floor light contribution.
+    hemisphere.groundColor.lerp(new Color(colors.ambient), 0.4 / 1.85);
+    hemisphere.intensity = 1.85;
+  } else scene.add(new AmbientLight(colors.ambient, 0.4));
+  scene.add(hemisphere);
+  const sign = garageSign(document, 'APAAR GARAGE', 7.4, 1.85, compact, true);
   sign.position.set(0, 5.38, -5.08);
   scene.add(sign);
-  const cones = heroZones.map(({ x }) => {
-    const reflection = paintedPlane(document, 5.9, 6, (brush, w, h) => {
-      const gradient = brush.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
-      gradient.addColorStop(0, colors.warm + '86');
-      gradient.addColorStop(0.35, colors.rail + '36');
-      gradient.addColorStop(1, colors.rail + '00');
-      brush.fillStyle = gradient;
-      brush.fillRect(0, 0, w, h);
-    });
+  yield;
+  const sharedReflection = paintedPlane(document, 5.9, 6, compact, (brush, w, h) => {
+    const gradient = brush.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
+    gradient.addColorStop(0, colors.warm + '86');
+    gradient.addColorStop(0.35, colors.rail + '36');
+    gradient.addColorStop(1, colors.rail + '00');
+    brush.fillStyle = gradient;
+    brush.fillRect(0, 0, w, h);
+  });
+  const sharedBeam = paintedPlane(document, 6.6, 6.6, compact, (brush, w, h) => {
+    const glow = brush.createLinearGradient(0, 0, 0, h);
+    glow.addColorStop(0, colors.strip + '42');
+    glow.addColorStop(0.5, colors.warm + '20');
+    glow.addColorStop(1, colors.warm + '00');
+    brush.fillStyle = glow;
+    brush.beginPath();
+    brush.moveTo(w * 0.45, 0);
+    brush.lineTo(w * 0.55, 0);
+    brush.lineTo(w, h);
+    brush.lineTo(0, h);
+    brush.fill();
+  });
+  const cones = heroZones.map(({ x }, index) => {
+    // The maps and geometry are shared. Each bay still animates its own material opacity.
+    const reflection = index ? sharedReflection.clone() : sharedReflection;
+    const beam = index ? sharedBeam.clone() : sharedBeam;
+    if (index) {
+      reflection.material = sharedReflection.material.clone();
+      beam.material = sharedBeam.material.clone();
+    }
     reflection.rotation.x = -Math.PI / 2;
     reflection.position.set(x, 0.013, 1.7);
     reflection.material.opacity = 0.55;
     scene.add(reflection);
-    const beam = paintedPlane(document, 6.6, 6.6, (brush, w, h) => {
-      const glow = brush.createLinearGradient(0, 0, 0, h);
-      glow.addColorStop(0, colors.strip + '42');
-      glow.addColorStop(0.5, colors.warm + '20');
-      glow.addColorStop(1, colors.warm + '00');
-      brush.fillStyle = glow;
-      brush.beginPath();
-      brush.moveTo(w * 0.45, 0);
-      brush.lineTo(w * 0.55, 0);
-      brush.lineTo(w, h);
-      brush.lineTo(0, h);
-      brush.fill();
-    });
     beam.position.set(x, 3.32, -0.35);
     beam.renderOrder = 2;
     scene.add(beam);
     return { beam, reflection };
   });
+  yield;
 
   const count = compact ? heroScene.mobileDustCount : heroScene.dustCount;
   const points = Array.from({ length: count }, (_, index) => [

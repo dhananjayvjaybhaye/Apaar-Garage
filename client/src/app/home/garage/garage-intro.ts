@@ -33,6 +33,7 @@ export class GarageIntro {
   private readonly title = viewChild<ElementRef<HTMLElement>>('title');
   private cancelAnimation?: () => void;
   private timeout?: ReturnType<typeof setTimeout>;
+  private openFrame = 0;
   private alive = true;
 
   protected readonly visible = signal(this.shouldShow());
@@ -43,13 +44,19 @@ export class GarageIntro {
     afterNextRender(() => {
       const dialog = this.modal()?.nativeElement;
       if (!dialog || !this.visible()) return;
-      this.armFailsafe();
-      try {
-        dialog.showModal();
-        this.document.documentElement.classList.add('garage-intro-open');
-      } catch {
-        this.finish();
-      }
+      this.document.documentElement.classList.add('garage-intro-open');
+      const view = this.document.defaultView;
+      if (!view) return this.finish();
+      // Let Angular finish rendering before native dialog focus asks the browser for layout.
+      this.openFrame = view.requestAnimationFrame(() => {
+        if (!this.alive || !this.visible()) return;
+        this.armFailsafe();
+        try {
+          dialog.showModal();
+        } catch {
+          this.finish();
+        }
+      });
     });
     effect(() => {
       if (this.visible() && this.motion.level() === 'reduced') this.finish();
@@ -91,6 +98,7 @@ export class GarageIntro {
   }
 
   private release() {
+    this.document.defaultView?.cancelAnimationFrame(this.openFrame);
     clearTimeout(this.timeout);
     this.cancelAnimation?.();
     const dialog = this.modal()?.nativeElement;

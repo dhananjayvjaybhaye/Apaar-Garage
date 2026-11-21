@@ -15,10 +15,19 @@
   min-block-size: var(--scene-height);
   margin-block-start: calc(-1 * var(--scene-overlap));
   padding-block: var(--scene-padding);
+  /* The existing scene minimum reserves space until its grid approaches the viewport. */
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto 0px;
 }
 
 .category-scene:first-of-type {
   margin-block-start: 0;
+}
+
+/* Skip to shop focuses the destination before scrolling. Measure the preceding sections
+   so their reserved heights cannot move the destination during the jump. */
+:host:has(+ #featured:focus) .category-scene {
+  content-visibility: visible;
 }
 
 [data-category='truck'] {
@@ -39,7 +48,7 @@
 .scene-heading {
   position: sticky;
   z-index: 2;
-  top: var(--category-sticky-top, var(--header-offset));
+  top: calc(var(--store-header-height, var(--header-offset)) + var(--category-sticky-gap));
   background: linear-gradient(
     var(--scene-base) 72%,
     color-mix(in srgb, var(--scene-base) 95%, transparent) 93%,

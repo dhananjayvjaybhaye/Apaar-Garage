@@ -25,6 +25,8 @@ export const heroMotion = {
   exitLiftPx: 24,
   swipeDistancePx: 48,
   swipeAxisRatio: 1.35,
+  // Native smooth scroll normally finishes sooner. This also covers browsers without scrollend.
+  skipSettleMs: 1400,
 } as const;
 
 // Product modal camera timing in seconds and milliseconds.
@@ -37,7 +39,10 @@ export const heroCamera = {
 export const heroScene = {
   fieldOfView: 43,
   desktopDpr: 2,
-  mobileDpr: 1.25,
+  mobileDpr: 1,
+  // Canvas texture widths in pixels for shelf signs, floor glows and light cones.
+  desktopTextureWidth: 512,
+  mobileTextureWidth: 256,
   baySpacing: 4.72,
   desktopOffset: 0.165,
   mobileOffset: 0,
@@ -76,5 +81,11 @@ export const heroScene = {
   },
 } as const;
 
-// Idle callbacks yield between inactive bench photos. Values are milliseconds.
-export const benchMedia = { idleTimeout: 600, timerFallback: 50 } as const;
+export const benchMedia = {
+  // Idle callbacks yield between inactive bench photos. Values are milliseconds.
+  idleTimeout: 600,
+  timerFallback: 50,
+  // Longest edge in pixels for product photos uploaded to the GPU.
+  mobilePhotoSize: 256,
+  desktopPhotoSize: 512,
+} as const;

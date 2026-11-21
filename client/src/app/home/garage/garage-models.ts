@@ -6,6 +6,7 @@ import {
   MeshStandardMaterial,
   PointLight,
   RingGeometry,
+  type Texture,
   TextureLoader,
   Vector3,
 } from 'three';
@@ -13,14 +14,15 @@ import { responsiveImage } from '../../ui/responsive-image';
 import { disposeModels } from '../../car-viewer/three-resources';
 import type { Product } from '../../catalog/product';
 import { garageZoneFor, type GarageZone } from './garage-path';
-import { makeBenchCard, rcBenchFallback } from './garage-bench-card';
+import { limitBenchTexture, makeBenchCard, rcBenchFallback } from './garage-bench-card';
 import { benchMedia } from '../hero.config';
 
 export interface GarageBay {
   display: Group;
   hit: Mesh;
   halo: Mesh<RingGeometry, MeshBasicMaterial>;
-  light: PointLight;
+  light?: PointLight;
+  lightIntensity: number;
   rail: MeshStandardMaterial;
   product?: Product;
   request?: AbortController;
@@ -34,10 +36,12 @@ export function createGarageModels(
   available: () => boolean,
   requestFrame: () => void,
   document: Document,
+  compact: boolean,
 ) {
   const loader = new TextureLoader();
   const center = new Vector3();
   const view = document.defaultView;
+  const photoSize = compact ? benchMedia.mobilePhotoSize : benchMedia.desktopPhotoSize;
   const pendingPhotos = new Map<number, () => void>();
   let cancelIdle: (() => void) | undefined;
   function clear(display: Group) {
@@ -87,18 +91,28 @@ export function createGarageModels(
         if (!source || !live() || bay.hasModel) return;
         loader.load(
           source,
-          (texture) => {
-            if (!live() || bay.hasModel) {
-              texture.dispose();
-              return;
-            }
-            clear(bay.display);
-            bay.display.add(makeBenchCard(texture));
-            requestFrame();
-          },
+          (texture) => void installPhoto(texture).catch(() => loadPhoto(index + 1)),
           undefined,
           () => loadPhoto(index + 1),
         );
+      }
+
+      async function installPhoto(source: Texture) {
+        await nextFrame(request.signal);
+        if (!live() || bay.hasModel) {
+          source.dispose();
+          return;
+        }
+        let texture: Texture;
+        try {
+          texture = limitBenchTexture(document, source, photoSize);
+        } catch (error) {
+          source.dispose();
+          throw error;
+        }
+        clear(bay.display);
+        bay.display.add(makeBenchCard(texture));
+        requestFrame();
       }
       pendingPhotos.set(index, () => loadPhoto(0));
     });
@@ -106,6 +120,22 @@ export function createGarageModels(
     loadActiveModel();
     scheduleOtherPhotos();
     requestFrame();
+  }
+
+  function nextFrame(signal: AbortSignal) {
+    if (!view || signal.aborted) return Promise.resolve();
+    return new Promise<void>((resolve) => {
+      const finish = () => {
+        signal.removeEventListener('abort', cancel);
+        resolve();
+      };
+      const frame = view.requestAnimationFrame(finish);
+      const cancel = () => {
+        view.cancelAnimationFrame(frame);
+        finish();
+      };
+      signal.addEventListener('abort', cancel, { once: true });
+    });
   }
 
   function loadPhotoAt(index: number) {
@@ -159,7 +189,10 @@ export function createGarageModels(
     const buffer = await response.arrayBuffer();
     if (!live()) return;
     const { parseGltfModel } = await import('../../car-viewer/gltf-model');
+    await nextFrame(request.signal);
+    if (!live()) return;
     const model = await parseGltfModel(buffer, new URL('.', response.url).href);
+    await nextFrame(request.signal);
     if (!live()) {
       disposeModels(model.scenes);
       return;

@@ -6,6 +6,7 @@
   [style.--scene-height]="config.sectionHeight"
   [style.--scene-padding]="config.sectionPadding"
   [style.--scene-overlap]="config.overlap"
+  [style.--category-sticky-gap.px]="config.stickyGapPx"
 >
   <h2 id="category-scenes-title" class="visually-hidden">Shop by vehicle category</h2>
   @for (stop of stops(); track stop.id) {
