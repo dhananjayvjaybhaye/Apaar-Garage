@@ -1,0 +1,117 @@
+import mongoose from 'mongoose';
+
+export const orderStatuses = [
+  'placed',
+  'confirmed',
+  'packed',
+  'shipped',
+  'delivered',
+  'cancelled',
+  'returned',
+];
+
+const addressSchema = new mongoose.Schema(
+  {
+    fullName: { type: String, required: true },
+    phone: { type: String, required: true },
+    addressLine1: { type: String, required: true },
+    addressLine2: String,
+    city: { type: String, required: true },
+    state: { type: String, required: true },
+    pincode: { type: String, required: true },
+  },
+  { _id: false },
+);
+
+const itemSchema = new mongoose.Schema(
+  {
+    product: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      ref: 'Product',
+    },
+    slug: { type: String, required: true },
+    name: { type: String, required: true },
+    quantity: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 99,
+      validate: Number.isSafeInteger,
+    },
+    unitPricePaise: {
+      type: Number,
+      required: true,
+      min: 0,
+      validate: Number.isSafeInteger,
+    },
+  },
+  { _id: false },
+);
+
+const money = {
+  type: Number,
+  required: true,
+  min: 0,
+  validate: Number.isSafeInteger,
+};
+const schema = new mongoose.Schema(
+  {
+    number: { type: String, required: true, unique: true },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    checkoutKey: String,
+    emailAddress: { type: String, select: false },
+    emailEvents: [
+      {
+        _id: false,
+        kind: { type: String, enum: ['confirmed', 'shipped', 'delivered'] },
+        attempts: { type: Number, default: 0 },
+        nextAttemptAt: Date,
+        lease: String,
+        sentAt: Date,
+        failedAt: Date,
+      },
+    ],
+    address: { type: addressSchema, required: true },
+    items: {
+      type: [itemSchema],
+      required: true,
+      validate: (items) => items.length > 0,
+    },
+    subtotalPaise: money,
+    codFeePaise: money,
+    discountPaise: { ...money, default: 0 },
+    discountCode: String,
+    shippingPaise: { ...money, default: 0 },
+    guest: { type: Boolean, default: false },
+    statusHistory: [{ _id: false, status: { type: String, enum: orderStatuses }, at: Date }],
+    totalPaise: money,
+    deliveryEstimate: { type: String, required: true },
+    status: {
+      type: String,
+      required: true,
+      enum: orderStatuses,
+      default: 'placed',
+    },
+    paymentMethod: { type: String, required: true, enum: ['cod', 'online'] },
+    paymentStatus: {
+      type: String,
+      required: true,
+      enum: ['pending', 'collected', 'failed'],
+      default: 'pending',
+    },
+  },
+  { timestamps: true },
+);
+
+schema.index({ user: 1, createdAt: -1, _id: -1 });
+schema.index({ user: 1, status: 1, 'items.product': 1 });
+schema.index({ 'emailEvents.nextAttemptAt': 1 }, { sparse: true });
+schema.index(
+  { user: 1, checkoutKey: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { checkoutKey: { $type: 'string' } },
+  },
+);
+export const Order = mongoose.model('Order', schema);

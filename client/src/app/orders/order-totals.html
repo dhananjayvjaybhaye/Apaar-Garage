@@ -1,0 +1,27 @@
+@let order = summary();
+<dl>
+  <div>
+    <dt>Merchandise subtotal</dt>
+    <dd>{{ order.subtotalPaise / 100 | currency: 'INR' : 'symbol' : '1.2-2' }}</dd>
+  </div>
+  @if (order.discountPaise; as discount) {
+    <div>
+      <dt>{{ order.discountCode === 'FIRST_ORDER' ? 'First-order discount' : 'Coupon ' + order.discountCode }}</dt>
+      <dd>−{{ discount / 100 | currency: 'INR' : 'symbol' : '1.2-2' }}</dd>
+    </div>
+  }
+  <div>
+    <dt>Delivery</dt>
+    <dd>{{ order.shippingPaise ? (order.shippingPaise / 100 | currency: 'INR' : 'symbol' : '1.2-2') : 'Free' }}</dd>
+  </div>
+  @if (order.codFeePaise > 0) {
+    <div>
+      <dt>COD fee</dt>
+      <dd>{{ order.codFeePaise / 100 | currency: 'INR' : 'symbol' : '1.2-2' }}</dd>
+    </div>
+  }
+  <div class="total">
+    <dt>Total</dt>
+    <dd>{{ order.totalPaise / 100 | currency: 'INR' : 'symbol' : '1.2-2' }}</dd>
+  </div>
+</dl>

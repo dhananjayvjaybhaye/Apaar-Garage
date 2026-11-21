@@ -1,0 +1,186 @@
+:host {
+  position: sticky;
+  z-index: 12;
+  top: 0;
+  display: block;
+  background: var(--header);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(16px);
+}
+
+.masthead {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.55rem 1rem;
+  min-height: 4.6rem;
+  padding-block: 0.65rem;
+}
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: fit-content;
+  color: var(--text);
+  text-decoration: none;
+  letter-spacing: 0.085em;
+  font: 700 clamp(1rem, 4.5vw, 1.45rem)/1 var(--display);
+}
+.wordmark strong {
+  color: var(--accent);
+}
+.garage-mark {
+  display: flex;
+  gap: 0.17rem;
+  padding: 0.35rem 0.25rem;
+  transform: skewX(-17deg);
+}
+.garage-mark i {
+  width: 0.18rem;
+  height: 1.05rem;
+  border-radius: 0.3rem;
+  background: var(--racing-red);
+}
+.shop-nav {
+  display: flex;
+  grid-column: 1 / -1;
+  grid-row: 3;
+  gap: 1.2rem;
+  align-items: center;
+}
+.shop-nav a, .rc-menu summary {
+  color: var(--muted);
+  font-size: .875rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+.shop-nav a:hover, .shop-nav .current, .rc-menu summary:hover { color: var(--text); }
+.rc-menu summary { cursor: pointer; white-space: nowrap; padding-block: .45rem; }
+.rc-mega-menu {
+  position: absolute;
+  z-index: 3;
+  top: 100%;
+  inset-inline: 1rem;
+  padding: .85rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow);
+  background: var(--panel);
+}
+.rc-mega-menu ul {
+  list-style: none;
+  padding: 0;
+  margin: .65rem 0 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .35rem;
+}
+.rc-mega-menu a { display: block; padding: .65rem; border-radius: var(--radius); }
+.rc-mega-menu a:hover, .rc-mega-menu a:focus-visible { background: var(--panel-raised); }
+.rc-mega-menu .rc-all { color: var(--accent); border-bottom: 1px solid var(--line); }
+.account-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  justify-self: end;
+  min-height: 2.75rem;
+}
+.account-name {
+  display: none;
+}
+.login {
+  white-space: nowrap;
+  padding-inline: 0.65rem;
+}
+.search {
+  display: flex;
+  grid-column: 1 / -1;
+  grid-row: 2;
+  align-items: center;
+  background: #16191f;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.search:focus-within {
+  border-color: var(--amber);
+}
+.search input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  padding: 0.48rem 0.75rem;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.875rem;
+}
+.search input:focus-visible {
+  outline: 0;
+}
+.search button {
+  display: grid;
+  place-items: center;
+  width: 2.65rem;
+  min-height: 2.35rem;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+@media (min-width: 58rem) {
+  .masthead {
+    grid-template-columns: auto 1fr minmax(10rem, 19rem) auto;
+    gap: clamp(1rem, 3vw, 3rem);
+  }
+  .shop-nav {
+    grid-column: 2;
+    grid-row: 1;
+    justify-content: center;
+    gap: clamp(.6rem, 1.5vw, 1.5rem);
+  }
+  .rc-menu { position: relative; }
+  .rc-mega-menu { top: 100%; inset-inline: 0 auto; width: min(30rem, 58vw); }
+  .rc-mega-menu ul { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .search {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .account-nav {
+    gap: 0.65rem;
+  }
+}
+@media (min-width: 72rem) {
+  .account-name {
+    display: block;
+    max-width: 7rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+}
+
+.account-nav {
+  min-width: 8.4rem;
+  justify-content: flex-end;
+}
+@media (min-width: 72rem) {
+  .account-nav {
+    min-width: 13rem;
+  }
+}
+
+.sound-toggle { min-width:2.75rem; padding:.35rem; }
+@media (width < 52rem) {
+  .header-wishlist, .header-login { display:none; }
+  .account-nav { min-width:0; }
+  .masthead { gap:.45rem; }
+  .wordmark { letter-spacing:.04em; }
+}
+@media (width < 23rem) {
+  .masthead { width:calc(100% - 1.1rem); }
+  .garage-mark { display:none; }
+  .account-nav { gap:.3rem; }
+}

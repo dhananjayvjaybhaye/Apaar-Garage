@@ -1,0 +1,152 @@
+:host {
+  position: absolute;
+  inset: -2.25rem -1.45rem -1.8rem;
+  z-index: -1;
+  overflow: clip;
+  pointer-events: none;
+  contain: layout paint;
+}
+.glows,
+.depth,
+.beams,
+.particles {
+  position: absolute;
+  inset: 0;
+}
+.glows {
+  opacity: var(--tour-glow-opacity);
+  transform: translateY(var(--tour-glow-y, 0px));
+}
+.glows i {
+  position: absolute;
+  width: 80%;
+  aspect-ratio: 1;
+  background: radial-gradient(circle, var(--glow), transparent 66%);
+  animation: drift-glow var(--tour-glow-loop) ease-in-out infinite alternate paused;
+}
+.glows i:nth-child(1) {
+  --glow: #ba6c31;
+  inset: -14% auto auto -27%;
+}
+.glows i:nth-child(2) {
+  --glow: #b53021;
+  inset: auto -32% 2% auto;
+  animation-direction: alternate-reverse;
+}
+.glows i:nth-child(3) {
+  --glow: #ad733b;
+  inset: auto auto -39% -3%;
+  animation-delay: -7s;
+}
+
+.depth {
+  opacity: var(--tour-depth-opacity);
+  transform: translateY(var(--tour-glow-y, 0px));
+}
+.shelves {
+  position: absolute;
+  inset: 15% 0 34%;
+  background:
+    repeating-linear-gradient(90deg, #131015 0 2.5%, transparent 2.5% 14%),
+    repeating-linear-gradient(0deg, #363036 0 7%, #201920 7% 24%);
+  filter: blur(3px);
+  mask-image: linear-gradient(180deg, transparent, black 32% 75%, transparent);
+}
+.shelves::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(120deg, transparent 36%, #130e12 36% 64%, transparent 64%) 7% 34% / 7% 25% no-repeat,
+    radial-gradient(ellipse, #130e12 60%, transparent 62%) 89% 27% / 5% 9% no-repeat,
+    linear-gradient(#130e12, #130e12) 89% 40% / 2% 22% no-repeat;
+}
+.floor {
+  position: absolute;
+  inset: 38% -33% -23%;
+  transform: perspective(325px) rotateX(54deg);
+  transform-origin: bottom;
+  background:
+    repeating-linear-gradient(90deg, #b4805b55 0 1px, transparent 1px 4rem),
+    repeating-linear-gradient(0deg, #b4805b55 0 1px, transparent 1px 4rem);
+  mask-image: linear-gradient(180deg, transparent 0%, #000b 45%, #000 73%, transparent);
+}
+.beams {
+  opacity: var(--tour-beam-opacity);
+  transform: translateY(var(--tour-beam-y, 0px));
+}
+.beams i {
+  position: absolute;
+  inset: -12% 25% 12% -25%;
+  background: linear-gradient(130deg, #ffd39c9e, transparent 75%);
+  clip-path: polygon(34% 0, 40% 0, 95% 94%, 64% 100%);
+  animation: drift-beam var(--tour-beam-loop) ease-in-out infinite alternate paused;
+}
+.beams i:nth-child(2) {
+  inset: -15% -39% 6% 53%;
+  animation-delay: -6s;
+}
+.particles {
+  opacity: var(--tour-dust-opacity);
+  transform: translateY(var(--tour-dust-y, 0px));
+}
+.particles i {
+  position: absolute;
+  width: 3px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  color: #ffd9a5;
+  background: currentColor;
+  box-shadow: 0 0 0.4rem currentColor;
+  animation: drift-dust var(--tour-dust-loop) ease-in-out infinite alternate paused;
+}
+.particles i.bokeh {
+  width: 9px;
+  opacity: 0.54;
+  filter: blur(2px);
+}
+:host-context(.atmosphere-running) i {
+  animation-play-state: running;
+}
+
+@keyframes drift-glow {
+  to {
+    transform: translate3d(8%, 6%, 0);
+  }
+}
+@keyframes drift-beam {
+  from {
+    opacity: 0.44;
+  }
+  to {
+    opacity: 1;
+    transform: translateX(4%);
+  }
+}
+@keyframes drift-dust {
+  to {
+    transform: translate3d(9px, -18px, 0);
+    opacity: 0.35;
+  }
+}
+
+@media (max-width: 55.99rem) {
+  :host {
+    inset-inline: -0.65rem;
+  }
+  .beams,
+  .particles i:nth-child(n + 6) {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .glows,
+  .depth,
+  .beams,
+  .particles {
+    transform: none;
+  }
+  :host i {
+    animation: none;
+  }
+}

@@ -1,0 +1,110 @@
+.motion-tilt { position: relative; }
+.motion-glare {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 0;
+  box-shadow: 0 12px 28px #100a0666;
+  transition: opacity 180ms ease;
+}
+.motion-glare::before {
+  position: absolute;
+  inset: -39%;
+  content: '';
+  background: radial-gradient(ellipse at center, #ffcc8b30, transparent 44%);
+  transform: translate3d(var(--glare-x, 0%), var(--glare-y, 0%), 0);
+}
+html[data-motion='full'] .motion-tilt {
+  transition: transform 145ms ease-out;
+}
+html[data-motion='full'] .motion-tilt.tilt-active:not(:has(:focus-visible)) {
+  will-change: transform;
+  transform: perspective(900px) translateY(-4px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+}
+html[data-motion='full'] .motion-tilt.tilt-active:not(:has(:focus-visible)) > .motion-glare { opacity: 1; }
+html[data-motion='full'] .motion-magnetic:not(:disabled) {
+  transform: translate3d(var(--magnetic-x, 0), calc(var(--magnetic-y, 0px) + var(--magnetic-press, 0px)), 0);
+  transition: transform 130ms ease-out, opacity 130ms ease;
+}
+html[data-motion='full'] .motion-magnetic:not(:disabled):active { --magnetic-press: 2px; }
+.route-content {
+  position: relative;
+  isolation: isolate;
+  overflow: clip visible;
+}
+.route-content:has(app-cart-page, app-checkout-page, app-order-success) > app-garage-ambience {
+  --ambient-strength: .62;
+}
+.shop-nav a[appMagnetic] {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+}
+.shop-nav a[appMagnetic]::after {
+  position: absolute;
+  content: '';
+  height: 2px;
+  inset: auto 0 0.45rem;
+  border-radius: 2px;
+  background: var(--amber);
+  opacity: 0;
+  transform: perspective(50px) rotateX(45deg) scaleX(.15);
+  transition: transform 180ms ease, opacity 180ms ease;
+}
+.shop-nav a[appMagnetic]:is(:hover,:focus-visible,.current)::after { opacity: 1; transform: perspective(50px) rotateX(20deg) scaleX(1); }
+html:not([data-motion='full']) .shop-nav a[appMagnetic]::after { transform: none; }
+html[data-motion='full'] .shop-nav a[appMagnetic]:hover { --magnetic-press: -2px; }
+.cart-flight {
+  position: fixed;
+  z-index: 31;
+  width: 1.25rem;
+  aspect-ratio: 1;
+  background: var(--amber);
+  border: 1px solid var(--amber);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.cart-flight-image {
+  width: 4.5rem;
+  aspect-ratio: 4 / 3;
+  border-radius: .55rem;
+  object-fit: cover;
+  box-shadow: var(--shadow);
+}
+.order-celebrate {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 2.9rem;
+  aspect-ratio: 1;
+  margin-bottom: .7rem;
+  border: 1px solid var(--success);
+  border-radius: 50%;
+  color: var(--success);
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+.order-celebrate::after {
+  position: absolute;
+  inset: 0;
+  content: '';
+  border: 1px solid var(--amber);
+  border-radius: inherit;
+  opacity: 0;
+  pointer-events: none;
+}
+html[data-motion='full'] .order-celebrate { animation: order-pop 420ms ease-out both; }
+html[data-motion='full'] .order-celebrate::after { animation: order-ring 620ms 100ms ease-out both; }
+@keyframes order-pop {
+  from { opacity: 0; transform: scale(.65); }
+  64% { opacity: 1; transform: scale(1.08); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes order-ring {
+  from { opacity: .8; transform: scale(.96); }
+  to { opacity: 0; transform: scale(1.75); }
+}

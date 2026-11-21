@@ -1,0 +1,59 @@
+<section aria-labelledby="review-title">
+  <h2 id="review-title">Verified buyer reviews</h2>
+  @if (access.hasValue() && access.value().canReview && !posted()) {
+    <form (ngSubmit)="submit()">
+      <div>
+        <label for="review-rating">Your rating</label>
+        <select id="review-rating" name="rating" [ngModel]="rating()" (ngModelChange)="rating.set(+$event)" required>
+          <option [ngValue]="0" disabled>Select stars</option>
+          @for (stars of choices; track stars) { <option [ngValue]="stars">{{ stars }} {{ stars === 1 ? 'star' : 'stars' }}</option> }
+        </select>
+      </div>
+      <label for="review-comment">Your review</label>
+      <textarea id="review-comment" rows="4" name="comment" [ngModel]="comment()" (ngModelChange)="comment.set($event)" maxlength="1000" required></textarea>
+      <button class="primary-button" type="submit" [disabled]="pending()">{{ pending() ? 'Posting…' : 'Post review' }}</button>
+    </form>
+  } @else if (posted()) {
+    <p role="status">Thanks for sharing your review.</p>
+  } @else if (access.hasValue() && access.value().reviewed) {
+    <p>You’ve reviewed this model.</p>
+  } @else if (access.error()) {
+    <p>We couldn’t verify your purchase. <button class="secondary-button" type="button" (click)="access.reload()">Try again</button></p>
+  } @else {
+    <p class="muted">Reviews are open to customers after delivery. If you checked out as a guest, use the same browser.</p>
+  }
+  @if (error()) { <p class="error-text" role="alert">{{ error() }}</p> }
+
+  @if (reviews.isLoading()) {
+    <p class="visually-hidden" role="status">Loading reviews…</p>
+    <div class="skeleton review-placeholder" appAmbientVisible aria-hidden="true"></div>
+  } @else if (reviews.hasValue()) {
+    @let result = reviews.value();
+    @if (result.items.length) {
+      <ul>
+        @for (review of result.items; track review.id) {
+          <li>
+            <div class="review-heading">
+              <strong>Verified buyer</strong>
+              <time [attr.datetime]="review.createdAt">{{ review.createdAt | date:'mediumDate' }}</time>
+            </div>
+            <span class="review-rating" [attr.aria-label]="review.rating + ' out of 5 stars'" role="img">
+              <span aria-hidden="true">{{ '★★★★★'.slice(0, review.rating) }}<span class="unset">{{ '☆☆☆☆☆'.slice(review.rating) }}</span></span>
+            </span>
+            <p>{{ review.comment }}</p>
+          </li>
+        }
+      </ul>
+    } @else { <p class="muted">This model hasn’t been reviewed yet.</p> }
+    @if (result.totalPages > 1) {
+      <nav aria-label="Review pages">
+        <button class="secondary-button" type="button" [disabled]="result.page <= 1" (click)="page.set(result.page - 1)">Previous</button>
+        <span>Page {{ result.page }} of {{ result.totalPages }}</span>
+        <button class="secondary-button" type="button" [disabled]="result.page >= result.totalPages" (click)="page.set(result.page + 1)">Next</button>
+      </nav>
+    }
+  } @else {
+    <p class="error-text" role="alert">Reviews couldn’t load.</p>
+    <button class="secondary-button" type="button" (click)="reviews.reload()">Try again</button>
+  }
+</section>

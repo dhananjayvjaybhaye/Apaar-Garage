@@ -1,0 +1,174 @@
+:host {
+  display: block;
+}
+
+.hero {
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+  color: #f8eee2;
+  background: #100e10;
+  padding: clamp(2.25rem, 5vw, 4.75rem) 0 1.55rem;
+}
+
+.hero-layout {
+  display: grid;
+  align-items: center;
+  gap: clamp(1.6rem, 5vw, 5rem);
+  width: min(calc(100% - 2rem), var(--hero-max-width));
+  margin-inline: auto;
+}
+
+.hero-copy,
+.hero-display {
+  min-inline-size: 0;
+}
+.hero-label,
+.hero-trust {
+  margin: 0;
+  color: #e4c7aa;
+  font-size: 0.82rem;
+}
+.hero-label {
+  color: #efbd88;
+  font-weight: 750;
+}
+.hero-trust {
+  margin-top: 1rem;
+}
+
+.hero h1 {
+  margin: 0.48rem 0 0.9rem;
+  color: inherit;
+  font: 700 clamp(2.5rem, 5vw, 4.5rem) / 1.04 var(--display);
+  letter-spacing: -0.025em;
+  text-transform: uppercase;
+}
+
+.hero-title-line {
+  display: block;
+  overflow: clip;
+  padding-block: 0.015em 0.09em;
+}
+.hero-title-line > * {
+  display: block;
+}
+.hero h1 em {
+  color: #efad6a;
+  font-style: normal;
+}
+.hero h1[tabindex='-1']:focus {
+  outline: none;
+}
+.hero-description {
+  max-width: 37ch;
+  margin: 0 0 1.15rem;
+  color: #eddfd2;
+  line-height: 1.5;
+}
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+.hero-actions > a {
+  min-height: 44px;
+  padding-inline: clamp(0.7rem, 2vw, 1.15rem);
+}
+.hero-actions .primary-button {
+  color: #21150d;
+  background: #f3b475;
+  border-color: #f3b475;
+}
+.hero-actions .primary-button:hover {
+  background: #ffd39f;
+}
+.hero-actions .secondary-button {
+  background: #241c1b;
+  border-color: #947256;
+  color: #fff0de;
+}
+
+.hero-visual {
+  position: relative;
+  isolation: isolate;
+}
+.hero-glow {
+  position: absolute;
+  inset: -19% -15% -15%;
+  z-index: -1;
+  background: radial-gradient(ellipse, #e791463d 4%, transparent 69%);
+  pointer-events: none;
+}
+.hero-window {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  height: var(--hero-mobile-scene);
+  border: 1px solid #705140;
+  border-radius: clamp(0.8rem, 2vw, 1.4rem);
+  background: #201513;
+  touch-action: pan-y;
+}
+app-garage-ambience {
+  border-radius: inherit;
+}
+.hero-window::after {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 53%, #100a0a6b);
+  pointer-events: none;
+  content: '';
+}
+.hero-picture,
+.hero-photo {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+}
+.hero-picture {
+  transform: scale(var(--hero-intro-scale, 1));
+}
+.hero-photo {
+  object-fit: cover;
+  object-position: 62% center;
+}
+.hero-display app-garage-controls {
+  margin-top: 0.75rem;
+}
+.hero-skip {
+  display: grid;
+  place-items: center;
+  min-height: 44px;
+  width: fit-content;
+  margin: 0.4rem auto 0;
+  color: #edc297;
+  font-size: 0.86rem;
+}
+
+.hero-copy:has(a:focus-visible),
+app-garage-controls:focus-within {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* Keep this breakpoint aligned with heroLayout.columnsAtRem. */
+@media (min-width: 56rem) {
+  .hero {
+    display: grid;
+    grid-template-rows: 1fr auto;
+    min-height: var(--hero-height);
+  }
+  .hero-layout {
+    width: min(calc(100% - clamp(2rem, 6vw, 5rem)), var(--hero-max-width));
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  }
+  .hero-window {
+    height: var(--hero-desktop-scene);
+  }
+  .hero-photo {
+    object-position: center;
+  }
+}

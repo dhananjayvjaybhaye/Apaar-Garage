@@ -1,0 +1,186 @@
+<main class="container catalog">
+  <header #catalogTop class="catalog-title" tabindex="-1">
+    <p class="kicker">Apaar Garage</p>
+    <h1>The collection</h1>
+    @if (query().q) {
+      <p class="muted">Search results for “{{ query().q }}”</p>
+    }
+  </header>
+
+  <div class="categories product-types" role="group" aria-label="Product type">
+    @for (type of typeChoices; track type.value) {
+      <button class="secondary-button" type="button"
+        [attr.aria-pressed]="(query().productType ?? null) === type.value"
+        (click)="changeType(type.value)">{{ type.label }}</button>
+    }
+  </div>
+
+  <nav class="categories" aria-label="Filter by category">
+    <button class="secondary-button" type="button" [attr.aria-pressed]="!query().category"
+      (click)="removeFilter('category')">All categories</button>
+    @for (category of categories(); track category) {
+      <button class="secondary-button" type="button" [attr.aria-pressed]="query().category === category"
+        (click)="change({ category })">{{ labels[category] }}</button>
+    }
+  </nav>
+
+  <button appMagnetic class="secondary-button filter-toggle" type="button" aria-controls="catalog-filters" [attr.aria-expanded]="filtersOpen()" (click)="filtersOpen.set(!filtersOpen())">{{ filtersOpen() ? 'Hide filters and sort' : 'Filters and sort' }}</button>
+  <div appReveal class="filters" id="catalog-filters" role="group" aria-label="Catalog filters"
+    [class.expanded]="filtersOpen()" [class.rc-filters]="query().productType === 'rc'">
+    <label
+      >Brand
+      <select aria-label="Brand" (change)="change({ brand: $any($event.target).value || null })">
+        <option value="" [selected]="!query().brand">All brands</option>
+        @for (brand of facets().brands; track brand) {
+          <option [value]="brand" [selected]="query().brand === brand">{{ brand }}</option>
+        }
+      </select>
+    </label>
+    <label
+      >Scale
+      <select aria-label="Scale" (change)="change({ scale: $any($event.target).value || null })">
+        <option value="" [selected]="!query().scale">All scales</option>
+        @for (scale of facets().scales; track scale) {
+          <option [value]="scale" [selected]="query().scale === scale">{{ scale }}</option>
+        }
+      </select>
+    </label>
+    <label
+      >Sort by
+      <select aria-label="Sort by" (change)="change({ sort: $any($event.target).value || null })">
+        <option value="" [selected]="!query().sort || query().sort === 'featured'">Featured</option>
+        <option value="newest" [selected]="query().sort === 'newest'">Newest</option>
+        <option value="price-asc" [selected]="query().sort === 'price-asc'">
+          Price low to high
+        </option>
+        <option value="price-desc" [selected]="query().sort === 'price-desc'">
+          Price high to low
+        </option>
+        <option value="popular" [selected]="query().sort === 'popular'">Popular</option>
+        <option value="name" [selected]="query().sort === 'name'">Name</option>
+      </select>
+    </label>
+    @if (query().productType === 'rc') {
+      @for (filter of rcFilters; track filter.key) {
+        <label>{{ filter.label }}
+          <select #filterOption [attr.aria-label]="filter.label" (change)="changeOption(filter.key, filterOption.value)">
+            <option value="" [selected]="!query()[filter.key]">Any</option>
+            @for (value of filter.options; track value) {
+              <option [value]="value" [selected]="query()[filter.key] === value">{{ value }}</option>
+            }
+          </select>
+        </label>
+      }
+      <label>Shopper’s age
+        <input #age type="number" inputmode="numeric" min="1" max="99" step="1" placeholder="Any age"
+          [value]="query().age ?? ''" (change)="changeAge(age)" />
+      </label>
+      <label>Battery included
+        <select aria-label="Battery included" (change)="change({ batteryIncluded: $any($event.target).value || null })">
+          <option value="" [selected]="query().batteryIncluded === undefined">Any</option>
+          <option value="true" [selected]="query().batteryIncluded === true">Yes</option>
+          <option value="false" [selected]="query().batteryIncluded === false">No</option>
+        </select>
+      </label>
+    }
+    <form class="price-filter" (submit)="applyPrice($event, minPrice.value, maxPrice.value)">
+      <label
+        >Min price
+        <input
+          #minPrice
+          type="number"
+          min="0"
+          max="999999999"
+          step=".01"
+          placeholder="₹0"
+          [value]="query().minPrice ?? ''"
+      /></label>
+      <label
+        >Max price
+        <input
+          #maxPrice
+          type="number"
+          min="0"
+          max="999999999"
+          step=".01"
+          [attr.aria-invalid]="!!priceError()"
+          [attr.aria-describedby]="priceError() ? 'catalog-price-error' : null"
+          placeholder="Any"
+          [value]="query().maxPrice ?? ''"
+      /></label>
+      <button class="secondary-button" type="submit">Apply</button>
+    </form>
+    <label class="stock-filter"><input type="checkbox" [checked]="query().inStock ?? false" (change)="change({ inStock: $any($event.target).checked ? 'true' : null })" /> In stock only</label>
+    <a class="clear" routerLink="/catalog" [queryParams]="{ productType: query().productType }">Clear filters</a>
+    @if (priceError()) {
+      <p id="catalog-price-error" class="error-text" role="alert">{{ priceError() }}</p>
+    }
+  </div>
+
+  @if (chips().length) {
+    <ul class="filter-chips" aria-label="Selected filters">
+      @for (chip of chips(); track chip.key) {
+        <li><button type="button" class="secondary-button" [attr.aria-label]="'Remove filter ' + chip.label" (click)="removeFilter(chip.key)">{{ chip.label }} <span aria-hidden="true">×</span></button></li>
+      }
+    </ul>
+  }
+  <h2 class="visually-hidden">Catalog products</h2>
+  @if (chips().length) {
+    <ul class="filter-chips" aria-label="Selected filters">
+      @for (chip of chips(); track chip.key) {
+        <li><button type="button" class="secondary-button" [attr.aria-label]="'Remove filter ' + chip.label" (click)="removeFilter(chip.key)">{{ chip.label }} <span aria-hidden="true">×</span></button></li>
+      }
+    </ul>
+  }
+  <h2 class="visually-hidden">Catalog products</h2>
+  @let catalog = state();
+  @if (catalog.status === 'loading') {
+    <p class="count loading-count" role="status">Loading products…</p>
+    <div class="product-grid" aria-hidden="true">
+      @for (i of [0, 1, 2, 3, 4, 5, 6, 7]; track i) {
+        <div class="skeleton card-skeleton" appAmbientVisible></div>
+      }
+    </div>
+  } @else if (catalog.status === 'error') {
+    <app-shop-state title="The collection is unavailable" message="We couldn’t load the catalog. Try again in a moment." [retryable]="true" (retry)="retry()" />
+  } @else if (catalog.status === 'ready') {
+    <p class="count" role="status">
+      {{ catalog.result.total }} {{ catalog.result.total === 1 ? 'product' : 'products' }}
+    </p>
+    @if (!catalog.result.items.length) {
+      <app-shop-state illustration="shelf" title="No matching products" message="Try a different search, or clear your filters to see the full collection." link="/catalog" action="Clear filters" />
+    } @else {
+      <div class="product-grid">
+        @for (product of catalog.result.items; track product.slug) {
+          <app-product-card
+            [product]="product"
+            [priority]="$index < 2"
+            [appReveal]="$index"
+          />
+        }
+      </div>
+    }
+    @if (catalog.result.totalPages > 1) {
+      <nav class="pagination" aria-label="Catalog pages">
+        <button
+          class="secondary-button"
+          type="button"
+          [disabled]="catalog.result.page === 1"
+          (click)="change({ page: catalog.result.page - 1 })"
+        >
+          Previous
+        </button>
+        <span>Page {{ catalog.result.page }} of {{ catalog.result.totalPages }}</span>
+        <button
+          class="secondary-button"
+          type="button"
+          [disabled]="catalog.result.page >= catalog.result.totalPages"
+          (click)="change({ page: catalog.result.page + 1 })"
+        >
+          Next
+        </button>
+      </nav>
+    }
+  }
+  <button type="button" class="secondary-button back-top" (click)="catalogTop.focus({ preventScroll: true }); catalogTop.scrollIntoView()">Back to top</button>
+</main>

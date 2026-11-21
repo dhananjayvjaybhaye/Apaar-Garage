@@ -1,0 +1,87 @@
+.garage-intro {
+  position: fixed;
+  box-sizing: border-box;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  isolation: isolate;
+  color: #f8ede3;
+  background: transparent;
+}
+.garage-intro[open] { display: grid; place-items: center; }
+.garage-intro::backdrop { background: transparent; }
+.door-shade, .door-slats, .bottom-light, .amber-haze { position: absolute; pointer-events: none; }
+.door-shade { inset: 0; background: #1b1316; }
+.door-slats {
+  inset: 0;
+  display: grid;
+  grid-template-rows: repeat(16, 1fr);
+  padding-bottom: .18rem;
+}
+.door-slat {
+  min-height: 0;
+  background:
+    linear-gradient(90deg, #0008, transparent 35% 65%, #0008),
+    linear-gradient(#77716f 0%, #3d383b 5%, var(--slat-face, #2e2c30) 16%, #242327 75%, #17161a 94%, #080709 98%);
+}
+.door-slat:nth-child(3n) { --slat-face: #2a282b; }
+.opening .door-slat { will-change: transform; }
+.bottom-light {
+  z-index: 1;
+  inset: auto 0 0;
+  height: .27rem;
+  background: linear-gradient(90deg, #ffab3640, #ffde9f 46%, #ffab3640);
+  box-shadow: 0 -.25rem 2rem .35rem #ffa24778;
+  transform-origin: center bottom;
+}
+.amber-haze {
+  z-index: 2;
+  inset: 0;
+  opacity: 0;
+  background:
+    radial-gradient(ellipse at 61% 76%, #ffe3afad, transparent 55%),
+    linear-gradient(0deg, #ff9e4e78, transparent 73%);
+}
+.intro-copy {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  gap: 1.25rem;
+  justify-items: center;
+  padding: clamp(1rem, 5vw, 2.6rem);
+  text-align: center;
+}
+.intro-copy h2 {
+  margin: 0;
+  font: 750 clamp(2.3rem, 10vw, 6.3rem)/1 var(--display, system-ui);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  text-shadow: 0 .25rem 1.3rem #000;
+}
+.intro-copy em { color: #ffc78f; font-style: normal; }
+.intro-copy .primary-button {
+  min-width: 12rem;
+  padding: .85rem 1.3rem;
+  background: #f4bd81;
+  border-color: #ffe0b7;
+  color: #191013;
+  box-shadow: 0 0 1.6rem #ffab4b47;
+}
+.intro-skip {
+  position: absolute;
+  z-index: 4;
+  inset: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) auto auto;
+  background: #1b171a;
+  border-color: #a88c78;
+  color: #f8ede3;
+}
+.intro-gauge { position: absolute; z-index: 3; inset: auto auto clamp(.8rem, 6vh, 3rem); }
+@media (max-height: 30rem) {
+  .intro-gauge { inset: auto auto 1rem 1rem; }
+}

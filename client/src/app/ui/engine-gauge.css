@@ -1,0 +1,54 @@
+:host { display: block; }
+.engine { display: grid; justify-items: center; gap: .2rem; color: #ffe0b8; }
+.engine p { margin: 0; font: 650 .85rem var(--body, system-ui); white-space: nowrap; }
+.dial {
+  position: relative;
+  isolation: isolate;
+  width: 6.2rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 48%, #352320, #140e11 66%);
+  border: 1px solid #b6764c;
+  box-shadow: 0 0 1.1rem #fb9a4b2e, inset 0 0 .6rem #0009;
+}
+.rim {
+  position: absolute;
+  inset: 7%;
+  border-radius: 50%;
+  background: conic-gradient(from 235deg, #c29269 0deg 211deg, #ff6354 211deg 250deg, transparent 250deg);
+  mask-image: radial-gradient(transparent 61%, black 63% 70%, transparent 72%);
+}
+.rim::after {
+  position: absolute;
+  inset: 0;
+  content: '';
+  background: repeating-conic-gradient(from 235deg, transparent 0deg 17deg, #1c1014 17deg 19deg);
+}
+.needle {
+  position: absolute;
+  inset: 13% calc(50% - 1px) auto;
+  height: 37%;
+  border-radius: .25rem;
+  background: #ffcc91;
+  box-shadow: 0 0 .4rem #ff963cbd;
+  transform-origin: center bottom;
+  rotate: calc(-125deg + var(--progress) * 250deg);
+  transition: rotate 280ms cubic-bezier(.2,.66,.25,1);
+}
+.needle.idle { animation: engine-idle 620ms ease-in-out infinite alternate; }
+@keyframes engine-idle { from { rotate: -125deg; } to { rotate: -115deg; } }
+.hub { position: absolute; inset: 46%; border-radius: 50%; background: #b57b5b; }
+.mark, .rpm { position: absolute; font: 650 .66rem system-ui; }
+.low { left: 21%; bottom: 25%; }
+.middle { left: 47%; top: 17%; }
+.high { right: 21%; bottom: 25%; color: #ff9380; }
+.rpm { inset: auto 0 13%; text-align: center; letter-spacing: .12em; font-size: .51rem; }
+.redline .dial { border-color: #ff6858; box-shadow: 0 0 1.45rem #fc443659, inset 0 0 .6rem #0009; }
+.redline .needle { background: #ff7767; box-shadow: 0 0 .5rem #ff4839; }
+.compact { display: flex; gap: .55rem; align-items: center; }
+.compact .dial { width: 2.45rem; }
+.compact .mark, .compact .rpm { display: none; }
+.compact p { font-size: .77rem; }
+@media (prefers-reduced-motion: reduce) {
+  .needle { animation: none !important; transition: none; }
+}

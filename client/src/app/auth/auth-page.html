@@ -1,0 +1,63 @@
+<main class="account" appReveal [gentleReveal]="true">
+  <h1>{{ registering ? 'Create an account' : 'Sign in' }}</h1>
+
+  <form #accountForm [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    @if (registering) {
+      <label for="account-name">Name</label>
+      <input
+        id="account-name"
+        formControlName="name"
+        autocomplete="name"
+        maxlength="80"
+        [attr.aria-invalid]="!!fieldMessage('name')"
+        [attr.aria-describedby]="fieldMessage('name') ? 'account-name-error' : null"
+        required
+      />
+      @if (fieldMessage('name'); as message) { <p id="account-name-error" class="hint error-text">{{ message }}</p> }
+    }
+
+    <label for="account-email">Email</label>
+    <input
+      id="account-email"
+      type="email"
+      formControlName="email"
+      [attr.autocomplete]="registering ? 'email' : 'username'"
+      inputmode="email"
+      maxlength="254"
+      [attr.aria-invalid]="!!fieldMessage('email')"
+      [attr.aria-describedby]="fieldMessage('email') ? 'account-email-error' : null"
+      required
+    />
+    @if (fieldMessage('email'); as message) { <p id="account-email-error" class="hint error-text">{{ message }}</p> }
+
+    <label for="account-password">Password</label>
+    <input
+      id="account-password"
+      type="password"
+      formControlName="password"
+      [attr.autocomplete]="registering ? 'new-password' : 'current-password'"
+      [attr.aria-describedby]="fieldMessage('password') || registering ? 'password-help' : null"
+      [attr.aria-invalid]="!!fieldMessage('password')"
+      required
+    />
+    @if (fieldMessage('password'); as message) {
+      <p class="hint error-text" id="password-help">{{ message }}</p>
+    } @else if (registering) {
+      <p class="hint" id="password-help">Use at least 8 characters.</p>
+    }
+
+    @if (error()) {
+      <p class="form-error" role="alert">{{ error() }}</p>
+    }
+    <button appMagnetic class="primary-button" type="submit" [disabled]="busy()">
+      {{ busy() ? 'Please wait…' : registering ? 'Create account' : 'Sign in' }}
+    </button>
+  </form>
+
+  <p class="account-link">
+    {{ registering ? 'Have an account?' : 'New to Apaar Garage?' }}
+    <a [routerLink]="registering ? '/login' : '/register'" [queryParams]="{ returnUrl }">
+      {{ registering ? 'Sign in' : 'Create an account' }}
+    </a>
+  </p>
+</main>

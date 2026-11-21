@@ -1,0 +1,50 @@
+<header>
+  <div class="container masthead">
+    <a class="wordmark" routerLink="/" aria-label="Apaar Garage home">
+      <span class="garage-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span>APAAR <strong>GARAGE</strong></span>
+    </a>
+
+    <nav class="shop-nav" aria-label="Shop navigation">
+      <a appMagnetic routerLink="/catalog" routerLinkActive="current">Shop</a>
+      <details #rcMenu class="rc-menu" (focusout)="closeRcMenu($event, rcMenu)"
+        (keydown.escape)="escapeRcMenu(rcMenu, rcToggle, $event)">
+        <summary #rcToggle>RC Toys</summary>
+        <div class="rc-mega-menu">
+          <a class="rc-all" routerLink="/catalog" [queryParams]="{ productType: 'rc' }" (click)="rcMenu.open = false">Shop all RC Toys <span aria-hidden="true">→</span></a>
+          <ul>
+            @for (link of rcLinks; track link.category) {
+              <li><a routerLink="/catalog" [queryParams]="{ productType: 'rc', category: link.category }"
+                (click)="rcMenu.open = false">{{ link.label }}</a></li>
+            }
+          </ul>
+        </div>
+      </details>
+      <a appMagnetic routerLink="/" fragment="featured">Featured</a>
+    </nav>
+
+    <app-shop-search />
+
+    <nav class="account-nav" aria-label="Account and cart">
+      <button appMagnetic class="secondary-button sound-toggle" type="button" aria-label="Mute sound"
+        [attr.aria-pressed]="sound.muted()" [title]="sound.muted() ? 'Unmute sound' : 'Mute sound'" (click)="sound.toggle()">
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9h4l5-4v14l-5-4H3z" />
+          @if (sound.muted()) { <path d="m16 9 5 6m0-6-5 6" /> }
+          @else { <path d="M15.5 9a4.5 4.5 0 0 1 0 6m2.8-8a7 7 0 0 1 0 10" /> }
+        </svg>
+      </button>
+      @if (auth.user(); as user) {
+        <span class="account-name" [title]="user.name">{{ user.name }}</span>
+        <button class="secondary-button login" type="button" [disabled]="signingOut()" (click)="logout()">Sign out</button>
+      } @else if (auth.status() !== 'checking') {
+        <a appMagnetic class="secondary-button login header-login" routerLink="/login">Sign in</a>
+      }
+      <a appMagnetic class="secondary-button header-wishlist" routerLink="/wishlist" aria-label="Wishlist"><span aria-hidden="true">♡</span></a>
+      <app-mini-cart />
+    </nav>
+  </div>
+  @if (error()) {
+    <p class="container error-text" role="alert">{{ error() }}</p>
+  }
+</header>

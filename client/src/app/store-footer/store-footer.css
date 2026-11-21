@@ -1,0 +1,19 @@
+:host { display: block; margin-top: auto; }
+footer { border-top: 1px solid var(--line); background: var(--footer); }
+.footer-grid { display: grid; gap: 1.75rem 2rem; grid-template-columns: repeat(2, minmax(0, 1fr)); padding-block: 2.5rem; }
+.footer-grid > div { grid-column: 1 / -1; }
+.wordmark { color: var(--text); font: 700 1.6rem/1 var(--display); text-decoration: none; letter-spacing: .11em; }
+.wordmark strong { color: var(--accent); }
+p, .legal { color: var(--muted); }
+h2 { margin: 0 0 .6rem; font-size: 1.3rem; }
+nav { display: grid; align-content: start; gap: .45rem; }
+nav a { color: var(--muted); text-decoration: none; }
+nav a:hover { color: var(--text); text-decoration: underline; }
+.socials { display: flex; gap: .5rem; }
+.socials a { display: grid; place-items: center; width: 2.6rem; height: 2.6rem; border-radius: var(--radius); border: 1px solid var(--line); color: var(--text); }
+.socials a:hover { border-color: var(--amber); }
+.legal { border-top: 1px solid var(--line); padding-block: 1rem; font-size: .8rem; }
+@media (min-width: 44rem) {
+  .footer-grid { grid-template-columns: 2fr 1fr 1fr; }
+  .footer-grid > div { grid-column: auto; }
+}

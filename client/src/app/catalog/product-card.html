@@ -1,0 +1,75 @@
+@let item = product();
+<article appTilt appAmbientVisible [tiltDegrees]="tiltDegrees()" class="product">
+  <a
+    class="product-photo"
+    [routerLink]="['/product', item.slug]"
+  >
+    <span class="visually-hidden">View {{ item.name }}</span>
+    @if (item.images[0]; as image) {
+      <img
+        [src]="image"
+        [attr.srcset]="imageSet(image)"
+        sizes="(min-width: 80rem) 304px, (min-width: 49rem) calc((100vw - 5.6rem) / 4), calc((100vw - 2.6rem) / 2)"
+        alt=""
+        [loading]="priority() ? 'eager' : 'lazy'"
+        [attr.fetchpriority]="priority() ? 'high' : null"
+        decoding="async"
+        width="720"
+        height="540"
+        (error)="$any($event.target).hidden = true"
+      />
+      <span class="photo-sweep" aria-hidden="true"></span>
+      @if (item.category === 'car' || item.category === 'truck' || item.category === 'rc-car' || item.category === 'rc-truck') {
+        <span class="photo-wheel-pair" aria-hidden="true"><i></i><i></i></span>
+      }
+    }
+    @if (item.scale) { <span class="scale">{{ item.scale }}</span> }
+    <span class="tags">
+      @if (item.stock > 0 && item.stock <= 5) {
+        <span class="low">Only {{ item.stock }} left</span>
+      }
+      @if (isNew()) {
+        <span class="new">New</span>
+      }
+    </span>
+  </a>
+  <div class="product-copy">
+    <div class="card-tools">
+      <p class="brand">{{ item.brand }}</p>
+      <app-wishlist-button [product]="item" />
+    </div>
+    <h3>
+      <a [routerLink]="['/product', item.slug]">{{ item.name }}</a>
+    </h3>
+    @if (item.productType === 'rc') {
+      <ul class="rc-badges" aria-label="RC product highlights">
+        @if (item.readyToRun) { <li>Ready to Run</li> }
+        @if (item.skillLevel === 'beginner' && item.category !== 'rc-accessory') { <li>Beginner friendly</li> }
+        @if (item.placeholder) { <li class="sample-badge">Sample listing</li> }
+      </ul>
+    }
+    <app-star-summary [average]="item.ratingAverage ?? null" [count]="item.ratingCount ?? 0" />
+    <div class="product-actions">
+      <strong>{{ item.price | currency: 'INR' : 'symbol' : '1.0-2' }}</strong>
+      <button
+        #quick
+        appMagnetic
+        class="secondary-button quick"
+        type="button"
+        [attr.aria-label]="(item.stock === 0 ? 'Sold out: ' : 'Add to cart: ') + item.name"
+        [disabled]="item.stock === 0 || adding() || cart.busy()"
+        (click)="add(quick)"
+      >
+        <span class="icon icon-cart" aria-hidden="true"></span
+        >{{ item.stock === 0 ? 'Sold out' : addLabel() }}
+      </button>
+    </div>
+    <button #viewButton type="button" class="view-button" aria-haspopup="dialog" (click)="quickView(viewButton)" [attr.aria-label]="'Quick view: ' + item.name">Quick view</button>
+    @if (item.stock === 0) { <app-stock-alert [slug]="item.slug" /> }
+    @if (message()) {
+      <p class="feedback" [class.error-text]="error()" >
+        {{ message() }}
+      </p>
+    }
+  </div>
+</article>

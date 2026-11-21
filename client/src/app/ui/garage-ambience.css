@@ -1,0 +1,114 @@
+:host {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  display: block;
+  overflow: clip;
+  pointer-events: none;
+}
+.asset {
+  position: absolute;
+  display: block;
+  opacity: calc(var(--ambient-strength, 1) * .085);
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+.grid {
+  inset: -2rem;
+  opacity: calc(var(--ambient-strength, 1) * .07);
+  background: url('/images/ambient/grid.svg') repeat 0 0 / 5rem;
+  mask-image: linear-gradient(120deg, #0005, black 52%, #0006);
+}
+:host(.ambient-site) .grid {
+  inset-block-end: auto;
+  height: min(72rem, calc(100% + 4rem));
+  mask-image: linear-gradient(180deg, black, #0009 67%, transparent);
+}
+:host(.site) .grid {
+  inset-block-end: auto;
+  height: min(72rem, calc(100% + 4rem));
+  mask-image: linear-gradient(180deg, black, #0009 67%, transparent);
+}
+.tread {
+  inset: 10rem -1.5rem auto auto;
+  width: clamp(6rem, 14vw, 13.5rem);
+  height: 25rem;
+  background: url('/images/ambient/tire-tracks.svg') repeat-y 0 0 / contain;
+  mask-image: linear-gradient(black 0%, black 67%, transparent);
+}
+.speed {
+  inset: 1.7rem auto auto 3%;
+  width: clamp(9rem, 27vw, 25rem);
+  aspect-ratio: 3 / 1;
+  background-image: url('/images/ambient/speed-lines.svg');
+}
+.car-drawing {
+  inset: 16rem 1.2rem auto auto;
+  width: clamp(13rem, 35vw, 35rem);
+  aspect-ratio: 2 / 1;
+  background-image: url('/images/ambient/car-blueprint.svg');
+}
+:host(.ambient-hero) { z-index: 2; }
+.beam {
+  position: absolute;
+  inset: 0 0 0 40%;
+  background: conic-gradient(from 147deg at 62% -4%, #ffdbad00, #ffd1a017 15deg, #ffb96c0f 39deg, #ffdbad00 64deg);
+}
+.dust {
+  position: absolute;
+  inset: var(--y) auto auto var(--x);
+  width: 3px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  color: #ffe2b3;
+  background: currentColor;
+  box-shadow: 0 0 .28rem currentColor;
+  opacity: .2;
+}
+.dust:nth-child(even) { width: 2px; }
+.wheel-layer {
+  position: absolute;
+  inset: auto -2% -12% auto;
+  width: clamp(10rem, 27vw, 24rem);
+  aspect-ratio: 1;
+}
+.hero-wheel {
+  inset: 0;
+  opacity: .1;
+  background-image: url('/images/ambient/wheel.svg');
+}
+.gear {
+  inset: 8% auto auto 3%;
+  width: clamp(7rem, 16vw, 13rem);
+  aspect-ratio: 1;
+  background-image: url('/images/ambient/gear.svg');
+}
+.truck-drawing {
+  inset: 12% 3% auto auto;
+  width: clamp(14rem, 34vw, 32rem);
+  aspect-ratio: 2 / 1;
+  background-image: url('/images/ambient/truck-blueprint.svg');
+}
+:host(.ambient-scale) .speed { inset-inline-start: 31%; }
+.plane-drawing {
+  inset: 11% auto auto 10%;
+  width: clamp(14rem, 46vw, 41rem);
+  aspect-ratio: 2 / 1;
+  background-image: url('/images/ambient/plane-blueprint.svg');
+}
+:host(.ambient-flight) .speed { inset: 17% 4% auto auto; }
+:host-context(html[data-motion='full']) .hero-wheel {
+  animation: ambient-wheel 52s linear infinite paused;
+}
+:host-context(html[data-motion='full']) .dust {
+  animation: ambient-dust var(--length) var(--delay) ease-in-out infinite paused;
+}
+:host-context(html[data-motion='full']) :is(.hero-wheel.ambient-in-view, .beam.ambient-in-view .dust) {
+  animation-play-state: running;
+}
+@keyframes ambient-wheel { to { transform: rotate(360deg); } }
+@keyframes ambient-dust {
+  from { transform: translate3d(-.35rem, 1.4rem, 0); opacity: .08; }
+  48% { opacity: .52; }
+  to { transform: translate3d(.72rem, -1.25rem, 0); opacity: .08; }
+}

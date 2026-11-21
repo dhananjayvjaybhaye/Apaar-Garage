@@ -1,0 +1,82 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.media-switch,
+.thumbnails {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.media-switch {
+  margin-bottom: 0.75rem;
+}
+.media-stage { position: relative; }
+.media-overlay { position: absolute; z-index: 1; inset: 0; opacity: 0; pointer-events: none; }
+.media-overlay.model-ready { opacity: 1; pointer-events: auto; animation: model-appear 180ms ease-out; }
+@keyframes model-appear { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .media-overlay.model-ready { animation-duration: 120ms; }
+}
+.thumbnails {
+  margin-top: 0.75rem;
+}
+
+button {
+  border: 1px solid var(--line);
+  border-radius: 0.3rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--panel);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+button[aria-pressed='true'] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.gallery-image,
+.placeholder {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+  background: var(--panel);
+  color: var(--muted);
+}
+
+.gallery-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.thumbnails button {
+  padding: 0.2rem;
+}
+.thumbnails img {
+  display: block;
+  width: 4rem;
+  height: 3rem;
+  object-fit: cover;
+  border-radius: 0.15rem;
+}
+.media-note {
+  margin: 0 0 0.75rem;
+  color: var(--muted);
+}
+
+.gallery-image, .placeholder { border-radius: var(--radius-large); box-shadow: var(--shadow); } .media-switch button, .thumbnails button { border-radius: var(--radius); }
+.gallery-image { position:relative; }
+.zoom-trigger { position:absolute; inset:auto .6rem .6rem auto; }
+.photo-dialog { width:min(56rem, calc(100% - 2rem)); padding:.6rem; border:1px solid var(--line); border-radius:1rem; background:var(--surface, #171a20); color:var(--text); }
+.photo-dialog::backdrop { background:#000c; }
+.zoom-controls { display:flex; justify-content:flex-end; gap:.5rem; margin-bottom:.4rem; }
+.zoom-scroll { overflow:auto; max-height:72dvh; }
+.zoom-scroll img { display:block; width:100%; height:auto; }
+.zoom-scroll .zoomed { width:175%; max-width:none; }

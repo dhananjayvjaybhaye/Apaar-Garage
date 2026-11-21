@@ -1,0 +1,39 @@
+:host {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  z-index: 32;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 110ms ease;
+}
+:host(.cursor-visible) { opacity: 1; will-change: transform; }
+.cursor-core {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffbc7155, #ffbc7112 38%, transparent 69%);
+  transform: translate(-50%, -50%) scale(0.65);
+  transition: transform 160ms ease;
+}
+:host(.cursor-action) .cursor-core { transform: translate(-50%, -50%) scale(1.15); }
+.cursor-core span {
+  position: absolute;
+  transform: translate(55%, 73%);
+  padding: 0.22rem 0.48rem;
+  border: 1px solid #c38353;
+  border-radius: 2rem;
+  color: #ffe5c7;
+  background: #251910;
+  font-size: 0.68rem;
+  font-weight: 700;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+:host(.cursor-product) .cursor-core span { opacity: 1; }
+:host-context(html:not([data-motion='full'])) { display: none; }

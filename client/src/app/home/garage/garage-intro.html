@@ -1,0 +1,20 @@
+@if (visible()) {
+  <dialog #modal class="garage-intro" [class.opening]="opening()" aria-labelledby="garage-intro-title" (cancel)="skip($event)">
+    <div class="door-shade" aria-hidden="true"></div>
+    <div class="door-slats" aria-hidden="true">
+      @for (slat of slats; track slat) { <div class="door-slat"></div> }
+    </div>
+    <div class="bottom-light" aria-hidden="true"></div>
+    <div class="amber-haze" aria-hidden="true"></div>
+    <button #skipControl class="secondary-button intro-skip" type="button" (click)="skip()">Skip intro</button>
+    <div class="intro-copy">
+      <h2 id="garage-intro-title">Apaar <em>Garage</em></h2>
+      <button class="primary-button" type="button" autofocus [disabled]="opening()" (click)="enter()">
+        Enter the Garage
+      </button>
+    </div>
+    @if (loading(); as status) {
+      <app-engine-gauge class="intro-gauge" [status]="status" />
+    }
+  </dialog>
+}

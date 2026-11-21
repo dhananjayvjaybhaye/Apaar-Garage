@@ -1,0 +1,193 @@
+<main class="container detail-page">
+  <a class="back-link" routerLink="/catalog">Collection</a>
+  @let state = detail();
+
+  @if (state.status === 'loading') {
+    <p class="visually-hidden" role="status">Loading model…</p>
+    <div class="detail-grid" aria-hidden="true">
+      <div class="skeleton skeleton-media" appAmbientVisible></div>
+      <div class="skeleton skeleton-panel" appAmbientVisible></div>
+    </div>
+  } @else if (state.status === 'ready') {
+    @let product = state.product;
+    <article class="detail-grid">
+      <div class="media-stack">
+        <app-product-media [product]="product" />
+        <section class="information">
+          <div
+            #tabList
+            class="tabs"
+            role="tablist"
+            aria-label="Product information"
+            (keydown)="moveTab($event, tabList)"
+          >
+            @for (tab of sections; track tab) {
+              <button
+                type="button"
+                role="tab"
+                [id]="'tab-' + tab"
+                [attr.aria-controls]="'panel-' + tab"
+                [attr.aria-selected]="panel() === tab"
+                [attr.tabindex]="panel() === tab ? 0 : -1"
+                (click)="panel.set(tab)"
+              >
+                {{ tab }}
+              </button>
+            }
+          </div>
+          <div
+            class="tab-content"
+            role="tabpanel"
+            tabindex="0"
+            [id]="'panel-' + panel()"
+            [attr.aria-labelledby]="'tab-' + panel()"
+          >
+            @switch (panel()) {
+              @case ('Details') {
+                <p>{{ product.description }}</p>
+              }
+              @case ('Specs') {
+                @if (product.productType === 'rc') {
+                  <app-rc-specs [product]="product" />
+                } @else {
+                <dl>
+                  <div>
+                    <dt>Brand</dt>
+                    <dd>{{ product.brand }}</dd>
+                  </div>
+                  <div>
+                    <dt>Scale</dt>
+                    <dd>{{ product.scale }}</dd>
+                  </div>
+                  <div>
+                    <dt>Category</dt>
+                    <dd>{{ product.category }}</dd>
+                  </div>
+                </dl>
+                }
+              }
+              @case ('Shipping') {
+                <p>Review your delivery estimate and any COD fee at checkout.</p>
+                <a routerLink="/policies/shipping">Shipping</a> · <a routerLink="/policies/returns">Returns</a>
+              }
+            }
+          </div>
+        </section>
+        @if (product.productType === 'rc') {
+          <section class="rc-detail" aria-labelledby="rc-box-title">
+            <h2 id="rc-box-title">What’s in the box</h2>
+            <ul>
+              @for (part of product.boxContents; track $index) { <li>{{ part }}</li> }
+            </ul>
+          </section>
+          <section class="rc-detail" aria-labelledby="rc-safety-title">
+            <h2 id="rc-safety-title">Battery and safety</h2>
+            <p><strong>Recommended for ages {{ product.recommendedAge }} and up.</strong> An adult should supervise children during use. Keep small parts away from younger children.</p>
+            @if (product.batteryType) {
+              <p>Follow the manufacturer’s charging instructions. Use a compatible charger, charge on a nonflammable surface, and stay nearby while it charges. Stop using damaged or swollen batteries.</p>
+            }
+          </section>
+        }
+      </div>
+
+      <div class="purchase">
+        <p class="kicker">{{ product.brand }} / {{ product.productType === 'rc' ? categoryLabels[product.category] : product.category }}</p>
+        <div class="purchase-title"><h1>{{ product.name }}</h1><app-wishlist-button [product]="product" /></div>
+        <div class="rating-link">
+          <app-star-summary [average]="reviewSummary()?.ratingAverage ?? product.ratingAverage ?? null" [count]="reviewSummary()?.ratingCount ?? product.ratingCount ?? 0" />
+          <a [routerLink]="[]" fragment="reviews" (click)="reviewRequested.set(true)">Read reviews</a>
+        </div>
+        <p class="price">{{ product.price | currency: 'INR' : 'symbol' : '1.0-2' }}</p>
+        @if (product.productType === 'rc' && product.placeholder) {
+          <p class="sample-notice">Sample listing. Photos, specs and pricing are for demonstration.</p>
+        }
+        <dl class="purchase-facts">
+          @if (product.scale) {
+          <div>
+            <dt>Scale</dt>
+            <dd>{{ product.scale }}</dd>
+          </div>
+          }
+          <div>
+            <dt>Size</dt>
+            <dd>
+              @let size = product.dimensionsMm;
+              @if (size?.length && size?.width && size?.height) { {{ size?.length }} × {{ size?.width }} × {{ size?.height }} mm (L × W × H) }
+              @else { Dimensions unavailable }
+            </dd>
+          </div>
+          <div>
+            <dt>Availability</dt>
+            <dd [class.in-stock]="product.stock > 0">
+              {{ product.stock === 0 ? 'Sold out' : product.stock <= 5 ? 'Only ' + product.stock + ' left' : 'In stock' }}
+            </dd>
+          </div>
+        </dl>
+        @if (product.stock > 0) {
+        <div class="purchase-actions">
+          <div class="quantity" role="group" aria-label="Quantity">
+            <button
+              type="button"
+              aria-label="Decrease quantity"
+              [disabled]="quantity() <= 1"
+              (click)="setQuantity(quantity() - 1, product.stock)"
+            >
+              −
+            </button>
+            <span aria-live="polite">{{ quantity() }}</span>
+            <button
+              type="button"
+              aria-label="Increase quantity"
+              [disabled]="quantity() >= product.stock || quantity() >= 99"
+              (click)="setQuantity(quantity() + 1, product.stock)"
+            >
+              +
+            </button>
+          </div>
+          <button
+            #addButton
+            appMagnetic
+            class="primary-button"
+            type="button"
+            [disabled]="product.stock === 0 || adding() || cart.busy()"
+            (click)="addToCart(product, addButton)"
+          >
+            <span class="icon icon-cart" aria-hidden="true"></span> Add to Cart
+          </button>
+        </div>
+        } @else {
+          <app-stock-alert [slug]="product.slug" />
+        }
+        <app-delivery-check />
+        @let feedback = cartFeedback();
+        @if (feedback?.slug === product.slug) {
+          <p
+            [class.error-text]="feedback?.error"
+          >
+            {{ feedback?.message }}
+          </p>
+        }
+      </div>
+    </article>
+    @if (product.stock > 0) {
+      <div class="mobile-add">
+        <span>{{ product.price | currency: 'INR' : 'symbol' : '1.0-2' }}</span>
+        <button #mobileAdd type="button" class="primary-button" [disabled]="adding() || cart.busy()" (click)="addToCart(product, mobileAdd)">Add to Cart</button>
+      </div>
+    }
+    <div id="reviews" tabindex="-1">
+      @defer (on viewport; when reviewRequested()) {
+        <app-product-reviews [slug]="product.slug" (submitted)="reviewSummary.set($event)" />
+      } @placeholder {
+        <div class="skeleton review-skeleton" appAmbientVisible aria-hidden="true"></div>
+      }
+    </div>
+    <app-product-recommendations [product]="product" />
+  } @else {
+    <h1>Product unavailable</h1>
+    <app-shop-state
+      [title]="state.status === 'missing' ? 'Model not found' : 'Couldn’t load this model'"
+      [message]="state.status === 'missing' ? 'This model could not be found in the catalog.' : 'Try again to load the product details.'"
+      [retryable]="state.status === 'error'" (retry)="retry()" link="/catalog" />
+  }
+</main>

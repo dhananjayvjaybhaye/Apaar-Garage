@@ -1,0 +1,23 @@
+<div class="stage" [class.hero-stage]="hero()" [attr.aria-busy]="status() === 'loading'">
+  <div
+    #surface
+    class="surface"
+    role="img"
+    [attr.aria-label]="'Interactive 3D preview of ' + label()"
+  ></div>
+  @if (status() === 'loading' && !quietLoading()) {
+    <div class="overlay">
+      <label>
+        Loading 3D model{{ progress() === null ? '…' : ' · ' + progress() + '%' }}
+        <progress max="100" [attr.value]="progress()"></progress>
+      </label>
+    </div>
+  } @else if (status() === 'error') {
+    <p class="overlay" role="status">The 3D preview could not load.</p>
+  }
+</div>
+@if (!hero()) {
+  <p class="hint" [style.visibility]="status() === 'ready' ? null : 'hidden'">
+    Drag to rotate. Scroll or pinch to zoom.
+  </p>
+}

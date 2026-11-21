@@ -1,0 +1,37 @@
+.featured-section, .scale-band, .rc-showcase { position: relative; isolation: isolate; overflow: clip; }
+.featured-lights {
+  position: absolute;
+  z-index: -1;
+  inset: -25% -10% 0 45%;
+  pointer-events: none;
+  background: radial-gradient(ellipse, #e39c5426, transparent 66%);
+}
+.rc-showcase {
+  border-block: 1px solid var(--line);
+  background: linear-gradient(115deg, var(--panel), transparent 105%);
+}
+.rc-pit-content { padding-block: clamp(1.5rem, 4vw, 3rem) 1rem; }
+.rc-pit-links { display: flex; flex-wrap: wrap; gap: .55rem; }
+.pit-track {
+  position: relative;
+  height: clamp(9rem, 16vw, 13rem);
+  overflow: clip;
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, transparent 20%, #b67a4b25);
+}
+.pit-track app-track-divider { position: absolute; inset: auto 0 0; }
+.pit-vehicle { position: absolute; z-index: 1; pointer-events: none; }
+.pit-vehicle svg { display: block; width: 100%; height: auto; }
+.pit-track [data-pit-car] { bottom: .55rem; left: 16%; width: clamp(4.5rem, 10vw, 8rem); }
+.pit-track [data-pit-plane] { bottom: 3rem; left: 48%; width: clamp(7rem, 16vw, 13rem); }
+.scale-grid a > span:not(.motion-glare) {
+  display: block;
+  transition: transform 230ms ease, opacity 180ms ease;
+}
+.pit-track.scroll-positioned .pit-vehicle { left: 1rem; }
+@media (prefers-reduced-motion: reduce) {
+  .pit-track .pit-vehicle { transform: none !important; }
+}
+:host-context(html[data-motion='full']) .scale-grid a:is(:hover,:focus-visible) > span:not(.motion-glare) {
+  transform: perspective(380px) rotateY(24deg) translateZ(13px);
+}

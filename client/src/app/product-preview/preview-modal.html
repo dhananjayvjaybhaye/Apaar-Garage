@@ -1,0 +1,49 @@
+<dialog #shell class="preview-shell" role="dialog" aria-modal="true" aria-labelledby="preview-title"
+  (cancel)="close($event)" (keydown)="keyboard($event)">
+  <div #shade class="preview-shade" aria-hidden="true" (click)="backdrop($event)"></div>
+  <article #surface class="preview-card">
+    <header class="preview-header">
+      <nav aria-label="Browse models in this category">
+        <button type="button" class="secondary-button" aria-label="Previous model" [disabled]="!canPrevious() || closing() || cart.busy()" (click)="change(-1)">‹</button>
+        <button type="button" class="secondary-button" aria-label="Next model" [disabled]="!canNext() || closing() || cart.busy()" (click)="change(1)">›</button>
+      </nav>
+      <button #closer class="secondary-button" type="button" autofocus (click)="close()">Close</button>
+    </header>
+    @if (item(); as product) {
+      <div class="preview-grid">
+        <div class="preview-media" data-preview-enter>
+          <app-product-media [product]="product" initialMode="photos" [allowModel]="canMountViewer()"
+            [imageSizes]="imageSizes" keepPhotoDuringLoad />
+        </div>
+        <div class="preview-details">
+          <div data-preview-enter>
+            <h2 id="preview-title">{{ product.name }}</h2>
+            <p class="preview-meta">{{ product.brand }} @if (product.scale) { · {{ product.scale }} }</p>
+            @if (product.productType === 'rc' && product.placeholder) { <p>Sample listing</p> }
+          </div>
+          <div class="preview-pricing" data-preview-enter>
+            <strong>{{ product.price | currency:'INR':'symbol':'1.0-2' }}</strong>
+            <span class="preview-stock" [class.out]="product.stock === 0">
+              {{ product.stock === 0 ? 'Sold out' : product.stock <= 5 ? 'Only ' + product.stock + ' left' : 'In stock' }}
+            </span>
+          </div>
+          <p>{{ product.description }}</p>
+          <div class="preview-actions" data-preview-enter>
+            @if (product.stock > 0) {
+              <div class="preview-quantity" role="group" aria-label="Quantity">
+                <button class="secondary-button" type="button" aria-label="Decrease quantity" [disabled]="quantity() <= 1 || cart.busy() || closing()" (click)="adjust(-1)">−</button>
+                <span aria-live="polite">{{ quantity() }}</span>
+                <button class="secondary-button" type="button" aria-label="Increase quantity" [disabled]="quantity() >= product.stock || quantity() >= 99 || cart.busy() || closing()" (click)="adjust(1)">+</button>
+              </div>
+              <button #addButton class="primary-button" type="button" [disabled]="cart.busy() || closing()" (click)="add(product, addButton)">Add to Cart</button>
+            } @else {
+              <app-stock-alert [slug]="product.slug" />
+            }
+            <a class="secondary-button" [routerLink]="['/product', product.slug]">View details</a>
+          </div>
+          <p class="preview-feedback" [class.error-text]="failed()" role="status">{{ feedback() }}</p>
+        </div>
+      </div>
+    }
+  </article>
+</dialog>

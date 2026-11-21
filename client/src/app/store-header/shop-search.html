@@ -1,0 +1,41 @@
+<div #host class="search-wrap" (focusout)="blur($event, host)">
+  <form role="search" (submit)="submit($event)">
+    <label class="visually-hidden" for="store-search">Search diecast and RC toys</label>
+    <input #searchInput id="store-search" type="search" role="combobox" aria-autocomplete="list"
+      [attr.aria-expanded]="visible()" [attr.aria-controls]="visible() ? 'search-options' : null"
+      [attr.aria-activedescendant]="visible() && results().items[active()] ? 'search-option-' + active() : null"
+      placeholder="Search diecast and RC" maxlength="80" [value]="text()" autocomplete="off"
+      (focus)="open.set(true)" (input)="update($any($event.target).value)" (keydown)="keys($event)" />
+    <button type="submit" aria-label="Search"><span class="icon icon-search" aria-hidden="true"></span></button>
+  </form>
+  @if (visible()) {
+    <div class="suggestions">
+      <ul id="search-options" role="listbox" aria-label="Matching products">
+        @for (product of results().items; track product.slug) {
+          <li role="option" [id]="'search-option-' + $index" [attr.aria-selected]="active() === $index">
+            <a [routerLink]="['/product', product.slug]" tabindex="-1" (mousedown)="$event.preventDefault()">
+              @if (product.images[0]; as image) { <img [src]="image" alt="" width="48" height="36" /> }
+              <span>{{ product.name }} <small>{{ product.productType === 'rc' ? 'RC' : 'Diecast' }}</small></span>
+              <strong>{{ product.price | currency:'INR':'symbol':'1.0-2' }}</strong>
+            </a>
+          </li>
+        }
+      </ul>
+      @if (results().loading) {
+        <p class="visually-hidden" role="status">Searching…</p>
+        <div class="skeleton" appAmbientVisible style="height:2rem;margin:.4rem" aria-hidden="true"></div>
+      } @else if (results().error) {
+        <p role="status">Suggestions are unavailable.</p>
+        <button class="retry-suggestions" type="button" (click)="searchInput.focus(); retry()">Try again</button>
+      } @else if (!results().items.length) {
+        <p role="status">No products found. Try a brand, category, or shorter search.</p>
+        <nav aria-label="Browse categories">
+          <a routerLink="/catalog" [queryParams]="{category:'car'}">Cars</a>
+          <a routerLink="/catalog" [queryParams]="{category:'truck'}">Trucks</a>
+          <a routerLink="/catalog" [queryParams]="{category:'bike'}">Bikes</a>
+          <a routerLink="/catalog" [queryParams]="{productType:'rc'}">RC Toys</a>
+        </nav>
+      }
+    </div>
+  }
+</div>

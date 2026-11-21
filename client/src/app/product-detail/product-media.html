@@ -1,0 +1,101 @@
+@let item = product();
+@if (modelAvailable()) {
+  <div class="media-switch" role="group" aria-label="Product media">
+    <button type="button" [attr.aria-pressed]="showModel()" (click)="mode.set('model')">
+      3D preview
+    </button>
+    <button type="button" [attr.aria-pressed]="!showModel()" (click)="showPhotos()">
+      Photos
+    </button>
+  </div>
+}
+
+<div class="media-stage">
+  @if (showModel() && allowModel() && item.glbUrl; as modelUrl) {
+    <div
+      [class.media-overlay]="keepPhotoDuringLoad()"
+      [class.model-ready]="modelReady()"
+      [attr.inert]="keepPhotoDuringLoad() && !modelReady() ? '' : null"
+    >
+      @defer (on viewport) {
+        <app-car-viewer
+          [modelUrl]="modelUrl"
+          [label]="item.name"
+          [quietLoading]="keepPhotoDuringLoad()"
+          (ready)="modelReady.set(true)"
+          (failed)="showPhotosAfterError()"
+        />
+      } @placeholder {
+        <div class="placeholder" aria-hidden="true"></div>
+      } @error {
+        <button type="button" (click)="showPhotosAfterError()">Show photos</button>
+      }
+    </div>
+  }
+  @if (!showModel() || keepPhotoDuringLoad()) {
+    @if (modelFailed()) {
+      <p class="media-note" role="status"> 3D preview unavailable. Showing photos. </p>
+    }
+    @if (item.images[imageIndex()]; as image) {
+      @let behindModel = showModel()
+  && allowModel() && modelReady();
+      <div class="gallery-image" [attr.inert]="behindModel ? '' : null">
+        <img
+          [src]="image"
+          [attr.srcset]="imageSet(image)"
+          [sizes]="imageSizes()"
+          fetchpriority="high"
+          decoding="async"
+          [alt]="item.name + ' photo ' + (imageIndex() + 1)"
+        />
+        <button
+          type="button"
+          class="secondary-button zoom-trigger"
+          (click)="zoomed.set(false); photoDialog.showModal()"
+        >
+          Zoom photo
+        </button>
+      </div>
+      <dialog #photoDialog class="photo-dialog" [attr.aria-label]="'Photo of ' + item.name">
+        <div class="zoom-controls">
+          <button
+            type="button"
+            class="secondary-button"
+            [attr.aria-pressed]="zoomed()"
+            (click)="zoomed.set(!zoomed())"
+          >
+            {{ zoomed() ? 'Zoom out' : 'Zoom in' }}
+          </button>
+          <button type="button" class="secondary-button" autofocus (click)="photoDialog.close()">
+            Close
+          </button>
+        </div>
+        @if (photoDialog.open) {
+          <div class="zoom-scroll">
+            <img [class.zoomed]="zoomed()" [src]="image" [alt]="item.name" />
+          </div>
+        }
+      </dialog>
+    } @else {
+      <div class="placeholder">No photos available.</div>
+    }
+  }
+</div>
+
+@if ((!showModel() || (keepPhotoDuringLoad() && !modelReady())) &&
+item.images.length > 1) {
+  <div class="thumbnails" role="group" aria-label="Product photos">
+    @for (image of item.images; track $index) {
+      <button
+        appTilt
+        [tiltDegrees]="7"
+        type="button"
+        [attr.aria-label]="'Show photo ' + ($index + 1)"
+        [attr.aria-pressed]="imageIndex() === $index"
+        (click)="imageIndex.set($index)"
+      >
+        <img [src]="image" [attr.srcset]="imageSet(image)" sizes="88px" alt="" loading="lazy" />
+      </button>
+    }
+  </div>
+}

@@ -1,0 +1,104 @@
+<main class="container history">
+  <h1>Order history</h1>
+  @if (status()) {
+    <p role="status">{{ status() }}</p>
+  }
+  @if (error()) {
+    <p role="alert" class="error-text">{{ error() }}</p>
+  }
+  @let state = result();
+  @if (state.loading) {
+    <p class="visually-hidden" role="status">Loading orders…</p>
+    <div class="skeleton orders-skeleton" appAmbientVisible aria-hidden="true"></div>
+  } @else if (state.error) {
+    <app-shop-state title="Order history unavailable" [message]="state.error" [retryable]="true" (retry)="retry()" />
+  } @else if (state.page; as page) {
+    @if (!page.items.length) {
+      <app-shop-state title="No orders here yet" message="Your orders will appear here after checkout." link="/catalog" />
+    }
+    <div class="order-list">
+      @for (order of page.items; track order.orderNumber) {
+        <div appReveal [gentleReveal]="true"><article appTilt [tiltDegrees]="3" class="order">
+          <div class="order-header">
+            <div>
+              <h2>{{ order.orderNumber }}</h2>
+              <p class="muted">{{ order.createdAt | date: 'mediumDate' }}</p>
+            </div>
+            <span class="badge" [attr.data-status]="order.status">{{
+              order.status | titlecase
+            }}</span>
+          </div>
+          <ul>
+            @for (item of order.items; track item.slug) {
+              <li>
+                <a [routerLink]="['/product', item.slug]">{{ item.name }}</a> × {{ item.quantity }}
+              </li>
+            }
+          </ul>
+          <div class="order-footer">
+            <div>
+              <strong>{{ order.totalPaise / 100 | currency: 'INR' : 'symbol' : '1.2-2' }}</strong>
+              <p class="muted">
+                {{ order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online payment' }} ·
+                {{ order.paymentStatus | titlecase }}
+              </p>
+            </div>
+            <a class="secondary-button" [routerLink]="['/track-order', order.orderNumber]">Track order</a>
+            @if (order.canCancel && confirm() !== order.orderNumber) {
+              <button
+                class="secondary-button"
+                type="button"
+                [disabled]="busy()"
+                (click)="confirm.set(order.orderNumber)"
+              >
+                Cancel order
+              </button>
+            }
+          </div>
+          @if (confirm() === order.orderNumber) {
+            <div class="confirm">
+              <p>Cancel order {{ order.orderNumber }}?</p>
+              <button
+                class="secondary-button"
+                type="button"
+                [disabled]="busy()"
+                (click)="confirm.set(null)"
+              >
+                Keep order
+              </button>
+              <button
+                class="primary-button"
+                type="button"
+                [disabled]="busy()"
+                (click)="cancel(order.orderNumber)"
+              >
+                Confirm cancellation
+              </button>
+            </div>
+          }
+        </article></div>
+      }
+    </div>
+    @if (page.page > 1 || page.totalPages > 1) {
+      <nav class="pages" aria-label="Order pages">
+        <button
+          class="secondary-button"
+          type="button"
+          [disabled]="page.page <= 1 || busy()"
+          (click)="load(page.page - 1)"
+        >
+          Previous
+        </button>
+        <span>Page {{ page.page }} of {{ page.totalPages }}</span>
+        <button
+          class="secondary-button"
+          type="button"
+          [disabled]="page.page >= page.totalPages || busy()"
+          (click)="load(page.page + 1)"
+        >
+          Next
+        </button>
+      </nav>
+    }
+  }
+</main>

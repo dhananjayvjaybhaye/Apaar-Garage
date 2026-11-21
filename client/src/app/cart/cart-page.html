@@ -1,0 +1,74 @@
+<main class="cart-page">
+  <h1>Your cart</h1>
+
+  @if (store.loading() && store.cart().items.length === 0) {
+    <p class="visually-hidden" role="status">Loading your cart…</p>
+    <div class="skeleton cart-skeleton" appAmbientVisible aria-hidden="true"></div>
+  } @else if (store.error()) {
+    <app-shop-state title="Cart unavailable" message="We couldn’t load your cart." [retryable]="true" (retry)="store.reload()" />
+  } @else if (store.cart().items.length === 0) {
+    <app-shop-state illustration="garage" title="Your cart is empty" message="Find a model you’d like to add to your collection." link="/catalog" />
+  } @else {
+    @if (actionError()) {
+      <p class="action-error" role="alert">{{ actionError() }}</p>
+    }
+    <ul class="cart-items">
+      @for (item of store.cart().items; track item.slug) {
+        <li appTilt [tiltDegrees]="2" appReveal [gentleReveal]="true">
+          @if (item.image) {
+            <img [src]="item.image" alt="" loading="lazy" />
+          }
+          <div class="item-info">
+            <a [routerLink]="['/product', item.slug]">{{ item.name }}</a>
+            <p>{{ item.price | currency: 'INR' : 'symbol' : '1.0-2' }} each</p>
+            @if (item.stock === 0) {
+              <p class="action-error">Sold out</p>
+            } @else if (item.quantity > item.stock) {
+              <p class="action-error">Only {{ item.stock }} available</p>
+            }
+          </div>
+          <div class="item-controls">
+            <div class="quantity" role="group" [attr.aria-label]="'Quantity for ' + item.name">
+              <button
+                class="secondary-button"
+                type="button"
+                aria-label="Decrease quantity"
+                [disabled]="store.busy() || item.quantity <= 1 || item.stock === 0"
+                (click)="changeQuantity(item, -1)"
+              >
+                −
+              </button>
+              <span aria-live="polite">{{ item.quantity }}</span>
+              <button
+                class="secondary-button"
+                type="button"
+                aria-label="Increase quantity"
+                [disabled]="store.busy() || item.quantity >= item.stock || item.quantity >= 99"
+                (click)="changeQuantity(item, 1)"
+              >
+                +
+              </button>
+            </div>
+            <button
+              class="remove"
+              type="button"
+              [attr.aria-label]="'Remove ' + item.name"
+              [disabled]="store.busy()"
+              (click)="remove(item)"
+            >
+              Remove
+            </button>
+          </div>
+        </li>
+      }
+    </ul>
+    <p class="subtotal">
+      <span>Subtotal</span
+      ><strong>{{ store.cart().subtotal | currency: 'INR' : 'symbol' : '1.0-2' }}</strong>
+    </p>
+    <a appMagnetic class="primary-button" routerLink="/checkout">Checkout</a>
+  }
+  @if (auth.user()) {
+    <p><a routerLink="/orders">Order history</a></p>
+  }
+</main>

@@ -1,0 +1,33 @@
+<main class="container success">
+  @let state = result();
+  @if (state.loading) {
+    <p class="visually-hidden" role="status">Loading order…</p>
+    <div class="skeleton success-skeleton" appAmbientVisible aria-hidden="true"></div>
+  } @else if (state.order; as order) {
+    @if (order.status !== 'cancelled') {
+      <div class="order-celebrate" aria-hidden="true"><span>✓</span></div>
+    }
+    <p class="kicker">Cash on Delivery</p>
+    <h1>{{ order.status === 'cancelled' ? 'Order cancelled' : 'Order received' }}</h1>
+    <p class="order-number">
+      Order number <strong>{{ order.orderNumber }}</strong>
+    </p>
+    @if (order.status !== 'cancelled') {
+      @if (order.paymentStatus === 'pending') {
+        <p>Pay in cash when your order arrives.</p>
+      }
+      <p class="muted">{{ order.deliveryEstimate }}</p>
+    }
+    <div appReveal [gentleReveal]="true"><app-order-totals appTilt [tiltDegrees]="2" [summary]="order" /></div>
+    <nav aria-label="Order links">
+      <a class="primary-button" [routerLink]="['/track-order', order.orderNumber]">Track order</a>
+      @if (!order.guest) { <a class="secondary-button" routerLink="/orders">Order history</a> }
+    </nav>
+  } @else {
+    <h1>Order unavailable</h1>
+    <app-shop-state title="Couldn’t load your confirmation" [message]="state.error ?? 'Try again in a moment.'" [retryable]="true" (retry)="retry()" />
+  }
+  <nav aria-label="Continue shopping">
+    <a class="secondary-button" routerLink="/catalog">Continue shopping</a>
+  </nav>
+</main>

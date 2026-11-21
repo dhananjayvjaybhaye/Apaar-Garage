@@ -1,0 +1,44 @@
+<app-trust-strip />
+<footer>
+  <div class="container footer-grid">
+    <div>
+      <a class="wordmark" routerLink="/">APAAR <strong>GARAGE</strong></a>
+      <p>Diecast cars, trucks and bikes.</p>
+      <div class="socials">
+        <a
+          [href]="'https://twitter.com/intent/tweet?url=' + shareUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Share Apaar Garage on X"
+          ><span class="icon icon-x" aria-hidden="true"></span
+        ></a>
+        <a
+          [href]="'https://wa.me/?text=' + shareUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Share Apaar Garage on WhatsApp"
+          ><span class="icon icon-chat" aria-hidden="true"></span
+        ></a>
+      </div>
+    </div>
+
+    <nav aria-label="Shop categories">
+      <h2>Explore</h2>
+      <a routerLink="/catalog" [queryParams]="{ category: 'car' }">Cars</a>
+      <a routerLink="/catalog" [queryParams]="{ category: 'truck' }">Trucks</a>
+      <a routerLink="/catalog" [queryParams]="{ category: 'bike' }">Bikes</a>
+    </nav>
+    <nav aria-label="Store policies">
+      <h2>Policies</h2>
+      <a routerLink="/policies/privacy">Privacy</a>
+      <a routerLink="/policies/shipping">Shipping</a>
+      <a routerLink="/policies/returns">Returns</a>
+      <a routerLink="/policies/terms">Terms</a>
+      <a routerLink="/orders">Order history</a>
+      <a routerLink="/about">About Apaar Garage</a>
+      <a routerLink="/faq">FAQ</a>
+      <a routerLink="/faq" fragment="contact">Contact</a>
+    </nav>
+  </div>
+  <div class="container legal">© Apaar Garage</div>
+</footer>

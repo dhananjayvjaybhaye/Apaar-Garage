@@ -1,0 +1,56 @@
+.missing-page { max-width: 40rem; padding-block: clamp(2.5rem, 9vw, 6.5rem); text-align: center; }
+.crash-scene {
+  position: relative;
+  overflow: clip;
+  height: clamp(8rem, 30vw, 12rem);
+  margin-bottom: 1.7rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-large);
+  background: radial-gradient(ellipse at 64% 62%, #b9784332, transparent 68%), var(--panel);
+}
+.road-line {
+  position: absolute;
+  inset: auto 0 22%;
+  height: .16rem;
+  background: repeating-linear-gradient(90deg, #d9a87366 0 1.4rem, transparent 1.4rem 2.9rem);
+}
+.car, .cone { position: absolute; bottom: 22%; height: auto; }
+.car { right: 39%; width: clamp(5.25rem, 27vw, 11rem); transform: translateX(.2rem) rotate(-4deg); }
+.cone {
+  left: 61%;
+  width: clamp(1.5rem, 8vw, 2.9rem);
+  transform: translateX(.34rem) rotate(62deg);
+  transform-origin: center bottom;
+}
+.impact {
+  position: absolute;
+  inset: auto auto 47% 60%;
+  width: 1.05rem;
+  height: 1.05rem;
+  background: #f7af75;
+  clip-path: polygon(48% 0, 59% 36%, 100% 22%, 70% 54%, 95% 81%, 58% 71%, 40% 100%, 39% 66%, 0 65%, 31% 46%);
+  opacity: 0;
+}
+h1 { margin: 0; font-size: clamp(2.1rem, 7vw, 4.1rem); }
+p:not(.kicker) { color: var(--muted); }
+.kicker { margin: 0 0 .35rem; }
+nav { display: flex; justify-content: center; flex-wrap: wrap; gap: .55rem; }
+:host-context(html[data-motion='full']) .car { animation: cone-brake 1.45s cubic-bezier(.28,.63,.27,1) both paused; }
+:host-context(html[data-motion='full']) .cone { animation: cone-tip 1.45s ease-out both paused; }
+:host-context(html[data-motion='full']) .impact { animation: cone-spark 1.45s ease-out both paused; }
+:host-context(html[data-motion='full']) .ambient-in-view :is(.car, .cone, .impact) { animation-play-state: running; }
+@keyframes cone-brake {
+  from { transform: translateX(-125%); }
+  66% { transform: translateX(.3rem); }
+  76% { transform: translate3d(.55rem, -.32rem, 0) rotate(-9deg); }
+  to { transform: translateX(.2rem) rotate(-4deg); }
+}
+@keyframes cone-tip {
+  0%, 64% { transform: none; }
+  85% { transform: translate3d(.7rem, -.16rem, 0) rotate(74deg); }
+  100% { transform: translateX(.34rem) rotate(62deg); }
+}
+@keyframes cone-spark {
+  0%, 63%, 96%, 100% { opacity: 0; }
+  69% { opacity: .86; transform: translateY(-.25rem) scale(1.12); }
+}

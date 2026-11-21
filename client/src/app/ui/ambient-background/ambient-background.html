@@ -1,0 +1,27 @@
+<i class="glow glow-amber"></i>
+<i class="glow glow-red"></i>
+<i class="glow glow-contrast"></i>
+@for (shape of shapes(); track $index) {
+  <span class="shape" [style]="shape.style">
+    <span
+      class="figure"
+      [class]="shape.type"
+      [class.filled]="shape.filled"
+      [class.bokeh]="shape.bokeh"
+    >
+      @if (shape.type === 'gear') {
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.4">
+          <path
+            d="m20 4 8 0 1 5 4 2 5-2 5 6-3 4 1 5 5 3-2 7-6 0-3 4 0 5-7 2-3-4-5-1-4 3-6-5 2-5-2-4-5-1 0-8 5-1 2-4-2-5 6-5 4 3 4-1z"
+          />
+          <circle cx="24" cy="24" r="8" />
+        </svg>
+      } @else if (shape.type === 'nut') {
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.4">
+          <path d="M24 3 42 13.5v21L24 45 6 34.5v-21z" />
+          <circle cx="24" cy="24" r="10" />
+        </svg>
+      }
+    </span>
+  </span>
+}

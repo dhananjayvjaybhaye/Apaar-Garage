@@ -1,0 +1,49 @@
+<main class="container help">
+  <h1>FAQ and support</h1>
+  <section appReveal [gentleReveal]="true" aria-label="Frequently asked questions" class="questions">
+    <details>
+      <summary>What does the model scale mean?</summary>
+      <p>Scale shows how the model compares to the full-size vehicle. At 1:64, a measurement on the model is one sixty-fourth of the original. Check the product page for listed dimensions.</p>
+    </details>
+    <details>
+      <summary>Can I pay with Cash on Delivery?</summary>
+      <p>Enter your pincode on a product page to check COD availability. Checkout shows any COD and delivery fees before you place your order.</p>
+    </details>
+    <details>
+      <summary>Where can I track or cancel an order?</summary>
+      <p>Open the tracking link on the confirmation page, or find it in your <a routerLink="/orders">order history</a>. If you checked out as a guest, use the same browser. Orders can be cancelled while placed or confirmed.</p>
+    </details>
+    <details>
+      <summary>Where can I learn about shipping and returns?</summary>
+      <p>See the <a routerLink="/policies/shipping">shipping policy</a> and <a routerLink="/policies/returns">returns policy</a> for store information.</p>
+    </details>
+    <details>
+      <summary>How do I get a restock alert?</summary>
+      <p>Select “Notify me when back in stock” on a sold-out model. You’ll see a notice in the store when you return in the same browser after it has restocked.</p>
+    </details>
+  </section>
+
+  <section appTilt [tiltDegrees]="2" id="contact" class="contact" aria-labelledby="contact-title">
+    <h2 id="contact-title">Contact us</h2>
+    <p>Send a question about a product or order. For an existing order, include the order number.</p>
+    <form #supportForm [formGroup]="form" (ngSubmit)="submit(supportForm)" novalidate>
+      <label for="support-email">Email</label>
+      <input id="support-email" type="email" autocomplete="email" inputmode="email" formControlName="email" maxlength="254" required
+        [attr.aria-invalid]="form.controls.email.touched && form.controls.email.invalid"
+        [attr.aria-describedby]="form.controls.email.touched && form.controls.email.invalid ? 'support-email-error' : null" />
+      @if (form.controls.email.touched && form.controls.email.invalid) {
+        <p class="error-text" id="support-email-error">Enter a valid email address.</p>
+      }
+      <label for="support-message">Message</label>
+      <textarea id="support-message" formControlName="message" rows="5" maxlength="2000" required
+        [attr.aria-invalid]="form.controls.message.touched && form.controls.message.invalid"
+        [attr.aria-describedby]="form.controls.message.touched && form.controls.message.invalid ? 'support-message-error' : null"></textarea>
+      @if (form.controls.message.touched && form.controls.message.invalid) {
+        <p class="error-text" id="support-message-error">Enter a message up to 2,000 characters.</p>
+      }
+      <div role="status">@if (reference()) { <p>Message received. Reference <strong>{{ reference() }}</strong></p> }</div>
+      @if (error()) { <p class="error-text" role="alert">{{ error() }}</p> }
+      <button appMagnetic type="submit" class="primary-button" [disabled]="sending()">{{ sending() ? 'Sending…' : error() ? 'Try again' : 'Send message' }}</button>
+    </form>
+  </section>
+</main>

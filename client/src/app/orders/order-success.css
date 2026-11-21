@@ -1,0 +1,32 @@
+.success {
+  max-width: 44rem;
+  margin: clamp(1.5rem, 5vw, 4rem) auto;
+  padding: clamp(1rem, 4vw, 2rem);
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: var(--radius-large);
+}
+h1 {
+  margin: 0.25rem 0 0.65rem;
+  font-size: clamp(2.5rem, 7vw, 4rem);
+  text-transform: uppercase;
+}
+.order-number {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.7rem;
+  color: var(--muted);
+}
+.order-number strong {
+  color: var(--text);
+  font-family: var(--mono);
+}
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+}
+.success-skeleton {
+  min-height: 12rem;
+}

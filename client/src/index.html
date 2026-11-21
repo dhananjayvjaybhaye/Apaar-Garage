@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Apaar Garage | Diecast Catalog</title>
+    <meta
+      name="description"
+      content="Explore the Apaar Garage catalog of diecast cars, trucks, and bikes."
+    />
+    <base href="/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0b0d10" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23100e10'/%3E%3Cpath d='M9 23l5-14m1 14l5-14m1 14l5-14' stroke='%23efb074' stroke-width='3'/%3E%3C/svg%3E" />
+    <script>
+      if (location.pathname === new URL(document.baseURI).pathname) {
+        const mobile = matchMedia('(max-width: 42rem)').matches;
+        const preload = document.createElement('link');
+        preload.rel = 'preload';
+        preload.as = 'image';
+        preload.type = 'image/webp';
+        preload.fetchPriority = 'high';
+        preload.href = mobile ? '/assets/garage/hero-mobile.webp' : '/assets/garage/hero-wide.webp';
+        preload.imageSrcset = mobile
+          ? '/assets/garage/hero-mobile-400.webp 400w, /assets/garage/hero-mobile.webp 600w'
+          : '/assets/garage/hero-wide-960.webp 960w, /assets/garage/hero-wide-1280.webp 1280w, /assets/garage/hero-wide.webp 1664w';
+        preload.imageSizes = mobile ? '100vw' : '(min-width: 82rem) 640px, (min-width: 56rem) 50vw, 100vw';
+        document.head.append(preload);
+      }
+    </script>
+    <link rel="preload" href="/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/oswald-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+  </head>
+  <body>
+    <app-root></app-root>
+  </body>
+</html>

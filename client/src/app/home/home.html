@@ -1,0 +1,185 @@
+<main id="main-content">
+  <app-home-hero
+    #garageHero
+    [products]="garageProducts()"
+    [category]="category()"
+    [preview]="featured().items[0]"
+    [ready]="!featured().loading && !featured().error"
+    (categorySelected)="selectCategory($event)"
+  />
+  <app-garage-intro [pushCamera]="garageHero.pushIn" (closed)="garageHero.focusHeading()" />
+  <app-garage-tour [stops]="tourStops()" [products]="garageProducts()" />
+
+  <section
+    id="featured"
+    class="container section featured-section"
+    [style.--hero-overlap]="heroOverlap"
+    tabindex="-1"
+    aria-labelledby="featured-title"
+  >
+    <span class="featured-lights" [appParallax]="0.55" aria-hidden="true"></span>
+    <div class="section-heading">
+      <div>
+        <p class="kicker">From the collection</p>
+        <h2 id="featured-title" [appParallax]="0.2">Featured {{ categoryName() }}</h2>
+      </div>
+      <a routerLink="/catalog" [queryParams]="category() === 'rc' ? { productType: 'rc' } : { category: category() }">Shop all {{ categoryName() }}</a>
+    </div>
+    @if (featured().loading) {
+      <p class="visually-hidden" role="status">Loading featured models…</p>
+      <div class="featured-grid" aria-hidden="true">
+        @for (i of [0, 1, 2]; track i) {
+          <div class="skeleton featured-skeleton" appAmbientVisible></div>
+        }
+      </div>
+    } @else if (featured().items.length) {
+      <div class="featured-grid" role="region" aria-label="Featured product cards" tabindex="0">
+        @for (product of featured().items; track product.slug) {
+          <app-product-card
+            [product]="product"
+            [appReveal]="$index"
+            addLabel="Add to Cart"
+          />
+        }
+      </div>
+    } @else {
+      @if (featured().error) {
+        <app-shop-state title="Featured models unavailable" message="We couldn’t load the featured models." [retryable]="true" [compact]="true" (retry)="retryFeatured()" />
+      } @else {
+        <app-shop-state title="More to explore" message="Find something for your shelf in the collection." link="/catalog" [compact]="true" />
+      }
+    }
+  </section>
+
+  <app-track-divider class="container" kind="road" />
+
+  <section class="container section" appReveal>
+    <div class="section-heading">
+      <div>
+        <p class="kicker">The showroom</p>
+        <h2>Shop by category</h2>
+      </div>
+      <a routerLink="/catalog">View collection</a>
+    </div>
+    <div class="category-grid">
+      @for (category of categories; track category.id) {
+        <a appTilt class="category" [id]="category.id === 'rc' ? 'rc-toys' : category.id + 's'" routerLink="/catalog"
+          [queryParams]="category.id === 'rc' ? { productType: 'rc' } : { category: category.id }">
+          <img
+            [appParallax]="0.35"
+            [src]="category.image"
+            [attr.srcset]="imageSet(category.image)"
+            sizes="auto, (min-width: 80rem) 304px, (min-width: 50rem) 25vw, (min-width: 33rem) 50vw, calc(100vw - 2rem)"
+            alt=""
+            width="720"
+            height="720"
+            loading="lazy"
+            decoding="async"
+          />
+          <div>
+            <h3>{{ category.name }}</h3>
+            <p>{{ category.note }}</p>
+          </div>
+        </a>
+      }
+    </div>
+  </section>
+
+  <section class="rc-showcase" id="rc-pit-lane" aria-labelledby="rc-pit-title">
+    <app-garage-ambience mode="flight" />
+    <div class="container rc-pit-content">
+      <div class="section-heading">
+        <div>
+          <p class="kicker">RC Toys</p>
+          <h2 id="rc-pit-title">Track &amp; runway</h2>
+        </div>
+        <div class="rc-pit-links">
+          <a class="secondary-button" routerLink="/catalog" [queryParams]="{ productType: 'rc' }">Shop RC Toys</a>
+          <a class="primary-button" routerLink="/catalog" [queryParams]="{ productType: 'rc', category: 'rc-plane' }">Shop RC Planes</a>
+        </div>
+      </div>
+      <div class="pit-track" appScrollVehicles aria-hidden="true">
+        <div class="pit-vehicle" data-pit-plane>
+          <svg viewBox="18 12 306 144" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M301 84q-5-9-23-13l-65-2L143 19l-23 1 44 50-70 1-27-21H45l19 30-19 27h22l27-17 70 1-44 51 23 1 70-51 65-1q17-1 23-7z" fill="#d49a61" stroke="#ffe0ab" stroke-width="4" />
+            <path d="m164 70 49-1-70-50-23 1zm0 21 49 1-70 51-23-1z" fill="#a35c37" stroke="#ffd39e" stroke-width="2.5" />
+            <path d="M74 85h205m-18-9q-7 8 0 16M299 81h20m-20 8h20" stroke="#ffe6b7" stroke-width="3" />
+            <path d="M265 75q8-2 14 3l-3 7h-12z" fill="#422723" />
+          </svg>
+        </div>
+        <div class="pit-vehicle" data-pit-car>
+          <svg viewBox="0 8 132 49" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 38v-9l22-5 18-13h30l18 15 23 5 5 13-8 3H17z" fill="#c36b38" stroke="#ffc78c" stroke-width="2.5" />
+            <path d="m37 25 15-11h27l13 11z" fill="#29242a" stroke="#edbc8e" stroke-width="2" />
+            <path d="M12 36h16m63-8h25m-66 7h14M9 27H3v9h9" stroke="#ffe1ad" stroke-width="2.5" />
+            <g fill="#171315" stroke="#e9ac77" stroke-width="2.5">
+              <circle cx="36" cy="44" r="11" /><circle cx="104" cy="44" r="11" />
+            </g>
+            <g fill="#ffc78c">
+              <circle cx="36" cy="44" r="3.5" /><circle cx="104" cy="44" r="3.5" />
+            </g>
+          </svg>
+        </div>
+        <app-track-divider kind="runway" />
+      </div>
+    </div>
+  </section>
+
+  <section class="scale-band">
+    <app-garage-ambience mode="scale" />
+    <div class="container section" appReveal>
+      <div class="section-heading">
+        <div>
+          <p class="kicker">Find your fit</p>
+          <h2>Shop by scale</h2>
+        </div>
+      </div>
+      <div class="scale-grid">
+        @for (scale of scales; track scale) {
+          <a appTilt [tiltDegrees]="7" routerLink="/catalog" [queryParams]="{ scale }"><span>{{ scale }}</span></a>
+        }
+      </div>
+    </div>
+  </section>
+
+  <app-track-divider class="container" kind="checkered" />
+
+  <section class="container section newsletter-section" appReveal>
+    <div class="newsletter">
+      <div>
+        <p class="kicker">Garage updates</p>
+        <h2>Get the next drop</h2>
+        <p>Get updates on new models and restocks.</p>
+      </div>
+      <form (submit)="subscribe($event, newsletterEmail)" novalidate>
+        <label class="visually-hidden" for="newsletter-email">Newsletter email address</label>
+        <div class="newsletter-fields">
+          <input
+            #newsletterEmail
+            id="newsletter-email"
+            type="email"
+            placeholder="Email address"
+            autocomplete="email"
+            maxlength="254"
+            inputmode="email"
+            [attr.aria-invalid]="signupInvalid()"
+            [attr.aria-describedby]="signupInvalid() ? 'newsletter-error' : null"
+            (input)="signupInvalid.set(false)"
+            required
+          />
+          <button appMagnetic class="primary-button" type="submit" [disabled]="signupPending()">
+            {{ signupPending() ? 'Signing up…' : 'Sign up' }}
+          </button>
+        </div>
+        @if (signupInvalid()) { <p id="newsletter-error" class="error-text">Enter a valid email address.</p> }
+        @if (signupStatus(); as status) {
+          <p [class.error-text]="status.failed" [attr.role]="status.failed ? 'alert' : 'status'">
+            {{ status.text }}
+          </p>
+        } @else {
+          <p><a routerLink="/policies/privacy">Privacy policy</a></p>
+        }
+      </form>
+    </div>
+  </section>
+</main>

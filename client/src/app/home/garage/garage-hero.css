@@ -1,0 +1,41 @@
+.garage-stage,
+.garage-still {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.garage-stage {
+  z-index: 1;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 280ms ease;
+}
+
+.garage-live .garage-stage {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.garage-stage > canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: pan-y;
+}
+
+.garage-stage > canvas.garage-hovering {
+  cursor: pointer;
+}
+
+.garage-still {
+  object-fit: cover;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .garage-stage {
+    transition: none;
+  }
+}

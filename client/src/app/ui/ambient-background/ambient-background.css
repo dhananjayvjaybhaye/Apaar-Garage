@@ -1,0 +1,116 @@
+:host {
+  position: fixed;
+  inset: 0;
+  overflow: clip;
+  z-index: -1;
+  pointer-events: none;
+  contain: layout paint;
+}
+.glow {
+  position: absolute;
+  width: min(76vw, 55rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--glow-color) 68%, transparent),
+    transparent 67%
+  );
+  opacity: var(--glow-opacity);
+}
+:host-context(html[data-motion='full']) .glow {
+  transition:
+    transform var(--ambient-glow-time) ease-out,
+    opacity var(--ambient-glow-time) ease-out;
+}
+.glow-amber {
+  --glow-color: var(--ambient-gold);
+  inset: max(-32vw, -17rem) auto auto max(-27vw, -20rem);
+  transform: translate3d(var(--glow-travel, 0%), var(--glow-travel, 0%), 0);
+}
+.glow-red {
+  --glow-color: var(--ambient-red);
+  inset: auto max(-27vw, -20rem) max(-32vw, -17rem) auto;
+  transform: translate3d(calc(-1 * var(--glow-travel, 0%)), calc(-1 * var(--glow-travel, 0%)), 0);
+}
+.glow-contrast {
+  --glow-color: var(--ambient-purple);
+  inset: 10% -43% auto auto;
+  opacity: calc(var(--glow-opacity) * var(--glow-mix, 0));
+  transform: translate3d(calc(-1 * var(--glow-travel, 0%)), var(--glow-travel, 0%), 0);
+}
+:host(.calm) .glow {
+  transform: none;
+  opacity: var(--calm-opacity);
+}
+:host(.calm) .glow-contrast {
+  display: none;
+}
+.shape {
+  position: absolute;
+  top: var(--shape-y);
+  left: var(--shape-x);
+  width: var(--shape-size);
+  aspect-ratio: 1;
+  color: var(--shape-color);
+  opacity: var(--shape-opacity);
+  transform: translate3d(
+    calc(var(--ambient-x, 0px) * var(--shape-depth)),
+    calc((var(--ambient-y, 0px) - var(--ambient-scroll, 0px)) * var(--shape-depth)),
+    0
+  );
+}
+.figure {
+  display: block;
+  width: 100%;
+  height: 100%;
+  animation: ambient-drift var(--shape-duration) ease-in-out var(--shape-delay) infinite;
+}
+.case,
+.ring,
+.dot,
+.dust {
+  border: 1px solid currentColor;
+  border-radius: 24%;
+}
+.ring,
+.dot,
+.dust {
+  border-radius: 50%;
+}
+.filled:is(.case, .ring),
+.dot {
+  background: radial-gradient(circle at 32% 29%, currentColor, transparent 76%);
+}
+.bokeh {
+  filter: blur(3px);
+}
+.dust {
+  background: currentColor;
+  box-shadow: 0 0 4px currentColor;
+}
+:host(.paused) .figure {
+  animation-play-state: paused;
+}
+:host-context(html[data-motion='light']) .figure {
+  animation: none;
+}
+@keyframes ambient-drift {
+  0%,
+  100% {
+    transform: none;
+  }
+  50% {
+    transform: translate3d(calc(var(--shape-float) * 0.5), calc(-1 * var(--shape-float)), 0)
+      rotate(var(--shape-turn));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .glow,
+  .shape {
+    transform: none;
+  }
+  .figure {
+    animation: none;
+  }
+}
