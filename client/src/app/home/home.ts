@@ -23,13 +23,15 @@ import { AmbientVisible } from '../motion/ambient-visible';
 import { heroLayout } from './hero.config';
 import { CategoryStages } from './category-stages';
 import { categoryScenes } from './category-scenes.config';
+import { HomeArrivals } from './home-arrivals';
+import { HomeAssurance } from './home-assurance';
 
 type FeaturedState = { loading: boolean; items: Product[]; error?: boolean };
 const loading: FeaturedState = { loading: true, items: [] };
 
 @Component({
   selector: 'app-home',
-  imports: [Tilt, Magnetic, Parallax, RouterLink, HomeHero, GarageIntro, CategoryStages, ProductCard, Reveal, ShopState, GarageAmbience, TrackDivider, ScrollVehicles, AmbientVisible],
+  imports: [Tilt, Magnetic, Parallax, RouterLink, HomeHero, GarageIntro, CategoryStages, ProductCard, Reveal, ShopState, GarageAmbience, TrackDivider, ScrollVehicles, AmbientVisible, HomeArrivals, HomeAssurance],
   templateUrl: './home.html',
   styleUrls: ['./home.css', './home-motion.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

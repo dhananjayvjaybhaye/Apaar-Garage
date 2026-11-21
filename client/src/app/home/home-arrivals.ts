@@ -1,0 +1,48 @@
+import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { httpResource } from '@angular/common/http';
+import { RouterLink } from '@angular/router';
+import { ProductCard } from '../catalog/product-card';
+import type { ProductPage } from '../catalog/product';
+import { Reveal } from '../reveal';
+import { ShopLoading, ShopState } from '../ui/shop-state';
+import { arrivalLimit } from './home-content.config';
+
+@Component({
+  selector: 'app-home-arrivals',
+  imports: [RouterLink, ProductCard, Reveal, ShopLoading, ShopState],
+  template: `
+    <section class="container arrivals" aria-labelledby="arrivals-title">
+      <div class="heading" appReveal>
+        <h2 id="arrivals-title">New Arrivals</h2>
+        <a routerLink="/catalog" [queryParams]="{ sort: 'newest' }">Shop new arrivals</a>
+      </div>
+      @if (products.isLoading()) {
+        <app-shop-loading label="Loading new arrivals…" [cards]="true" />
+      } @else if (products.error()) {
+        <app-shop-state
+          title="New arrivals are unavailable"
+          message="Try again in a moment."
+          [compact]="true"
+          [retryable]="true"
+          (retry)="products.reload()"
+        />
+      } @else if (products.hasValue() && products.value().items.length) {
+        <div class="row" role="region" aria-label="New arrivals products" tabindex="0">
+          @for (item of products.value().items; track item.slug; let index = $index) {
+            <app-product-card [product]="item" [appReveal]="index" addLabel="Add to Cart" />
+          }
+        </div>
+      } @else {
+        <p>No new arrivals yet. Check back for the next drop.</p>
+      }
+    </section>
+  `,
+  styleUrl: './home-arrivals.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class HomeArrivals {
+  protected readonly products = httpResource<ProductPage>(() => ({
+    url: '/products',
+    params: { sort: 'newest', limit: arrivalLimit },
+  }));
+}

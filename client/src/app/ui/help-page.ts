@@ -4,18 +4,20 @@ import { Tilt } from '../motion/tilt';
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { apiMessage } from '../api-message';
+import { FaqList } from './faq-list';
+import { questions } from './faq-content';
 
 @Component({
   selector: 'app-help-page',
-  imports: [Magnetic, Reveal, Tilt, RouterLink, ReactiveFormsModule],
+  imports: [Magnetic, Reveal, Tilt, FaqList, ReactiveFormsModule],
   templateUrl: './help-page.html',
   styleUrl: './help-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HelpPage {
+  protected readonly questions = questions;
   private readonly http = inject(HttpClient);
   private readonly builder = inject(FormBuilder).nonNullable;
   protected readonly form = this.builder.group({
@@ -31,14 +33,18 @@ export class HelpPage {
     this.form.markAllAsTouched();
     this.error.set('');
     if (this.form.invalid) {
-      element.querySelector<HTMLElement>('[aria-invalid="true"], input.ng-invalid, textarea.ng-invalid')?.focus();
+      element
+        .querySelector<HTMLElement>('[aria-invalid="true"], input.ng-invalid, textarea.ng-invalid')
+        ?.focus();
       return;
     }
 
     this.sending.set(true);
     this.reference.set('');
     try {
-      const { reference } = await firstValueFrom(this.http.post<{ reference: string }>('/api/support', this.form.getRawValue()));
+      const { reference } = await firstValueFrom(
+        this.http.post<{ reference: string }>('/api/support', this.form.getRawValue()),
+      );
       this.reference.set(reference);
       this.form.reset();
     } catch (error) {

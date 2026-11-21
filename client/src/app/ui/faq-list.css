@@ -1,0 +1,77 @@
+:host {
+  display: grid;
+  gap: 0.65rem;
+  /* Accordion timing is short enough to keep repeated keyboard toggles responsive. */
+  --faq-motion: 220ms;
+}
+details {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+details[open] {
+  border-color: var(--control-line);
+}
+summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  min-height: 44px;
+  cursor: pointer;
+  font-weight: 700;
+  list-style: none;
+}
+summary::-webkit-details-marker {
+  display: none;
+}
+summary span {
+  color: var(--amber);
+  font-size: 1.4rem;
+}
+details[open] summary span {
+  transform: rotate(45deg);
+}
+.answer {
+  padding: 0 1rem 1rem;
+  color: var(--muted);
+}
+.answer p {
+  margin: 0;
+}
+.answer a {
+  display: inline-grid;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 0.25rem;
+}
+@media (prefers-reduced-motion: no-preference) {
+  summary span {
+    transition: transform var(--faq-motion) ease;
+  }
+  details[open] .answer {
+    animation: faq-answer var(--faq-motion) ease-out;
+  }
+  @supports (interpolate-size: allow-keywords) {
+    details {
+      interpolate-size: allow-keywords;
+    }
+    details::details-content {
+      block-size: 0;
+      overflow: clip;
+      transition:
+        block-size var(--faq-motion) ease,
+        content-visibility var(--faq-motion) allow-discrete;
+    }
+    details[open]::details-content {
+      block-size: auto;
+    }
+  }
+}
+@keyframes faq-answer {
+  from {
+    opacity: 0;
+    transform: translateY(-0.2rem);
+  }
+}

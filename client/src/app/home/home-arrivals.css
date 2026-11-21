@@ -1,0 +1,32 @@
+.arrivals {
+  padding-block: clamp(2rem, 5vw, 4.6rem);
+}
+.heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+h2 {
+  margin: 0;
+  text-transform: uppercase;
+}
+.heading a {
+  display: inline-grid;
+  min-height: 44px;
+  align-items: center;
+  font-weight: 700;
+}
+.row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: clamp(14rem, 26%, 19rem);
+  gap: 1rem;
+  overflow-x: auto;
+  padding: 0.25rem 0.25rem 0.75rem;
+}
+.row:focus-visible {
+  outline: 2px solid var(--amber);
+}

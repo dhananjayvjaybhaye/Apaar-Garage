@@ -1,9 +1,7 @@
 .help { max-width:53rem; padding-block:2rem 6rem; }
 h1 { margin:0 0 1.5rem; }
 .questions { display:grid; gap:.65rem; }
-details, .contact { background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:1rem; }
-summary { cursor:pointer; font-weight:700; }
-details p { margin:.75rem 0 0; color:var(--muted); }
+.contact { background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:1rem; }
 .contact { margin-top:1.5rem; }
 .contact h2 { margin:.15rem 0; }
 form { display:grid; gap:.5rem; }

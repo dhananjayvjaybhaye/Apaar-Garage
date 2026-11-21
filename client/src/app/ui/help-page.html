@@ -1,26 +1,7 @@
 <main class="container help">
   <h1>FAQ and support</h1>
   <section appReveal [gentleReveal]="true" aria-label="Frequently asked questions" class="questions">
-    <details>
-      <summary>What does the model scale mean?</summary>
-      <p>Scale shows how the model compares to the full-size vehicle. At 1:64, a measurement on the model is one sixty-fourth of the original. Check the product page for listed dimensions.</p>
-    </details>
-    <details>
-      <summary>Can I pay with Cash on Delivery?</summary>
-      <p>Enter your pincode on a product page to check COD availability. Checkout shows any COD and delivery fees before you place your order.</p>
-    </details>
-    <details>
-      <summary>Where can I track or cancel an order?</summary>
-      <p>Open the tracking link on the confirmation page, or find it in your <a routerLink="/orders">order history</a>. If you checked out as a guest, use the same browser. Orders can be cancelled while placed or confirmed.</p>
-    </details>
-    <details>
-      <summary>Where can I learn about shipping and returns?</summary>
-      <p>See the <a routerLink="/policies/shipping">shipping policy</a> and <a routerLink="/policies/returns">returns policy</a> for store information.</p>
-    </details>
-    <details>
-      <summary>How do I get a restock alert?</summary>
-      <p>Select “Notify me when back in stock” on a sold-out model. You’ll see a notice in the store when you return in the same browser after it has restocked.</p>
-    </details>
+    <app-faq-list [entries]="questions" />
   </section>
 
   <section appTilt [tiltDegrees]="2" id="contact" class="contact" aria-labelledby="contact-title">
@@ -47,3 +28,4 @@
     </form>
   </section>
 </main>
+

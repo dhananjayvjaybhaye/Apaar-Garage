@@ -144,6 +144,17 @@
 
   <app-track-divider class="container" kind="checkered" />
 
+  @defer (on viewport) {
+    <app-home-arrivals />
+  } @placeholder {
+    <section class="container section" aria-label="New arrivals">
+      <h2>New Arrivals</h2>
+      <div class="skeleton featured-skeleton" aria-hidden="true"></div>
+    </section>
+  }
+
+  <app-home-assurance />
+
   <section class="container section newsletter-section" appReveal>
     <div class="newsletter">
       <div>

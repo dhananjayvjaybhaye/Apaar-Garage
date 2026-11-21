@@ -14,7 +14,7 @@
     <app-shop-state title="Order history unavailable" [message]="state.error" [retryable]="true" (retry)="retry()" />
   } @else if (state.page; as page) {
     @if (!page.items.length) {
-      <app-shop-state title="No orders here yet" message="Your orders will appear here after checkout." link="/catalog" />
+      <app-shop-state illustration="orders" title="No orders here yet" message="Your orders will appear here after checkout." link="/catalog" />
     }
     <div class="order-list">
       @for (order of page.items; track order.orderNumber) {
