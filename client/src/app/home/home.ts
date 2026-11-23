@@ -20,7 +20,6 @@ import { GarageAmbience } from '../ui/garage-ambience';
 import { TrackDivider } from '../ui/track-divider';
 import { ScrollVehicles } from '../motion/scroll-vehicles';
 import { AmbientVisible } from '../motion/ambient-visible';
-import { heroLayout } from './hero.config';
 import { CategoryStages } from './category-stages';
 import { categoryScenes } from './category-scenes.config';
 import { HomeArrivals } from './home-arrivals';
@@ -43,7 +42,6 @@ export class Home {
   private readonly api = inject(CatalogApi);
   private readonly http = inject(HttpClient);
   protected readonly imageSet = responsiveImage;
-  protected readonly heroOverlap = heroLayout.overlap;
   private readonly featuredRequest = new Subject<GarageZone>();
   private readonly paint = inject(AfterFirstPaint);
   private readonly secondaryReady = toObservable(this.paint.ready).pipe(filter(Boolean));

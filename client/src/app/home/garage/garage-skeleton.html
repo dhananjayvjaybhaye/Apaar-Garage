@@ -1,0 +1,15 @@
+<svg viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true">
+  <polygon class="neon" [attr.points]="layout().sign.points" />
+  @for (light of layout().lights; track $index) {
+    <polygon class="light" [attr.points]="light.points" />
+  }
+  <polygon class="plane" [attr.points]="layout().plane.points" />
+  @for (bay of layout().bays; track bay.category) {
+    <g [class.active]="bay.active">
+      @for (part of bay.parts; track $index) {
+        <polygon [class]="part.kind" [attr.points]="part.points" />
+      }
+    </g>
+  }
+</svg>
+<div class="skeleton garage-skeleton-sweep" appAmbientVisible aria-hidden="true"></div>

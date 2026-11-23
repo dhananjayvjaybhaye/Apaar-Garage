@@ -7,10 +7,10 @@ import {
   Texture,
 } from 'three';
 import { heroScene } from '../hero.config';
+import { garageBench } from './garage-bench-layout';
 import type { RcBenchStatus } from './garage-path';
 
-// Size in world units, matching the existing photo cards in all four display cases.
-const card = { width: 2.62, height: 1.94, centerY: 1.02, centerZ: 0.19 };
+const { card } = garageBench;
 
 export function makeBenchCard(texture: Texture) {
   texture.colorSpace = SRGBColorSpace;
@@ -18,7 +18,7 @@ export function makeBenchCard(texture: Texture) {
     new PlaneGeometry(card.width, card.height),
     new MeshBasicMaterial({ map: texture, toneMapped: false }),
   );
-  face.position.set(0, card.centerY, card.centerZ);
+  face.position.set(0, card.y, card.z);
   return face;
 }
 

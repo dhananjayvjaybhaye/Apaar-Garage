@@ -78,8 +78,6 @@
   font-size: 0.8rem;
 }
 .featured-section {
-  position: relative;
-  z-index: 2;
   --panel: #191618;
   --panel-raised: #2b211d;
   --surface: #191618;
@@ -89,16 +87,8 @@
   --amber: #f5c489;
   --accent: #f5c489;
   color: var(--text);
-  background: radial-gradient(ellipse at 80% 0, #39271dd9, transparent 70%), #100e11b3;
   width: 100%;
   padding-inline: max(1rem, calc((100% - 80rem) / 2));
-}
-@media (prefers-reduced-motion: no-preference) {
-  .featured-section {
-    margin-block-start: calc(-1 * var(--hero-overlap));
-    border-radius: 1rem 1rem 0 0;
-    box-shadow: 0 -0.5rem 1.6rem #0a070744;
-  }
 }
 .featured-grid {
   display: grid;

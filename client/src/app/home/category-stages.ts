@@ -28,7 +28,11 @@ export interface CategoryScene {
   selector: 'app-category-stages',
   imports: [ProductCard, RouterLink],
   templateUrl: './category-stages.html',
-  styleUrls: ['./category-stages.css', './category-stages-atmosphere.css'],
+  styleUrls: [
+    './category-stages.css',
+    './category-stages-atmosphere.css',
+    './category-stages-empty.css',
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CategoryStages {

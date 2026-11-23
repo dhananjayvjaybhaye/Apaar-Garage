@@ -15,9 +15,7 @@ export const garageHeroZones = [
   { category: 'rc', name: 'RC', sign: 'RC TOYS', x: 1.5 * baySpacing },
 ] as const satisfies ReadonlyArray<{ category: GarageZone; name: string; sign: string; x: number }>;
 
-// The existing overlap belongs to the section immediately below the hero.
 export const heroLayout = {
-  overlap: 'clamp(1rem, 3vw, 2.4rem)',
   copyClearance: '24px',
   automaticGarageQuery: '(min-width: 56rem) and (min-height: 28rem) and (pointer: fine)',
   desktopControlsQuery: '(min-width: 56rem) and (pointer: fine)',
@@ -38,14 +36,14 @@ export const heroTransfer = {
 
 export const heroSteps = {
   // Hold input during the dolly and for a short cooldown. A stalled dolly fails open.
-  moveMs: 1050,
-  cooldownMs: 150,
+  moveMs: 850,
+  cooldownMs: 90,
   stallMs: 3000,
   // Recognize a new wheel gesture after a quiet gap. Trackpad inertia extends this gap.
   wheelQuietMs: 120,
   // Accumulate normalized pixels within this rolling time window, in milliseconds.
-  wheelSampleMs: 100,
-  wheelThresholdPx: 40,
+  wheelSampleMs: 260,
+  wheelThresholdPx: 28,
   // A deliberate reversal can start a new gesture once the camera is unlocked.
   wheelReversePx: 72,
   wheelLinePx: 16,
@@ -56,6 +54,8 @@ export const heroSteps = {
   settleTolerancePx: 2,
   alignMs: 200,
   transferMs: 700,
+  // Release native scrolling even when a trackpad keeps sending a long momentum tail.
+  transferTailMs: 280,
   // Cap the elapsed time per painted frame so a delayed frame cannot jump to the end.
   maxTravelFrameMs: 80,
 } as const;

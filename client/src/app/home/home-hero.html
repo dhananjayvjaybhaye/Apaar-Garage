@@ -2,6 +2,7 @@
   #hero
   class="hero"
   [class.garage-live]="live()"
+  [class.garage-static-mode]="showStatic() && explorationStatus() !== 'loading'"
   [class.hero-steps]="stepEnabled()"
   [style.--hero-copy-clearance]="copyClearance"
   [style.--garage-fade]="sceneFade"
@@ -13,7 +14,7 @@
     (pointerup)="swipe.end($event)"
     (pointercancel)="swipe.end($event)"
   >
-    @if (showStatic()) {
+    @if (showStatic() && explorationStatus() !== 'loading' && !live()) {
       <div class="garage-static" aria-hidden="true">
         <div class="garage-static-cases">
           @for (zone of zones; track zone.category; let index = $index) {
@@ -24,6 +25,7 @@
         </div>
       </div>
     }
+    <app-garage-skeleton class="garage-skeleton" [zoneIndex]="activeIndex()" aria-hidden="true" />
     <div #stage class="garage-stage" aria-hidden="true"></div>
     <div class="hero-shade" aria-hidden="true"></div>
     <div class="hero-layout">

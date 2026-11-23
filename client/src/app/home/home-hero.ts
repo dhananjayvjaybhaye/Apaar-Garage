@@ -18,6 +18,7 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import type { Product } from '../catalog/product';
 import { Motion } from '../motion/motion';
+import { GarageSkeleton } from './garage/garage-skeleton';
 import { isConstrainedDevice } from '../motion/motion-policy';
 import { ProductPreview, type PreviewPoint } from '../product-preview/product-preview';
 import { EngineLoading } from '../ui/engine-loading';
@@ -37,7 +38,7 @@ import { createHeroSwipe } from './hero-swipe';
 
 @Component({
   selector: 'app-home-hero',
-  imports: [CurrencyPipe, RouterLink],
+  imports: [CurrencyPipe, RouterLink, GarageSkeleton],
   templateUrl: './home-hero.html',
   styleUrls: ['./home-hero.css', './hero-hint.css', './garage/garage-hero.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

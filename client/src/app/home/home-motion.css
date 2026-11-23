@@ -1,4 +1,14 @@
-.featured-section, .scale-band, .rc-showcase { position: relative; isolation: isolate; overflow: clip; }
+.featured-section { position: relative; isolation: isolate; }
+.scale-band, .rc-showcase { position: relative; isolation: isolate; overflow: clip; }
+.featured-atmosphere {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  overflow: clip;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 80% 0, #39271dd9, transparent 70%), #100e11b3;
+  mask-image: linear-gradient(transparent, #000 4rem);
+}
 .featured-lights {
   position: absolute;
   z-index: -1;

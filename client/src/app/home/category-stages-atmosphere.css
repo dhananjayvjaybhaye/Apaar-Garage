@@ -4,7 +4,19 @@
   inset: 0;
   overflow: clip;
   pointer-events: none;
-  background: linear-gradient(to bottom, transparent, var(--scene-base) 4rem, #101115 92%);
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--scene-base) 4rem,
+    color-mix(in srgb, var(--scene-base), var(--background)) calc(100% - var(--scene-bottom-space)),
+    transparent
+  );
+  mask-image: linear-gradient(
+    transparent,
+    #000 4rem,
+    #000 calc(100% - var(--scene-bottom-space)),
+    transparent
+  );
 }
 
 .scene-backdrop span {

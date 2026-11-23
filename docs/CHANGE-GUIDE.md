@@ -19,7 +19,18 @@ The `heroScene` values in `hero.config.ts` control the zoom and emphasis of the 
 
 ## Populate an empty RC bench
 
-Run `npm.cmd run seed` from `server` to load the sample listings into the database configured in `server/.env`. The seed includes 15 RC products. Use End to reach the RC display in the 3D hero, or choose RC in the static hero, after the seed completes.
+Run `npm.cmd run seed` from `server` to load the sample listings into the database configured in `server/.env`. The seed includes 15 RC products. Check `GET /products?productType=rc&sort=featured&limit=8` on the running API. The home category uses the RC product type, which includes all supported `rc-*` categories. Use End to reach the RC display in the 3D hero, or choose RC in the static hero, after the seed completes.
+
+## Check the home category layouts
+
+With a seeded API and the production preview running, install the optional browser test dependency from `client` and run the check. It needs an installed copy of Chrome.
+
+```powershell
+npm.cmd install --no-save --package-lock=false playwright-core
+node scripts/check-category-layout.mjs
+```
+
+Set `PREVIEW_URL` when using a different preview port. The check measures the last product and View all card on all four sections, then simulates loading and an empty inventory. Keep bottom padding on the section and clipping on its decorative backdrop so the card shadows and tilt stay visible.
 
 ## Change the COD fee
 

@@ -160,3 +160,28 @@
     background: linear-gradient(#0a0b10ed, #0a0b10ab 40%, transparent 67%, #0c0d12d6);
   }
 }
+
+.garage-skeleton {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--garage-fade) ease,
+    visibility 0s var(--garage-fade);
+}
+
+.garage-live .garage-skeleton,
+.garage-static-mode .garage-skeleton {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.garage-static-mode .garage-skeleton {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .garage-skeleton {
+    transition: none;
+  }
+}

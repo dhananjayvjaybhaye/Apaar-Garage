@@ -91,12 +91,12 @@ describe('garage hero gesture handling', () => {
     expect(hero.index()).toBe(1);
   });
 
-  it('accumulates a light swipe in 100 ms and drops older samples', () => {
+  it('accepts a light precision-trackpad gesture and drops older samples', () => {
     const hero = controls();
-    swipe(hero, [14, 14, 14, 14, 14], 55);
+    swipe(hero, [7, 7, 7, 7, 7], 100);
     expect(hero.index()).toBe(0);
     vi.advanceTimersByTime(heroSteps.wheelQuietMs);
-    swipe(hero, Array<number>(10).fill(4.25), 10);
+    swipe(hero, Array<number>(16).fill(2), 16);
     expect(hero.move).toHaveBeenCalledOnce();
   });
 
@@ -278,6 +278,20 @@ describe('garage hero page integration', () => {
     vi.advanceTimersByTime(heroSteps.transferMs / 2 + 40);
     expect(y).toBe(680 + heroSteps.settleTolerancePx);
     expect(wheel(70, document.body)).toBe(false);
+  });
+
+  it('returns scroll to the catalog even when the trackpad tail never goes quiet', () => {
+    index = lastHeroZone;
+    expect(wheel(120)).toBe(true);
+    for (let elapsed = 0; elapsed < heroSteps.transferMs + 80; elapsed += 40) {
+      vi.advanceTimersByTime(40);
+      expect(wheel(4, document.body)).toBe(true);
+    }
+    for (let elapsed = 0; elapsed < heroSteps.transferTailMs; elapsed += 40) {
+      vi.advanceTimersByTime(40);
+      wheel(4, document.body);
+    }
+    expect(wheel(4, document.body)).toBe(false);
   });
 
   it('releases the page if the controlled handoff stops producing frames', () => {

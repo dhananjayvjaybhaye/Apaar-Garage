@@ -11,11 +11,12 @@
   <section
     id="featured"
     class="container section featured-section"
-    [style.--hero-overlap]="heroOverlap"
     tabindex="-1"
     aria-labelledby="featured-title"
   >
-    <span class="featured-lights" [appParallax]="0.55" aria-hidden="true"></span>
+    <div class="featured-atmosphere" aria-hidden="true">
+      <span class="featured-lights" [appParallax]="0.55"></span>
+    </div>
     <div class="section-heading">
       <div>
         <p class="kicker">From the collection</p>

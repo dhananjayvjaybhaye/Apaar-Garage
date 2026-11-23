@@ -15,6 +15,7 @@ import {
   type Material,
 } from 'three';
 import { heroScene } from '../hero.config';
+import { garageBench } from './garage-bench-layout';
 import { heroZones } from './hero-garage-camera';
 import { addHeroLighting, garageSign } from './hero-garage-lighting';
 import { addRcDisplayDetails } from './hero-rc-display';
@@ -101,7 +102,8 @@ function addRoom(scene: Scene) {
   const strip = new MeshBasicMaterial({ color: colors.strip, toneMapped: false });
   for (const { x } of heroZones) {
     box(scene, x, 6.6, -0.35, 4.5, 0.2, 0.86, metal);
-    box(scene, x, 6.48, -0.35, 4.16, 0.05, 0.35, strip);
+    const light = garageBench.light;
+    box(scene, x, light.y, light.z, light.width, light.height, light.depth, strip);
   }
 }
 
@@ -135,18 +137,22 @@ function createBay(
     transparent: true,
     depthWrite: false,
   });
-  box(bay, 0, 1.02, -1.6, 4.6, 0.23, 2.55, bench);
+  for (const { y, z, width, height, depth } of garageBench.shelves)
+    box(bay, 0, y, z, width, height, depth, bench);
   box(bay, 0, 0.87, -0.31, 4.6, 0.09, 0.08, metal);
   box(bay, 0, 0.91, -0.253, 4.41, 0.034, 0.025, rail);
-  box(bay, 0, 0.37, -1.6, 4.46, 0.12, 2.41, metal);
-  box(bay, 0, 3.42, -1.59, 4.6, 0.15, 2.53, metal);
+  const base = garageBench.base;
+  box(bay, 0, base.y, base.z, base.width, base.height, base.depth, metal);
   box(bay, 0, 3.33, -0.34, 4.38, 0.032, 0.055, rail);
-  for (const side of [-2.24, 2.24]) {
-    for (const depth of [-2.81, -0.38]) box(bay, side, 1.7, depth, 0.14, 3.4, 0.16, metal);
+  for (const side of [-garageBench.posts.x, garageBench.posts.x]) {
+    const post = garageBench.posts;
+    for (const z of [-2.81, post.z])
+      box(bay, side, post.y, z, post.width, post.height, post.depth, metal);
     box(bay, side, 2.27, -1.58, 0.018, 2.22, 2.3, glass);
   }
-  const sign = garageSign(document, label, 2.34, 0.42, compact);
-  sign.position.set(0, 3.73, -0.48);
+  const face = garageBench.label;
+  const sign = garageSign(document, label, face.width, face.height, compact);
+  sign.position.set(0, face.y, face.z);
   bay.add(sign);
 
   const light = compact ? undefined : makeBayLight();
@@ -164,7 +170,7 @@ function createBay(
   halo.position.set(0, 1.14, -1.56);
   bay.add(halo);
   const display = new Group();
-  display.position.set(0, 1.14, -1.58);
+  display.position.set(0, garageBench.display.y, garageBench.display.z);
   bay.add(display);
   const hit = box(
     bay,

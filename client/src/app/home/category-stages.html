@@ -41,16 +41,32 @@
               <div class="skeleton scene-skeleton"></div>
             }
           </div>
-        } @else {
-          @if (!stop.items.length) {
-            <p class="scene-empty">
+        } @else if (!stop.items.length) {
+          <div class="scene-empty">
+            <img
+              src="/images/ambient/empty-shelf.svg"
+              width="220"
+              height="116"
+              alt=""
+              loading="lazy"
+            />
+            <h4>
+              {{
+                stop.error ? 'The shelf is temporarily unavailable' : 'More models are on the way'
+              }}
+            </h4>
+            <p [attr.role]="stop.error ? 'alert' : null">
               {{
                 stop.error
-                  ? 'Products are temporarily unavailable.'
-                  : 'No products are available in this category yet.'
+                  ? 'Try browsing the catalog in a moment.'
+                  : 'This shelf is empty for now. You can still explore the collection.'
               }}
             </p>
-          }
+            <a class="secondary-button" routerLink="/catalog" [queryParams]="filters">
+              Browse {{ stop.name }}
+            </a>
+          </div>
+        } @else {
           <div class="scene-grid" data-scene-grid>
             @for (product of stop.items; track product.slug) {
               <div class="scene-card" data-scene-card>

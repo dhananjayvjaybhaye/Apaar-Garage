@@ -73,6 +73,8 @@ export function attachHeroInput(options: HeroInputOptions) {
     hero.dispatchEvent(new Event(heroTransfer.event));
   });
   let lastTransferWheel = -Infinity;
+  let transferDirection: -1 | 1 | undefined;
+  let transferTailDeadline = -Infinity;
   let lastApproachWheel = -Infinity;
   let cameFromBelow = view.scrollY >= position().end;
 
@@ -86,23 +88,31 @@ export function attachHeroInput(options: HeroInputOptions) {
     now,
     fail,
     release: (direction) => {
-      lastTransferWheel = now();
       const target = direction < 0 ? 0 : position().end + heroSteps.settleTolerancePx;
-      travel.start(target, heroSteps.transferMs);
+      handoff(direction, target);
     },
   });
 
+  function handoff(direction: -1 | 1, target: number) {
+    transferDirection = direction;
+    lastTransferWheel = now();
+    travel.start(target, heroSteps.transferMs, () => {
+      transferTailDeadline = now() + heroSteps.transferTailMs;
+    });
+  }
+
   function returnToGarage() {
     cameFromBelow = false;
-    lastTransferWheel = now();
+    lastApproachWheel = -Infinity;
     seek(lastHeroZone);
-    travel.start(position().anchor, heroSteps.transferMs);
+    handoff(-1, position().anchor);
   }
 
   function trackPosition() {
+    if (travel.active()) return;
     const { end, offset } = position();
     if (view.scrollY >= end - heroSteps.settleTolerancePx) cameFromBelow = true;
-    if (travel.active() || !cameFromBelow) return;
+    if (!cameFromBelow) return;
     if (view.scrollY < end && now() - lastApproachWheel < heroSteps.wheelQuietMs) {
       returnToGarage();
     } else if (nearAnchor(offset)) {
@@ -140,16 +150,27 @@ export function attachHeroInput(options: HeroInputOptions) {
         const { deltaY, deltaX, deltaMode, ctrlKey, timeStamp } = event;
         console.debug('Garage wheel', { deltaY, deltaX, deltaMode, ctrlKey, timeStamp });
       }
-      if (event.defaultPrevented || modalOpen()) return;
-      if (event.target instanceof Element && event.target.closest(editable)) return;
+      if (event.defaultPrevented) return;
       const delta = wheelPixels(event, view.innerHeight);
       if (delta === undefined) return;
       const time = now();
-      if (travel.active() || time - lastTransferWheel < heroSteps.wheelQuietMs) {
+      const strongReversal =
+        Math.sign(delta) !== transferDirection && Math.abs(delta) >= heroSteps.wheelReversePx;
+      const tail =
+        transferDirection !== undefined &&
+        !strongReversal &&
+        time < transferTailDeadline &&
+        time - lastTransferWheel < heroSteps.wheelQuietMs;
+      const transferring = travel.active();
+      if (!inside && !transferring && !tail && (delta > 0 || !cameFromBelow)) return;
+      if (modalOpen() || (event.target instanceof Element && event.target.closest(editable)))
+        return;
+      if (transferring || tail) {
         lastTransferWheel = time;
         if (event.cancelable) event.preventDefault();
         return;
       }
+      transferDirection = undefined;
       const { end, offset, visible } = position();
       if (delta < 0 && offset > heroSteps.anchorTolerancePx && cameFromBelow) {
         lastApproachWheel = time;
@@ -227,7 +248,7 @@ export function attachHeroInput(options: HeroInputOptions) {
     swipe: (direction: -1 | 1) => !modalOpen() && atAnchor(() => stepper.step(direction)),
     cancelTravel() {
       travel.cancel();
-      lastTransferWheel = -Infinity;
+      transferDirection = undefined;
       lastApproachWheel = -Infinity;
     },
     remember,

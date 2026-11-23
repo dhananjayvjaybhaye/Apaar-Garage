@@ -3,6 +3,8 @@
 }
 
 .category-scenes {
+  --scene-bottom-space: clamp(3rem, 6vw, 5rem);
+  --scene-gap: clamp(4rem, 5vw, 6rem);
   position: relative;
   isolation: isolate;
 }
@@ -10,12 +12,13 @@
 .category-scene {
   --scene-accent: #ec9b48;
   --scene-base: #18130f;
+  padding-block-end: var(--scene-bottom-space);
   position: relative;
   isolation: isolate;
 }
 
 .category-scene + .category-scene {
-  margin-block-start: clamp(4rem, 5vw, 6rem);
+  margin-block-start: max(0px, calc(var(--scene-gap) - var(--scene-bottom-space)));
 }
 
 .category-scenes,
@@ -173,8 +176,7 @@
   font: 650 clamp(1.45rem, 3vw, 2.2rem) / 1.15 var(--display);
 }
 
-.scene-catalog-link > span:last-child,
-.scene-empty {
+.scene-catalog-link > span:last-child {
   color: var(--muted);
 }
 
