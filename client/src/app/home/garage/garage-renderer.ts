@@ -7,7 +7,6 @@ import {
   Vector3,
   WebGLRenderer,
 } from 'three';
-import { mediaQuery } from '../../ui/media-query';
 import type { Product } from '../../catalog/product';
 import { disposeModels } from '../../car-viewer/three-resources';
 import { heroLayout, heroScene, heroSteps } from '../hero.config';
@@ -15,6 +14,9 @@ import { createGarageModels, type GarageBay } from './garage-models';
 import type { RcBenchStatus } from './garage-path';
 import { heroCameraAt, heroZones } from './hero-garage-camera';
 import { createHeroGarage } from './hero-garage-scene';
+import { connectGaragePointer } from './garage-pointer';
+import { observeGarageViewport } from './garage-viewport';
+import { updateGarageEmphasis } from './garage-emphasis';
 
 interface GarageEvents {
   select: (product: Product, point: { x: number; y: number }) => void;
@@ -54,17 +56,9 @@ export function mountGarage(canvas: HTMLCanvasElement, events: GarageEvents, mob
     done?.();
   }
   let snapLighting = true;
-  let pointer: { x: number; y: number } | null = null;
-  let mx = 0;
-  let my = 0;
-  let hover: Product | undefined;
   let painted = false;
   let mediaReady = false;
   let inspection: { x: number; amount: number } | undefined;
-  let pressed: { x: number; y: number } | undefined;
-
-  let drag: { x: number; y: number } | undefined;
-  let touch: number | undefined;
   function* prepare() {
     const context = canvas.getContext('webgl2', {
       antialias: !mobile,
@@ -74,7 +68,7 @@ export function mountGarage(canvas: HTMLCanvasElement, events: GarageEvents, mob
     renderer = new WebGLRenderer({ canvas, context, antialias: !mobile });
     renderer.toneMapping = ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.23;
-    resize();
+    viewport.resize();
     yield;
     ({ bays, animate } = yield* createHeroGarage(scene, document, mobile));
     yield;
@@ -139,11 +133,9 @@ export function mountGarage(canvas: HTMLCanvasElement, events: GarageEvents, mob
 
   function render(time: number) {
     frame = 0;
-    if (!renderer || !measured.width || !visible || disposed || document.hidden) return;
-    const targetX = pointer ? (pointer.x / canvas.clientWidth) * 2 - 1 : (drag?.x ?? 0);
-    const targetY = pointer ? (pointer.y / canvas.clientHeight) * 2 - 1 : (drag?.y ?? 0);
-    mx += (targetX - mx) * 0.18;
-    my += (targetY - my) * 0.18;
+    if (!renderer || !viewport.measured.width || !visible || disposed || document.hidden) return;
+    const { mx, my } = pointer.parallax();
+    const { measured } = viewport;
     const compact = measured.width < heroLayout.stackedWidthPx;
     const phase = move ? Math.min(1, Math.max(0, (time - move.start) / heroSteps.moveMs)) : 1;
     const base = heroCameraAt(index, measured.width, measured.height, compact, move?.from, phase);
@@ -179,39 +171,9 @@ export function mountGarage(canvas: HTMLCanvasElement, events: GarageEvents, mob
     camera.updateMatrixWorld();
     const immediate = snapLighting || (index === 0 && !move) || (!!move && phase === 1);
     snapLighting = false;
-    const previousHover = hover;
-    if (pointer) {
-      const rect = canvas.getBoundingClientRect();
-      hover = pick(
-        rect.left + (pointer.x * rect.width) / canvas.clientWidth,
-        rect.top + (pointer.y * rect.height) / canvas.clientHeight,
-      );
-    } else hover = undefined;
-    if (hover?.slug !== previousHover?.slug) {
-      if (hover) events.prefetch(hover);
-      events.hover?.(hover && pointer ? { product: hover, ...pointer } : undefined);
-    }
-    canvas.classList.toggle('garage-hovering', Boolean(hover));
+    const hover = pointer.hover();
 
-    bays.forEach((bay, bayIndex) => {
-      const lit = bayIndex === index;
-      const hovered = Boolean(hover && hover.slug === bay.product?.slug);
-      bay.focus = immediate ? Number(lit) : bay.focus + (Number(lit) - bay.focus) * 0.19;
-      bay.setFocus(bay.focus);
-      const brightness =
-        heroScene.inactiveBrightness + bay.focus * (1 - heroScene.inactiveBrightness);
-      bay.card?.material.color.setScalar(brightness);
-      const intensity = heroScene.activeLight * brightness + (hovered ? heroScene.hoverLight : 0);
-      bay.lightIntensity = immediate
-        ? intensity
-        : bay.lightIntensity + (intensity - bay.lightIntensity) * 0.19;
-      if (bay.light) bay.light.intensity = bay.lightIntensity;
-      bay.rail.emissiveIntensity = 0.14 + bay.lightIntensity / 26;
-      const opacity = hovered ? 0.95 : lit ? 0.25 : 0.06;
-      bay.halo.material.opacity = immediate
-        ? opacity
-        : bay.halo.material.opacity + (opacity - bay.halo.material.opacity) * 0.2;
-    });
+    updateGarageEmphasis(bays, index, immediate, hover);
     animate?.(time, index, blend, immediate, base.signX);
     renderer.render(scene, camera);
     if (phase === 1) finishMove();
@@ -227,45 +189,23 @@ export function mountGarage(canvas: HTMLCanvasElement, events: GarageEvents, mob
     requestFrame();
   }
 
-  let measured = { width: 0, height: 0, ratio: 0 };
-  function resize(width = surface!.clientWidth, height = surface!.clientHeight) {
-    if (!renderer || disposed || !width || !height) return;
-    const ratio = Math.min(
-      view!.devicePixelRatio || 1,
-      mobile ? heroScene.mobileDpr : heroScene.desktopDpr,
-    );
-    if (width === measured.width && height === measured.height && ratio === measured.ratio) return;
-    measured = { width, height, ratio };
-    // Use the untransformed stage size, so the animated frame never changes the viewport buffer.
-    renderer.setDrawingBufferSize(width, height, ratio);
-    camera.aspect = width / height;
-    requestFrame();
-  }
-
-  const size = new ResizeObserver(([entry]) =>
-    resize(entry.contentRect.width, entry.contentRect.height),
-  );
-  const visibility = new IntersectionObserver(([entry]) => {
-    visible = entry.isIntersecting;
-    if (visible) requestFrame();
-    else pause();
-  });
   const handlers = new AbortController();
   const signal = handlers.signal;
-  size.observe(surface);
-  visibility.observe(surface);
-  const updateResolution = () =>
-    resize(measured.width || surface.clientWidth, measured.height || surface.clientHeight);
-  let resolution: MediaQueryList | undefined;
-  const watchResolution = () => {
-    resolution?.removeEventListener('change', watchResolution);
-    resolution = mediaQuery('(resolution: ' + view.devicePixelRatio + 'dppx)', view);
-    resolution?.addEventListener('change', watchResolution);
-    updateResolution();
-  };
-  watchResolution();
-  view.addEventListener('resize', updateResolution, { passive: true, signal });
-  view.visualViewport?.addEventListener('resize', updateResolution, { passive: true, signal });
+  const viewport = observeGarageViewport(
+    surface,
+    view,
+    camera,
+    () => renderer,
+    mobile,
+    requestFrame,
+    (inView) => {
+      visible = inView;
+      if (visible) requestFrame();
+      else pause();
+    },
+    signal,
+  );
+  const pointer = connectGaragePointer(canvas, signal, { ...events, pick, frame: requestFrame });
   document.addEventListener(
     'visibilitychange',
     () => {
@@ -281,63 +221,6 @@ export function mountGarage(canvas: HTMLCanvasElement, events: GarageEvents, mob
     { signal },
   );
   canvas.addEventListener(
-    'pointermove',
-    (event) => {
-      if (event.pointerId === touch && pressed) {
-        drag = {
-          x: Math.max(-1, Math.min(1, (event.clientX - pressed.x) / heroScene.dragRangePx)),
-          y: Math.max(-1, Math.min(1, (event.clientY - pressed.y) / heroScene.dragRangePx)),
-        };
-        requestFrame();
-        return;
-      }
-      if (event.pointerType !== 'mouse') return;
-      // Pointer parallax is a small offset on top of the zone camera.
-      pointer = { x: event.offsetX, y: event.offsetY };
-      requestFrame();
-    },
-    { passive: true, signal },
-  );
-  canvas.addEventListener(
-    'pointerleave',
-    () => {
-      pointer = null;
-      requestFrame();
-    },
-    { signal },
-  );
-  canvas.addEventListener(
-    'pointerdown',
-    (event) => {
-      pressed = { x: event.clientX, y: event.clientY };
-      if (event.pointerType === 'touch') {
-        touch = event.pointerId;
-        const product = pick(event.clientX, event.clientY);
-        if (product) events.prefetch(product);
-      }
-    },
-    { passive: true, signal },
-  );
-  function clearDrag(event: PointerEvent) {
-    if (event.pointerId !== touch) return;
-    touch = undefined;
-    drag = undefined;
-    requestFrame();
-  }
-  canvas.addEventListener('pointerup', clearDrag, { signal });
-  canvas.addEventListener('pointercancel', clearDrag, { signal });
-  canvas.addEventListener(
-    'click',
-    (event) => {
-      const start = pressed;
-      pressed = undefined;
-      if (start && Math.hypot(event.clientX - start.x, event.clientY - start.y) > 12) return;
-      const product = pick(event.clientX, event.clientY);
-      if (product) events.select(product, { x: event.clientX, y: event.clientY });
-    },
-    { signal },
-  );
-  canvas.addEventListener(
     'webglcontextlost',
     (event) => {
       event.preventDefault();
@@ -345,7 +228,6 @@ export function mountGarage(canvas: HTMLCanvasElement, events: GarageEvents, mob
     },
     { signal },
   );
-  resize();
 
   function pause() {
     if (frame) cancelAnimationFrame(frame);
@@ -400,9 +282,6 @@ export function mountGarage(canvas: HTMLCanvasElement, events: GarageEvents, mob
       preparation.return();
       if (overlayFrame) cancelAnimationFrame(overlayFrame);
       handlers.abort();
-      resolution?.removeEventListener('change', watchResolution);
-      size.disconnect();
-      visibility.disconnect();
       models?.destroy();
       disposeModels([scene]);
       scene.clear();

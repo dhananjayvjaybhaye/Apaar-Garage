@@ -11,6 +11,6 @@ li { display:flex; align-items:flex-start; gap:.65rem; padding:.65rem 0; border-
 li img { flex:none; object-fit:cover; border-radius:.25rem; }
 li p { margin:.2rem 0; color:var(--muted); font-size:.83rem; }
 .quantity { display:flex; flex-wrap:wrap; align-items:center; gap:.4rem; }
-.quantity button { min-height:2.25rem; padding:.2rem .6rem; }
-.remove { border:0; background:transparent; color:var(--muted); text-decoration:underline; cursor:pointer; }
+.quantity button { min-height:2.75rem; min-width:2.75rem; padding:.2rem .6rem; }
+.remove { min-height:2.75rem; min-width:2.75rem; border:0; background:transparent; color:var(--muted); text-decoration:underline; cursor:pointer; }
 .delivery, .undo { background:var(--panel-raised); border:1px solid var(--line); border-radius:var(--radius); padding:.6rem; }

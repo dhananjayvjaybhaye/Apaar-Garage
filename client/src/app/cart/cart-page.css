@@ -58,8 +58,8 @@ h1 {
   gap: 0.65rem;
 }
 .quantity button {
-  min-width: 2.35rem;
-  min-height: 2.35rem;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
   padding: 0.2rem;
 }
 .action-error,
@@ -68,6 +68,8 @@ h1 {
 }
 
 .remove {
+  min-height: 2.75rem;
+  min-width: 2.75rem;
   border: 0;
   padding: 0.25rem 0;
   color: var(--muted);

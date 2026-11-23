@@ -36,78 +36,127 @@
 }
 
 .garage-static {
-  display: grid;
-  align-items: center;
-  justify-items: end;
-  padding-inline: 10%;
   pointer-events: none;
-  background: radial-gradient(ellipse at 72% 75%, #ff9b5214, transparent 38%);
+  overflow: hidden;
+  padding: 0;
+  background:
+    radial-gradient(ellipse at 50% 75%, #9553244a, transparent 52%),
+    linear-gradient(#14141d 30%, #26232a 72%, #17131a 73%, #1c1a25);
   transition: opacity var(--garage-fade) ease;
+}
+
+.garage-static::before {
+  position: absolute;
+  inset: 44% 0 27%;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 12%, #07070c6b 12% 12.5%),
+    repeating-linear-gradient(0deg, #15141b 0 4px, #29262b 4px 5px);
+  mask-image: linear-gradient(transparent, #000 40%);
+  content: '';
 }
 
 .garage-live .garage-static {
   opacity: 0;
 }
 
+.garage-static-cases {
+  position: absolute;
+  inset: auto 6% 19% 38%;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(0.28rem, 1.3vw, 1.25rem);
+}
+
 .garage-static-case {
   position: relative;
-  width: min(43%, 36rem);
-  aspect-ratio: 1.38;
-  border: 0.45rem solid #2a292f;
-  border-block-end-color: #63352b;
+  display: grid;
+  align-content: end;
+  justify-items: center;
+  min-inline-size: 0;
+  aspect-ratio: 0.85;
+  border: 2px solid #423229;
+  border-block-end: 4px solid #74503b;
+  border-radius: 0.2rem;
   background:
-    linear-gradient(0deg, #793d2929, transparent 12%),
-    repeating-linear-gradient(90deg, #17171f 0 19%, #1d1c25 20%), #191923;
+    linear-gradient(0deg, #2a1713 0 12%, transparent 12%),
+    repeating-linear-gradient(90deg, #1c1b20 0 19%, #252127 20%);
   box-shadow:
-    inset 0 2px #e4a565a0,
-    0 2rem 3rem #08080b6c;
+    inset 0 2px #865d42,
+    0 1.5rem 2.1rem #09070bc9;
 }
 
 .garage-static-case::before {
   position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse at top, #e7a35135, transparent 72%);
+  inset: 1px 0 10%;
+  background: radial-gradient(ellipse at top, #e9a55f66, transparent 75%);
+  opacity: 0.24;
+  transition: opacity 220ms ease;
+  content: '';
+}
+
+.garage-static-case::after {
+  position: absolute;
+  inset: 51% 8% 14%;
+  border-block: 1px solid #e9a55f45;
+  background: linear-gradient(#e9a55f13, transparent);
+  transform: skewY(-4deg);
   content: '';
 }
 
 .garage-static-case span {
   position: absolute;
   inset: auto 0 100%;
-  width: fit-content;
-  margin-inline: auto;
-  padding: 0.25rem 0.85rem;
-  background: #211c20;
-  color: #e2ad79;
-  font: 700 clamp(0.75rem, 2vw, 1.2rem)/1.1 var(--display);
-  letter-spacing: 0.1em;
-  text-shadow: 0 0 0.6rem #eaa15e80;
-  opacity: 0;
-  transition: opacity var(--garage-fade) ease;
+  padding: 0.3rem 0.1rem;
+  background: #19161c;
+  color: #b3a08f;
+  font: 650 clamp(0.62rem, 1.6vw, 1.3rem)/1.15 var(--display);
+  letter-spacing: 0.055em;
+  text-align: center;
+  white-space: nowrap;
+  transition:
+    color 220ms ease,
+    opacity 220ms ease;
 }
 
-.garage-static-case .active-sign {
+.garage-static-case.active-sign::before {
   opacity: 1;
+}
+.garage-static-case.active-sign span {
+  color: #ffe2ad;
+  text-shadow: 0 0 0.65rem #ff9e41;
 }
 
 @media (max-width: 55.99rem) {
-  .garage-static {
-    justify-items: center;
-    align-items: end;
-    padding: 0 1rem clamp(5.5rem, 21svh, 11rem);
+  .garage-static-cases {
+    inset-inline: 6%;
   }
+}
 
-  .garage-static-case {
-    width: min(73%, 23rem);
+@media (max-width: 38rem) {
+  .garage-static-cases {
+    inset-block-end: 22%;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .garage-stage,
-  .garage-static {
+  .garage-static,
+  .garage-static-case span,
+  .garage-static-case::before {
     transition: none;
   }
+}
 
-  .garage-static-case span {
-    transition-duration: 120ms;
+.garage-static-case.active-sign {
+  border-color: #ac7347;
+  box-shadow:
+    inset 0 2px #ffc586,
+    0 0 1.25rem #dc8a372b,
+    0 1.5rem 2.1rem #09070bc9;
+}
+
+@media (max-width: 55.99rem) {
+  .hero:has(.garage-static):not(.garage-live) .hero-shade {
+    background: linear-gradient(#0a0b10ed, #0a0b10ab 40%, transparent 67%, #0c0d12d6);
   }
 }

@@ -37,7 +37,9 @@
       @if (auth.user(); as user) {
         <span class="account-name" [title]="user.name">{{ user.name }}</span>
         <button class="secondary-button login" type="button" [disabled]="signingOut()" (click)="logout()">Sign out</button>
-      } @else if (auth.status() !== 'checking') {
+      } @else if (auth.status() === 'checking') {
+        <span class="secondary-button login header-login account-placeholder" aria-hidden="true">Sign in</span>
+      } @else {
         <a appMagnetic class="secondary-button login header-login" routerLink="/login">Sign in</a>
       }
       <a appMagnetic class="secondary-button header-wishlist" routerLink="/wishlist" aria-label="Wishlist"><span aria-hidden="true">♡</span></a>

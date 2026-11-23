@@ -54,6 +54,7 @@
   font-weight: 650;
   text-decoration: none;
 }
+.shop-nav > a { display:inline-flex; align-items:center; min-height:2.75rem; }
 .shop-nav a:hover, .shop-nav .current, .rc-menu summary:hover { color: var(--text); }
 .rc-menu summary { cursor: pointer; white-space: nowrap; padding-block: .45rem; }
 .rc-mega-menu {
@@ -88,6 +89,7 @@
 .account-name {
   display: none;
 }
+.account-placeholder { visibility: hidden; }
 .login {
   white-space: nowrap;
   padding-inline: 0.65rem;

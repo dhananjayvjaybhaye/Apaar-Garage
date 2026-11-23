@@ -9,15 +9,17 @@
 >
   <div
     class="hero-content"
-    (pointerdown)="startSwipe($event)"
-    (pointerup)="endSwipe($event)"
-    (pointercancel)="endSwipe($event)"
+    (pointerdown)="swipe.start($event)"
+    (pointerup)="swipe.end($event)"
+    (pointercancel)="swipe.end($event)"
   >
     @if (showStatic()) {
       <div class="garage-static" aria-hidden="true">
-        <div class="garage-static-case">
+        <div class="garage-static-cases">
           @for (zone of zones; track zone.category; let index = $index) {
-            <span [class.active-sign]="index === activeIndex()">{{ zone.sign }}</span>
+            <div class="garage-static-case" [class.active-sign]="index === activeIndex()">
+              <span>{{ zone.sign }}</span>
+            </div>
           }
         </div>
       </div>
@@ -67,6 +69,15 @@
     <p class="visually-hidden" role="status" aria-live="polite" aria-atomic="true">
       Showing {{ zoneName() }}, {{ activeIndex() + 1 }} of {{ zones.length }}
     </p>
+    @if (showHint() && stepEnabled()) {
+      <p
+        class="hero-scroll-hint"
+        [class.dismissed]="hintDismissed()"
+        [attr.aria-hidden]="hintDismissed()"
+      >
+        Scroll to explore the garage <span aria-hidden="true"></span>
+      </p>
+    }
     @if (showStatic() && !live()) {
       <div class="hero-static-zones" role="group" aria-label="Garage zones">
         @for (zone of zones; track zone.category; let index = $index) {

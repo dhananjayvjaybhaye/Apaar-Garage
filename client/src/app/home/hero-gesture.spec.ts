@@ -136,19 +136,18 @@ describe('garage hero gesture handling', () => {
   });
 
   it.each([
-    ['ArrowDown', false, 1],
-    ['ArrowRight', false, 1],
-    ['ArrowLeft', false, -1],
-    ['PageDown', false, 1],
-    [' ', false, 1],
-    ['ArrowUp', false, -1],
-    ['PageUp', false, -1],
-    [' ', true, -1],
-    ['Home', false, 'first'],
-    ['End', false, 'last'],
-    ['Escape', false, undefined],
-  ] as const)('maps keyboard input %s while leaving unrelated keys alone', (key, shift, result) => {
-    expect(stepForKey(key, shift)).toBe(result);
+    ['ArrowDown', 1],
+    ['PageDown', 1],
+    ['ArrowUp', -1],
+    ['PageUp', -1],
+    ['Home', 'first'],
+    ['End', 'last'],
+    [' ', undefined],
+    ['ArrowRight', undefined],
+    ['ArrowLeft', undefined],
+    ['Escape', undefined],
+  ] as const)('maps keyboard input %s while leaving unrelated keys alone', (key, result) => {
+    expect(stepForKey(key)).toBe(result);
   });
 
   it.each([
@@ -193,7 +192,16 @@ describe('garage hero page integration', () => {
     vi.spyOn(hero, 'getBoundingClientRect').mockImplementation(() =>
       DOMRect.fromRect({ x: 0, y: 60 - y, width: 1200, height: 680 }),
     );
-    scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) =>
+      window.setTimeout(() => callback(performance.now()), 16),
+    );
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((frame) =>
+      window.clearTimeout(frame),
+    );
+    scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation((options) => {
+      y = (options as ScrollToOptions).top ?? y;
+      window.dispatchEvent(new Event('scroll'));
+    });
     move = vi.fn((next) => {
       index = next;
     });
@@ -217,7 +225,7 @@ describe('garage hero page integration', () => {
     vi.useRealTimers();
   });
 
-  it('lets pinch zoom, horizontal gestures, and wheels outside the hero pass through', () => {
+  it('lets pinch zoom, horizontal gestures, and wheels away from a transfer pass through', () => {
     expect(wheel(90, hero, { ctrlKey: true })).toBe(false);
     expect(wheel(14, hero, { deltaX: 100 })).toBe(false);
     expect(wheel(120, document.body)).toBe(false);
@@ -232,15 +240,78 @@ describe('garage hero page integration', () => {
     expect(move).toHaveBeenCalledOnce();
   });
 
-  it('leaves the page below the hero alone and re-enters at RC', () => {
-    y = 1000;
-    expect(wheel(95, document.body)).toBe(false);
-    vi.advanceTimersByTime(heroSteps.wheelQuietMs);
-    y = 610;
-    expect(wheel(-70)).toBe(true);
-    expect(seek).toHaveBeenCalledExactlyOnceWith(lastHeroZone);
-    expect(scrollTo).toHaveBeenLastCalledWith({ top: 0, behavior: 'instant' });
+  function scrollNormally(to: number) {
+    y = to;
+    window.dispatchEvent(new Event('scroll'));
+  }
+
+  function key(key: string, target: HTMLElement = document.body) {
+    const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
+    target.dispatchEvent(event);
+    return event.defaultPrevented;
+  }
+
+  it('scrolls natively below the garage, then eases back to RC when crossing its bottom edge', () => {
+    scrollNormally(1000);
+    expect(wheel(-95, document.body)).toBe(false);
+    expect(scrollTo).not.toHaveBeenCalled();
+    scrollNormally(710);
+    expect(wheel(-70, document.body)).toBe(true);
+    expect(y).toBe(710);
+    vi.advanceTimersByTime(heroSteps.transferMs / 2);
+    expect(y).toBeGreaterThan(0);
+    expect(y).toBeLessThan(710);
+    vi.advanceTimersByTime(heroSteps.transferMs / 2 + 40);
+    expect(y).toBe(0);
+    expect(seek).toHaveBeenCalledWith(lastHeroZone);
     expect(move).not.toHaveBeenCalled();
+  });
+
+  it('eases the exit and suppresses remaining momentum even outside the hero', () => {
+    index = lastHeroZone;
+    expect(wheel(120)).toBe(true);
+    expect(y).toBe(0);
+    vi.advanceTimersByTime(heroSteps.transferMs / 2);
+    expect(y).toBeGreaterThan(0);
+    expect(y).toBeLessThan(680);
+    expect(wheel(120, document.body)).toBe(true);
+    vi.advanceTimersByTime(heroSteps.transferMs / 2 + 40);
+    expect(y).toBe(680 + heroSteps.settleTolerancePx);
+    expect(wheel(70, document.body)).toBe(false);
+  });
+
+  it('releases the page if the controlled handoff stops producing frames', () => {
+    index = lastHeroZone;
+    vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(71);
+    expect(wheel(120)).toBe(true);
+    expect(wheel(120, document.body)).toBe(true);
+    vi.advanceTimersByTime(heroSteps.stallMs);
+    expect(wheel(120)).toBe(false);
+  });
+  it('settles an 18 px offset smoothly before honoring the first wheel gesture', () => {
+    scrollNormally(18);
+    expect(wheel(100)).toBe(true);
+    expect(y).toBe(18);
+    expect(move).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(heroSteps.alignMs + 40);
+    expect(y).toBe(0);
+    expect(move).toHaveBeenCalledExactlyOnceWith(1, expect.any(Function));
+  });
+
+  it('lets Space and horizontal arrows through, and leaves keys on interactive targets alone', () => {
+    expect(key(' ')).toBe(false);
+    expect(key('ArrowLeft')).toBe(false);
+    expect(key('ArrowRight')).toBe(false);
+    for (const tag of ['button', 'input', 'a']) {
+      const control = document.createElement(tag);
+      hero.append(control);
+      expect(key('PageDown', control)).toBe(false);
+    }
+    scrollNormally(120);
+    expect(key('ArrowDown')).toBe(false);
+    scrollNormally(0);
+    expect(key('PageDown')).toBe(true);
+    expect(move).toHaveBeenCalledOnce();
   });
 
   it('allows native keyboard controls on inputs and while a modal is open', () => {

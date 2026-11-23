@@ -54,11 +54,19 @@ function proxy(request, response, url) {
     api,
     { path, method: request.method, headers: { ...request.headers, host: api.host } },
     (result) => {
+      if (response.destroyed) {
+        result.destroy();
+        return;
+      }
       response.writeHead(result.statusCode, result.headers);
       pipeline(result, response, () => {});
     },
   );
+  response.once('close', () => {
+    if (!response.writableFinished) upstream.destroy();
+  });
   upstream.on('error', () => {
+    if (response.destroyed) return;
     if (!response.headersSent) response.writeHead(502);
     response.end('The local API is unavailable.');
   });

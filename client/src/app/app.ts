@@ -18,6 +18,7 @@ import { AmbientBackground } from './ui/ambient-background/ambient-background';
 import { Seo } from './seo/seo';
 import { AfterFirstPaint } from './ui/after-first-paint';
 import { Motion } from './motion/motion';
+import { scrollOnStoreNavigation } from './store-route-scroll';
 
 const calmRoutes = new Set([
   'cart',
@@ -65,7 +66,11 @@ const calmRoutes = new Set([
       <router-outlet />
     </div>
     <app-store-footer />
-    <a class="secondary-button contact-float" routerLink="/faq" fragment="contact"
+    <a
+      class="secondary-button contact-float"
+      [class.contact-inline]="purchaseRoute()"
+      routerLink="/faq"
+      fragment="contact"
       ><span class="icon icon-chat" aria-hidden="true"></span> Contact us</a
     >
     <app-toasts />
@@ -86,6 +91,7 @@ const calmRoutes = new Set([
 export class App {
   constructor() {
     inject(Seo);
+    scrollOnStoreNavigation();
   }
 
   protected readonly engine = inject(EngineLoading).state;
@@ -99,10 +105,13 @@ export class App {
     ),
     { initialValue: inject(Location).path(true) || '/' },
   );
-  protected readonly calmBackground = computed(() => {
-    const page = this.router.parseUrl(this.url()).root.children[PRIMARY_OUTLET]?.segments[0]?.path;
-    return page !== undefined && calmRoutes.has(page);
-  });
+  private readonly page = computed(
+    () => this.router.parseUrl(this.url()).root.children[PRIMARY_OUTLET]?.segments[0]?.path,
+  );
+  protected readonly calmBackground = computed(() => calmRoutes.has(this.page() ?? ''));
+  protected readonly purchaseRoute = computed(
+    () => this.page() === 'product' || this.page() === 'checkout',
+  );
   protected readonly showCursor = computed(
     () => !this.calmBackground() && this.motion.level() === 'full',
   );

@@ -161,7 +161,7 @@
   font-size: clamp(0.91rem, 2vw, 1.1rem);
 }
 .quick {
-  min-height: 2.35rem;
+  min-height: 2.75rem;
   padding: 0.35rem 0.55rem;
   border-radius: var(--radius);
   font-size: 0.75rem;
@@ -177,7 +177,7 @@
 }
 
 .card-tools { display:flex; align-items:center; justify-content:space-between; gap:.5rem; }
-.view-button { background:transparent; border:0; padding:.4rem 0; text-decoration:underline; color:var(--muted); cursor:pointer; }
+.view-button { background:transparent; border:0; min-height:2.75rem; padding:.4rem 0; text-decoration:underline; color:var(--muted); cursor:pointer; }
 
 .quick .icon { transition: transform 160ms ease; }
 :host-context(html[data-motion='full']) .quick:is(:hover,:focus-visible) .icon { transform: translateY(-2px) scale(1.15); }

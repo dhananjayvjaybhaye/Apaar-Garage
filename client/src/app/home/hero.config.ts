@@ -19,7 +19,7 @@ export const garageHeroZones = [
 export const heroLayout = {
   overlap: 'clamp(1rem, 3vw, 2.4rem)',
   copyClearance: '24px',
-  automaticGarageQuery: '(min-width: 48rem) and (min-height: 28rem)',
+  automaticGarageQuery: '(min-width: 56rem) and (min-height: 28rem) and (pointer: fine)',
   desktopControlsQuery: '(min-width: 56rem) and (pointer: fine)',
   // Keep the camera composition in step with the stacked hero's CSS breakpoint.
   stackedWidthPx: 896,
@@ -29,6 +29,11 @@ export const heroMotion = {
   sceneFadeMs: 600,
   // Native smooth scroll normally finishes sooner. This also covers browsers without scrollend.
   skipSettleMs: 1400,
+} as const;
+
+export const heroTransfer = {
+  attribute: 'data-garage-transfer',
+  event: 'garage-transfer',
 } as const;
 
 export const heroSteps = {
@@ -46,7 +51,13 @@ export const heroSteps = {
   wheelLinePx: 16,
   swipeDistancePx: 40,
   swipeAxisRatio: 1.35,
-  anchorTolerancePx: 3,
+  // Allow a slightly offset anchor. Ease the correction and the page handoff separately.
+  anchorTolerancePx: 24,
+  settleTolerancePx: 2,
+  alignMs: 200,
+  transferMs: 700,
+  // Cap the elapsed time per painted frame so a delayed frame cannot jump to the end.
+  maxTravelFrameMs: 80,
 } as const;
 
 // Product modal camera timing in seconds and milliseconds.

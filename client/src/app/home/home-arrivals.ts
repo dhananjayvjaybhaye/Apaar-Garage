@@ -1,23 +1,36 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import {
+  afterNextRender,
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  ElementRef,
+  inject,
+  signal,
+} from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { ProductCard } from '../catalog/product-card';
 import type { ProductPage } from '../catalog/product';
 import { Reveal } from '../reveal';
-import { ShopLoading, ShopState } from '../ui/shop-state';
+import { ShopState } from '../ui/shop-state';
 import { arrivalLimit } from './home-content.config';
 
 @Component({
   selector: 'app-home-arrivals',
-  imports: [RouterLink, ProductCard, Reveal, ShopLoading, ShopState],
+  imports: [RouterLink, ProductCard, Reveal, ShopState],
   template: `
     <section class="container arrivals" aria-labelledby="arrivals-title">
       <div class="heading" appReveal>
         <h2 id="arrivals-title">New Arrivals</h2>
         <a routerLink="/catalog" [queryParams]="{ sort: 'newest' }">Shop new arrivals</a>
       </div>
-      @if (products.isLoading()) {
-        <app-shop-loading label="Loading new arrivals…" [cards]="true" />
+      @if (!near() || products.isLoading()) {
+        <p class="visually-hidden" role="status">Loading new arrivals…</p>
+        <div class="row" aria-hidden="true">
+          @for (placeholder of [1, 2, 3, 4]; track placeholder) {
+            <div class="skeleton"></div>
+          }
+        </div>
       } @else if (products.error()) {
         <app-shop-state
           title="New arrivals are unavailable"
@@ -41,8 +54,13 @@ import { arrivalLimit } from './home-content.config';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomeArrivals {
-  protected readonly products = httpResource<ProductPage>(() => ({
-    url: '/products',
-    params: { sort: 'newest', limit: arrivalLimit },
-  }));
+  protected readonly near = signal(false);
+  protected readonly products = httpResource<ProductPage>(() =>
+    this.near()
+      ? {
+          url: '/products',
+          params: { sort: 'newest', limit: arrivalLimit },
+        }
+      : undefined,
+  );
 }

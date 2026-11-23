@@ -15,7 +15,7 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
-import { NavigationEnd, NavigationStart, Router, RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import type { Product } from '../catalog/product';
 import { Motion } from '../motion/motion';
 import { isConstrainedDevice } from '../motion/motion-policy';
@@ -28,15 +28,18 @@ import { observeGarage } from './garage/garage-session';
 import { heroZones } from './garage/hero-garage-camera';
 import { heroLayout, heroMotion, heroSteps } from './hero.config';
 import { attachHeroInput, heroPosition, savedHeroZone } from './hero-scroll';
-import { lastHeroZone, stepForSwipe } from './hero-gesture';
+import { lastHeroZone } from './hero-gesture';
 import { StoreHeaderSize } from '../store-header/store-header-size';
 import { followHeroSection } from './hero-section-link';
+import { firstGarageHint, watchHeroArrival } from './hero-arrival';
+import { skipHeroToShop } from './hero-skip';
+import { createHeroSwipe } from './hero-swipe';
 
 @Component({
   selector: 'app-home-hero',
   imports: [CurrencyPipe, RouterLink],
   templateUrl: './home-hero.html',
-  styleUrls: ['./home-hero.css', './garage/garage-hero.css'],
+  styleUrls: ['./home-hero.css', './hero-hint.css', './garage/garage-hero.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomeHero {
@@ -72,10 +75,10 @@ export class HomeHero {
   private cancelSkip?: () => void;
   private cancelSectionLink?: () => void;
 
-  private swipe?: { id: number; x: number; y: number };
-
   protected readonly live = signal(false);
   protected readonly stepEnabled = signal(false);
+  protected readonly showHint = signal(false);
+  protected readonly hintDismissed = signal(false);
   protected readonly needsOptIn = computed(() => !this.reduced() && !this.automatic());
   protected readonly showStatic = computed(
     () => this.reduced() || this.needsOptIn() || this.unavailable(),
@@ -98,70 +101,25 @@ export class HomeHero {
   constructor() {
     const destroy = inject(DestroyRef);
     afterNextRender(() => {
-      const hero = this.hero().nativeElement;
-      const view = hero.ownerDocument.defaultView;
-      if (!view) return;
-      const updateMode = () => {
-        this.automatic.set(this.canStartAutomatically());
-      };
-      this.wideGarage?.addEventListener('change', updateMode);
-      const followHashChange = () => {
-        if (this.entered()) this.followSectionLink();
-      };
-      view.addEventListener('hashchange', followHashChange);
-      let returning = false;
-      const routes = this.router.events.subscribe((event) => {
-        if (event instanceof NavigationStart) {
-          returning = event.navigationTrigger === 'popstate';
-          if (!returning) this.steps?.remember();
-        }
-        if (event instanceof NavigationEnd && this.entered()) {
-          this.followSectionLink();
-          if (returning && this.automatic() && !this.reduced()) {
-            const restored = savedHeroZone(view);
-            if (restored !== undefined) this.setZone(restored);
-          }
-        }
-      });
-      let checkedHistory = false;
-      const synchronizeArrival = () => {
-        if (!this.automatic() || this.reduced() || this.steps || this.stepFailed) return;
-        const restored = checkedHistory ? undefined : savedHeroZone(view);
-        checkedHistory = true;
-        const belowHeroStart =
-          heroPosition(hero, view, this.headerHeight()).offset > heroSteps.anchorTolerancePx;
-        if (restored !== undefined) this.setZone(restored);
-        else if (belowHeroStart) this.setZone(lastHeroZone);
-      };
-      view.addEventListener('scroll', synchronizeArrival, { passive: true });
-      let secondFrame = 0;
-      let idle = 0;
-      let timer = 0;
-      const frame = view.requestAnimationFrame(() => {
-        synchronizeArrival();
-        if (!hero.ownerDocument.documentElement.classList.contains('garage-intro-open')) {
+      const stopArrival = watchHeroArrival({
+        hero: this.hero().nativeElement,
+        router: this.router,
+        media: this.wideGarage,
+        updateMode: () => this.automatic.set(this.canStartAutomatically()),
+        entered: this.entered,
+        enter: () => {
           this.entered.set(true);
           this.followSectionLink();
-        }
-        secondFrame = view.requestAnimationFrame(() => {
-          this.firstPaint.set(true);
-          const enable = () => this.idleReady.set(true);
-          if (typeof view.requestIdleCallback === 'function') {
-            idle = view.requestIdleCallback(enable, { timeout: 1600 });
-          } else {
-            timer = view.setTimeout(enable, 250);
-          }
-        });
+        },
+        followSection: () => this.followSectionLink(),
+        zone: this.activeIndex,
+        synchronizeZone: () => this.synchronizeZone(),
+        restoreZone: () => this.restoreZone(),
+        paint: () => this.firstPaint.set(true),
+        idle: () => this.idleReady.set(true),
       });
       destroy.onDestroy(() => {
-        view.cancelAnimationFrame(frame);
-        view.cancelAnimationFrame(secondFrame);
-        if (idle) view.cancelIdleCallback(idle);
-        if (timer) view.clearTimeout(timer);
-        this.wideGarage?.removeEventListener('change', updateMode);
-        view.removeEventListener('scroll', synchronizeArrival);
-        view.removeEventListener('hashchange', followHashChange);
-        routes.unsubscribe();
+        stopArrival();
         this.destroySteps();
         this.cancelSkip?.();
         this.cancelSectionLink?.();
@@ -239,6 +197,31 @@ export class HomeHero {
     return !!(this.view && this.wideGarage?.matches && !isConstrainedDevice(this.view));
   }
 
+  private checkedHistory = false;
+  private restoredZone = false;
+  private synchronizeZone() {
+    if (!this.view || !this.automatic() || this.reduced() || this.steps || this.stepFailed) return;
+    if (!this.checkedHistory) {
+      this.checkedHistory = true;
+      this.restoreZone();
+    }
+    if (
+      !this.restoredZone &&
+      this.view.scrollY >=
+        heroPosition(this.hero().nativeElement, this.view, this.headerHeight()).end -
+          heroSteps.settleTolerancePx
+    )
+      this.setZone(lastHeroZone);
+  }
+
+  private restoreZone() {
+    if (!this.view || !this.automatic() || this.reduced()) return;
+    const restored = savedHeroZone(this.view);
+    if (restored === undefined) return;
+    this.restoredZone = true;
+    this.setZone(restored);
+  }
+
   protected exploreGarage() {
     this.explorationStatus.set('loading');
     this.explore.set(true);
@@ -251,6 +234,7 @@ export class HomeHero {
       headerHeight: this.headerHeight,
       index: this.activeIndex,
       move: (index, done) => {
+        this.hintDismissed.set(true);
         this.setZone(index, done);
         this.steps?.remember();
       },
@@ -262,6 +246,7 @@ export class HomeHero {
       },
     });
     this.stepEnabled.set(true);
+    if (firstGarageHint(this.view)) this.showHint.set(true);
   }
 
   private destroySteps() {
@@ -283,33 +268,14 @@ export class HomeHero {
     this.cancelSectionLink = followHeroSection(this.hero().nativeElement);
   }
 
-  protected chooseStaticZone(index: number) {
-    this.setZone(index);
-  }
-
-  protected startSwipe(event: PointerEvent) {
-    if (!['touch', 'pen'].includes(event.pointerType) || !event.isPrimary) return;
-    if (event.target instanceof Element && event.target.closest('a, button')) return;
-    this.swipe = { id: event.pointerId, x: event.clientX, y: event.clientY };
-  }
-
-  protected endSwipe(event: PointerEvent) {
-    const start = this.swipe;
-    if (!start || start.id !== event.pointerId) return;
-    this.swipe = undefined;
-    if (event.type === 'pointercancel') return;
-    const x = event.clientX - start.x;
-    const y = event.clientY - start.y;
-    if (!this.steps && Math.abs(x) <= Math.abs(y)) return;
-    const direction = stepForSwipe(x, y);
-    if (!direction) return;
-    if (this.steps) {
-      this.steps.swipe(direction);
-      return;
+  protected chooseStaticZone = (index: number) => this.setZone(index);
+  protected readonly swipe = createHeroSwipe((direction, vertical) => {
+    if (this.steps) this.steps.swipe(direction);
+    else if (!vertical) {
+      const next = this.activeIndex() + direction;
+      if (next >= 0 && next < heroZones.length) this.setZone(next);
     }
-    const next = this.activeIndex() + direction;
-    if (next >= 0 && next < heroZones.length) this.setZone(next);
-  }
+  });
 
   protected skip(event: MouseEvent) {
     if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
@@ -317,35 +283,8 @@ export class HomeHero {
     if (!target) return;
     event.preventDefault();
     this.cancelSkip?.();
-    target.focus({ preventScroll: true });
-    const view = target.ownerDocument.defaultView;
-    if (!view || this.reduced()) {
-      target.scrollIntoView({ block: 'start', behavior: 'instant' });
-      return;
-    }
-    const input = new AbortController();
-    const cancel = () => {
-      input.abort();
-      view.clearTimeout(timer);
-    };
-    const settle = () => {
-      cancel();
-      if (target.ownerDocument.activeElement !== target) return;
-      const { top } = target.getBoundingClientRect();
-      // Mounting deferred category content can interrupt the smooth jump.
-      if (top < 0 || top >= view.innerHeight)
-        target.scrollIntoView({ block: 'start', behavior: 'instant' });
-    };
-    const timer = view.setTimeout(settle, heroMotion.skipSettleMs);
-    this.cancelSkip = cancel;
-    target.ownerDocument.addEventListener('scrollend', settle, {
-      once: true,
-      signal: input.signal,
-    });
-    for (const name of ['wheel', 'pointerdown', 'keydown']) {
-      view.addEventListener(name, cancel, { passive: true, signal: input.signal });
-    }
-    target.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    this.steps?.cancelTravel();
+    this.cancelSkip = skipHeroToShop(target, this.reduced());
   }
 
   private openProduct(product: Product, point: PreviewPoint) {

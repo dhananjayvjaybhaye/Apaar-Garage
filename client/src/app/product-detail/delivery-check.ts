@@ -21,7 +21,7 @@ import { apiMessage } from '../api-message';
     :host { display:block; margin-top:1rem; }
     form { display:flex; flex-wrap:wrap; gap:.5rem; align-items:end; }
     label { display:grid; gap:.25rem; }
-    input { width:8rem; max-width:100%; min-height:2.65rem; padding:.5rem; border:1px solid var(--line); border-radius:.5rem; background:var(--surface); color:inherit; }
+    input { width:8rem; max-width:100%; min-height:2.75rem; padding:.5rem; border:1px solid var(--line); border-radius:.5rem; background:var(--surface); color:inherit; }
     p { margin:.45rem 0; }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

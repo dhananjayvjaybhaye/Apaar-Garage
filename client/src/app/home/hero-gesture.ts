@@ -3,13 +3,11 @@ import { garageHeroZones, heroSteps } from './hero.config';
 type Direction = -1 | 1;
 export const lastHeroZone = garageHeroZones.length - 1;
 
-export function stepForKey(key: string, shift = false) {
+export function stepForKey(key: string) {
   if (key === 'Home') return 'first';
   if (key === 'End') return 'last';
-  if (key === 'ArrowDown' || key === 'ArrowRight' || key === 'PageDown' || (key === ' ' && !shift))
-    return 1;
-  if (key === 'ArrowUp' || key === 'ArrowLeft' || key === 'PageUp' || (key === ' ' && shift))
-    return -1;
+  if (key === 'ArrowDown' || key === 'PageDown') return 1;
+  if (key === 'ArrowUp' || key === 'PageUp') return -1;
   return undefined;
 }
 

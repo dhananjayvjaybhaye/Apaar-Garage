@@ -131,7 +131,7 @@
 }
 
 .filter-chips { display:flex; flex-wrap:wrap; gap:.45rem; list-style:none; padding:0; margin: .75rem 0; }
-.filter-chips button { min-height:2.5rem; padding:.25rem .55rem; }
+.filter-chips button { min-height:2.75rem; padding:.25rem .55rem; }
 .filters .stock-filter { display:flex; align-items:center; gap:.5rem; min-height:2.75rem; }
 .filters .stock-filter input { width:1.05rem; min-height:auto; accent-color:var(--accent); }
 .back-top { display:flex; width:fit-content; margin:1.5rem auto 0; }

@@ -91,6 +91,8 @@ npm.cmd run preview
 
 The loopback preview at `http://127.0.0.1:4200` serves the built files with gzip and forwards `/products` and `/api` requests to the local API. Set `PREVIEW_PORT` or `PREVIEW_API` to use another port or API origin. For sign-in and cart writes, include the preview origin in the API's `CORS_ORIGINS`. Audit the home page, `/catalog`, and an existing product URL with Lighthouse in mobile mode. Use a fresh session to include the first-visit garage intro, and keep the same catalog data and throttling when comparing builds. Production hosts should enable Brotli or gzip for scripts, styles, and HTML.
 
+For a storefront review, run the preview with seeded products and try 1366×768, 1536×864, 1920×1080, 768×1024, and 390×844. On desktop, start in Cars, step to RC, scroll into the shop, and scroll back into RC. Reload a scrolled home page and repeat using the browser Back button. On mobile, use the four static garage buttons and place a guest COD order in a disposable database. Follow its tracking link, then check sign-in, the wishlist, and an unknown URL.
+
 ## Folder structure
 
 - `client/src/app` groups storefront pages into folders such as `home`, `catalog`, `product-detail`, `cart`, and `orders`.

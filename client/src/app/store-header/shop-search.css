@@ -4,7 +4,8 @@ form { display:flex; align-items:center; background:var(--panel); border:1px sol
 form:focus-within { border-color:var(--amber); }
 input { width:100%; min-width:0; border:0; padding:.5rem .75rem; color:var(--text); background:transparent; font-size:.875rem; }
 input:focus-visible { outline:0; }
-button { display:grid; place-items:center; min-width:2.5rem; min-height:2.35rem; border:0; background:transparent; color:var(--muted); cursor:pointer; border-radius:var(--radius); }
+form:has(input:focus-visible) { outline:2px solid var(--amber); outline-offset:2px; }
+button { display:grid; place-items:center; min-width:2.75rem; min-height:2.75rem; border:0; background:transparent; color:var(--muted); cursor:pointer; border-radius:var(--radius); }
 .suggestions { position:absolute; z-index:10; inset-inline:0; top:calc(100% + .35rem); min-width:min(100%, 15rem); padding:.35rem; border:1px solid var(--line); border-radius:var(--radius); background:var(--panel); box-shadow:var(--shadow); }
 ul { list-style:none; padding:0; margin:0; }
 li a { display:flex; align-items:center; gap:.55rem; padding:.5rem; text-decoration:none; color:var(--text); border-radius:.45rem; font-size:.8rem; }

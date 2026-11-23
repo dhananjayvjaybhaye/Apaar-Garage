@@ -22,7 +22,7 @@ dd { margin: 0; text-align: right; }
 .purchase-actions { display: flex; flex-wrap: wrap; gap: .65rem; margin-top: 1rem; }
 .purchase-actions .primary-button { flex: 1 0 auto; }
 .quantity { display: flex; align-items: center; gap: .45rem; background: var(--background); border: 1px solid var(--line); border-radius: var(--radius); }
-.quantity button { width: 2.5rem; min-height: 2.65rem; border: 0; border-radius: var(--radius); background: transparent; color: inherit; cursor: pointer; }
+.quantity button { width: 2.75rem; min-height: 2.75rem; border: 0; border-radius: var(--radius); background: transparent; color: inherit; cursor: pointer; }
 .quantity button:hover:not(:disabled) { color: var(--amber); }
 .quantity button:disabled { opacity: .45; cursor: default; }
 .quantity span { min-width: 1.15rem; text-align: center; font-variant-numeric: tabular-nums; }
@@ -40,7 +40,7 @@ dd { margin: 0; text-align: right; }
   .detail-grid { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: clamp(1.25rem, 4vw, 3rem); }
   .media-stack { display: grid; gap: 1.25rem; grid-area: 1 / 1; }
   app-product-media, .information { grid-row: auto; }
-  .purchase { position: sticky; top: 6rem; grid-column: 2; }
+  .purchase { position: sticky; top: calc(var(--store-header-height, 4.6rem) + 1rem); grid-column: 2; }
 }
 
 .purchase-title { display:flex; align-items:flex-start; gap:.65rem; }

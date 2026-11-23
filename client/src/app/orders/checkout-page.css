@@ -118,7 +118,7 @@ address {
   }
   .summary {
     position: sticky;
-    top: 6rem;
+    top: calc(var(--store-header-height, 4.6rem) + 1rem);
   }
 }
 
@@ -152,9 +152,6 @@ address {
 .save-address input[type='checkbox'] {
   width: 1rem;
   min-height: 1rem;
-}
-.summary {
-  scroll-margin-top: 6rem;
 }
 @media (width < 52rem) {
   .checkout {
