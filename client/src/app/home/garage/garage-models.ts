@@ -13,7 +13,7 @@ import {
 import { responsiveImage } from '../../ui/responsive-image';
 import { disposeModels } from '../../car-viewer/three-resources';
 import type { Product } from '../../catalog/product';
-import { garageZoneFor, type GarageZone } from './garage-path';
+import { garageZoneFor, type GarageZone, type RcBenchStatus } from './garage-path';
 import { limitBenchTexture, makeBenchCard, rcBenchFallback } from './garage-bench-card';
 import { benchMedia } from '../hero.config';
 
@@ -24,6 +24,9 @@ export interface GarageBay {
   light?: PointLight;
   lightIntensity: number;
   rail: MeshStandardMaterial;
+  focus: number;
+  setFocus: (focus: number) => void;
+  card?: ReturnType<typeof makeBenchCard>;
   product?: Product;
   request?: AbortController;
   hasModel: boolean;
@@ -44,20 +47,28 @@ export function createGarageModels(
   const photoSize = compact ? benchMedia.mobilePhotoSize : benchMedia.desktopPhotoSize;
   const pendingPhotos = new Map<number, () => void>();
   let cancelIdle: (() => void) | undefined;
-  function clear(display: Group) {
-    disposeModels([display]);
-    display.clear();
+  function clear(bay: GarageBay) {
+    disposeModels([bay.display]);
+    bay.display.clear();
+    bay.card = undefined;
+  }
+
+  function addCard(bay: GarageBay, card: ReturnType<typeof makeBenchCard>) {
+    bay.card = card;
+    bay.display.add(card);
   }
 
   let active = 0;
+  let rcStatus: RcBenchStatus = 'loading';
   const rcBay = zoneOptions.findIndex(({ category }) => category === 'rc');
-  if (rcBay >= 0) bays[rcBay].display.add(rcBenchFallback(document));
+  if (rcBay >= 0) addCard(bays[rcBay], rcBenchFallback(document, rcStatus));
 
-  function setFeatured(products: readonly Product[]) {
+  function setFeatured(products: readonly Product[], status: RcBenchStatus) {
     zoneOptions.forEach(({ category }, index) => {
       const product = products.find((entry) => garageZoneFor(entry) === category);
       const bay = bays[index];
       if (
+        (index !== rcBay || product || rcStatus === status) &&
         bay.product?.slug === product?.slug &&
         bay.product?.images.join('\n') === product?.images.join('\n') &&
         bay.product?.glbUrl === product?.glbUrl
@@ -68,11 +79,11 @@ export function createGarageModels(
 
       bay.request?.abort();
       pendingPhotos.delete(index);
-      clear(bay.display);
+      clear(bay);
       bay.product = product;
       bay.hasModel = false;
       bay.loadingModel = false;
-      if (index === rcBay) bay.display.add(rcBenchFallback(document, product?.name));
+      if (index === rcBay) addCard(bay, rcBenchFallback(document, status, product?.name));
       if (!product) return;
       const request = new AbortController();
       bay.request = request;
@@ -110,12 +121,13 @@ export function createGarageModels(
           source.dispose();
           throw error;
         }
-        clear(bay.display);
-        bay.display.add(makeBenchCard(texture));
+        clear(bay);
+        addCard(bay, makeBenchCard(texture));
         requestFrame();
       }
       pendingPhotos.set(index, () => loadPhoto(0));
     });
+    rcStatus = status;
     loadPhotoAt(active);
     loadActiveModel();
     scheduleOtherPhotos();
@@ -205,7 +217,7 @@ export function createGarageModels(
       return;
     }
     // Release resources belonging only to alternate GLTF scenes when replacing this display too.
-    clear(bay.display);
+    clear(bay);
     for (const alternate of model.scenes) {
       if (alternate !== model.scene) {
         alternate.visible = false;

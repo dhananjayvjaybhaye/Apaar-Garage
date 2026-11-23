@@ -2,54 +2,40 @@
   #hero
   class="hero"
   [class.garage-live]="live()"
+  [class.hero-steps]="stepEnabled()"
   [style.--hero-copy-clearance]="copyClearance"
+  [style.--garage-fade]="sceneFade"
   aria-labelledby="hero-title"
 >
   <div
     class="hero-content"
-    data-hero-content
     (pointerdown)="startSwipe($event)"
     (pointerup)="endSwipe($event)"
     (pointercancel)="endSwipe($event)"
   >
-    <picture class="hero-picture">
-      <source
-        media="(max-width: 42rem)"
-        srcset="/assets/garage/hero-mobile-400.webp 400w, /assets/garage/hero-mobile.webp 600w"
-        sizes="100vw"
-        type="image/webp"
-      />
-      <img
-        class="hero-photo"
-        src="/assets/garage/hero-wide-960.webp"
-        srcset="
-          /assets/garage/hero-wide-960.webp   960w,
-          /assets/garage/hero-wide-1280.webp 1280w,
-          /assets/garage/hero-wide.webp      1664w
-        "
-        sizes="100vw"
-        width="1664"
-        height="936"
-        decoding="async"
-        fetchpriority="high"
-        [attr.aria-hidden]="live() ? 'true' : null"
-        alt="Diecast cars displayed on lit garage shelves."
-      />
-    </picture>
+    @if (showStatic()) {
+      <div class="garage-static" aria-hidden="true">
+        <div class="garage-static-case">
+          @for (zone of zones; track zone.category; let index = $index) {
+            <span [class.active-sign]="index === activeIndex()">{{ zone.sign }}</span>
+          }
+        </div>
+      </div>
+    }
     <div #stage class="garage-stage" aria-hidden="true"></div>
     <div class="hero-shade" aria-hidden="true"></div>
     <div class="hero-layout">
       <div class="hero-copy">
-        <p class="hero-label" data-hero-enter>Collector-grade diecast</p>
+        <p class="hero-label">Collector-grade diecast</p>
         <h1 id="hero-title" tabindex="-1">
-          <span class="hero-title-line"><span data-hero-enter>Built to</span></span>
-          <span class="hero-title-line"><em data-hero-enter>Collect.</em></span>
+          Built to<br />
+          <em>Collect.</em>
         </h1>
-        <p class="hero-description" data-hero-enter>
+        <p class="hero-description">
           Iconic cars, heavy-duty trucks and precision bikes. Find a scale model worth making room
           for.
         </p>
-        <div class="hero-actions" data-hero-enter>
+        <div class="hero-actions">
           <a class="primary-button" routerLink="/catalog">Shop All</a>
           <a class="hero-skip" href="#featured" (click)="skip($event)">Skip to shop</a>
         </div>
@@ -78,13 +64,22 @@
         }
       </div>
     </div>
-    <app-garage-controls
-      [activeIndex]="activeIndex()"
-      [product]="preview()"
-      [ready]="ready()"
-      (selectZone)="jump($event)"
-      (openProduct)="openProduct($event.product, $event.source)"
-    />
+    <p class="visually-hidden" role="status" aria-live="polite" aria-atomic="true">
+      Showing {{ zoneName() }}, {{ activeIndex() + 1 }} of {{ zones.length }}
+    </p>
+    @if (showStatic() && !live()) {
+      <div class="hero-static-zones" role="group" aria-label="Garage zones">
+        @for (zone of zones; track zone.category; let index = $index) {
+          <button
+            type="button"
+            [attr.aria-pressed]="index === activeIndex()"
+            (click)="chooseStaticZone(index)"
+          >
+            {{ zone.name }}
+          </button>
+        }
+      </div>
+    }
     @if (hover(); as hovered) {
       <div
         class="hero-model-label"

@@ -2,23 +2,11 @@
   <app-home-hero
     #garageHero
     [products]="garageProducts()"
-    [category]="category()"
-    [preview]="featured().items[0]"
-    [ready]="!featured().loading"
+    [rcStatus]="rcBenchStatus()"
     (categorySelected)="selectCategory($event)"
   />
-  <app-garage-intro (closed)="garageHero.focusHeading($event)" />
-  @defer (on viewport; when tourReady()) {
-    <app-category-stages [stops]="categoryStages()" />
-  } @placeholder {
-    <div
-      class="category-scenes-placeholder"
-      [style.--scene-height]="tourLayout.sectionHeight"
-      [style.--scene-overlap]="tourLayout.overlap"
-      [style.--scene-count]="categories.length"
-      aria-hidden="true"
-    ></div>
-  }
+  <app-garage-intro (closed)="garageHero.focusHeading()" />
+  <app-category-stages [stops]="categoryStages()" />
 
   <section
     id="featured"

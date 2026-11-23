@@ -66,6 +66,9 @@ export function garageSign(
       brush.shadowBlur = compact ? 15 : 30;
       brush.fillText(text, w / 2, h / 2, w * 0.83);
       brush.shadowBlur = compact ? 5 : 10;
+    } else {
+      brush.shadowColor = colors.warm;
+      brush.shadowBlur = h * 0.11;
     }
     brush.fillText(text, w / 2, h / 2, w * 0.83);
   });
@@ -79,8 +82,9 @@ export function* addHeroLighting(scene: Scene, document: Document, compact: bool
     hemisphere.intensity = 1.85;
   } else scene.add(new AmbientLight(colors.ambient, 0.4));
   scene.add(hemisphere);
-  const sign = garageSign(document, 'APAAR GARAGE', 7.4, 1.85, compact, true);
-  sign.position.set(0, 5.38, -5.08);
+  const { width, height, y, z } = heroScene.neonSign;
+  const sign = garageSign(document, 'APAAR GARAGE', width, height, compact, true);
+  sign.position.set(0, y, z);
   scene.add(sign);
   yield;
   const sharedReflection = paintedPlane(document, 5.9, 6, compact, (brush, w, h) => {
@@ -146,13 +150,16 @@ export function* addHeroLighting(scene: Scene, document: Document, compact: bool
   );
   scene.add(dust);
 
-  return (time: number, active: number, blend: number) => {
+  return (time: number, active: number, blend: number, immediate: boolean, signX: number) => {
+    sign.position.x = signX;
     sign.material.opacity = 0.88 + Math.sin((time * 2 * Math.PI) / heroScene.neonCycleMs) * 0.11;
     const drift = (time * 2 * Math.PI) / heroScene.dustCycleMs;
     dust.position.set(Math.sin(drift) * 0.38, Math.sin(drift * 0.7) * 0.23, 0);
     cones.forEach(({ beam, reflection }, index) => {
       const target = (index === active ? 0.7 : 0.3) * (1 - 0.55 * blend);
-      beam.material.opacity += (target - beam.material.opacity) * 0.09;
+      beam.material.opacity = immediate
+        ? target
+        : beam.material.opacity + (target - beam.material.opacity) * 0.09;
       reflection.material.opacity = beam.material.opacity;
     });
   };

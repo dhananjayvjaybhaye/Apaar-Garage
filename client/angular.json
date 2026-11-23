@@ -32,11 +32,6 @@
                 "glob": "oswald-latin-wght-normal.woff2",
                 "input": "node_modules/@fontsource-variable/oswald/files",
                 "output": "fonts"
-              },
-              {
-                "glob": "hero-*.webp",
-                "input": "src/assets/images",
-                "output": "assets/garage"
               }
             ],
             "styles": ["src/styles.css"]

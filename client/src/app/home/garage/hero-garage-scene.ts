@@ -55,12 +55,14 @@ export function* createHeroGarage(scene: Scene, document: Document, compact: boo
   if (zoneLight) scene.add(zoneLight);
   return {
     bays,
-    animate(time: number, active: number, blend: number) {
-      animateLights(time, active, blend);
+    animate(time: number, active: number, blend: number, immediate: boolean, signX: number) {
+      animateLights(time, active, blend, immediate, signX);
       animatePlane?.(time);
       if (zoneLight) {
         const position = heroZones[active].x;
-        zoneLight.position.x += (position - zoneLight.position.x) * 0.19;
+        zoneLight.position.x = immediate
+          ? position
+          : zoneLight.position.x + (position - zoneLight.position.x) * 0.19;
         zoneLight.intensity = bays[active].lightIntensity;
       }
     },
@@ -104,7 +106,12 @@ function addRoom(scene: Scene) {
 }
 
 function makeBayLight() {
-  const light = new PointLight(colors.warm, heroScene.idleLight, 9, 1.6);
+  const light = new PointLight(
+    colors.warm,
+    heroScene.activeLight * heroScene.inactiveBrightness,
+    9,
+    1.6,
+  );
   light.position.set(0, 3.15, -0.54);
   return light;
 }
@@ -172,5 +179,26 @@ function createBay(
       depthWrite: false,
     }),
   );
-  return { display, hit, halo, light, lightIntensity: heroScene.idleLight, rail, hasModel: false };
+  const surfaces = [metal, bench, rail].map((material) => ({
+    material,
+    color: material.color.clone(),
+  }));
+  return {
+    display,
+    hit,
+    halo,
+    light,
+    rail,
+    focus: 0,
+    hasModel: false,
+    lightIntensity: heroScene.activeLight * heroScene.inactiveBrightness,
+    setFocus(focus) {
+      const brightness = heroScene.inactiveBrightness + focus * (1 - heroScene.inactiveBrightness);
+      for (const { material, color } of surfaces)
+        material.color.copy(color).multiplyScalar(brightness);
+      bay.scale.setScalar(1 + focus * (heroScene.activeScale - 1));
+      sign.scale.setScalar(1 + focus * (heroScene.activeLabelScale - 1));
+      sign.material.color.setScalar(brightness + focus * heroScene.activeLabelGlow);
+    },
+  };
 }

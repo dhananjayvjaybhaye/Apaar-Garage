@@ -1,12 +1,7 @@
 export const categoryScenes = {
   productLimit: 8,
-  // CSS lengths for the minimum scene height, vertical padding and overlap between scenes.
-  sectionHeight: '138svh',
-  sectionPadding: 'clamp(2.6rem, 8svh, 6.5rem)',
-  overlap: 'clamp(0.75rem, 3vw, 2.5rem)',
   imageSizes:
     'auto, (min-width: 98rem) 360px, (min-width: 64rem) 25vw, (min-width: 40rem) 50vw, calc(100vw - 2rem)',
-  stickyGapPx: 4,
   // ScrollTrigger start and end lines are percentages of the viewport. Scrub is in seconds.
   rowStart: 'top 96%',
   rowEnd: 'bottom 19%',

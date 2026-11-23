@@ -56,16 +56,16 @@ export class CategoryStages {
       const near =
         ready && typeof IntersectionObserver !== 'undefined'
           ? new IntersectionObserver(
-              ([entry], observer) => {
-                if (!entry.isIntersecting) return;
+              (entries, observer) => {
+                if (!entries.some((entry) => entry.isIntersecting)) return;
                 observer.disconnect();
                 loadMotion();
               },
               { threshold: 0.15 },
             )
           : undefined;
-      const firstHeading = listing.querySelector('[data-scene-heading]');
-      if (firstHeading) near?.observe(firstHeading);
+      // A direct category link can land past the first heading.
+      listing.querySelectorAll('[data-scene-heading]').forEach((heading) => near?.observe(heading));
       cleanup(() => {
         alive = false;
         dispose?.();

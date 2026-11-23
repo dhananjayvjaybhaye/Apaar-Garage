@@ -1,5 +1,6 @@
 .garage-stage,
-.garage-still {
+.garage-still,
+.garage-static {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -10,7 +11,7 @@
   z-index: 1;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 280ms ease;
+  transition: opacity var(--garage-fade) ease;
 }
 
 .garage-live .garage-stage {
@@ -34,8 +35,79 @@
   pointer-events: none;
 }
 
+.garage-static {
+  display: grid;
+  align-items: center;
+  justify-items: end;
+  padding-inline: 10%;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 72% 75%, #ff9b5214, transparent 38%);
+  transition: opacity var(--garage-fade) ease;
+}
+
+.garage-live .garage-static {
+  opacity: 0;
+}
+
+.garage-static-case {
+  position: relative;
+  width: min(43%, 36rem);
+  aspect-ratio: 1.38;
+  border: 0.45rem solid #2a292f;
+  border-block-end-color: #63352b;
+  background:
+    linear-gradient(0deg, #793d2929, transparent 12%),
+    repeating-linear-gradient(90deg, #17171f 0 19%, #1d1c25 20%), #191923;
+  box-shadow:
+    inset 0 2px #e4a565a0,
+    0 2rem 3rem #08080b6c;
+}
+
+.garage-static-case::before {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at top, #e7a35135, transparent 72%);
+  content: '';
+}
+
+.garage-static-case span {
+  position: absolute;
+  inset: auto 0 100%;
+  width: fit-content;
+  margin-inline: auto;
+  padding: 0.25rem 0.85rem;
+  background: #211c20;
+  color: #e2ad79;
+  font: 700 clamp(0.75rem, 2vw, 1.2rem)/1.1 var(--display);
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 0.6rem #eaa15e80;
+  opacity: 0;
+  transition: opacity var(--garage-fade) ease;
+}
+
+.garage-static-case .active-sign {
+  opacity: 1;
+}
+
+@media (max-width: 55.99rem) {
+  .garage-static {
+    justify-items: center;
+    align-items: end;
+    padding: 0 1rem clamp(5.5rem, 21svh, 11rem);
+  }
+
+  .garage-static-case {
+    width: min(73%, 23rem);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .garage-stage {
+  .garage-stage,
+  .garage-static {
     transition: none;
+  }
+
+  .garage-static-case span {
+    transition-duration: 120ms;
   }
 }

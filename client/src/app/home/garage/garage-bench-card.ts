@@ -7,6 +7,7 @@ import {
   Texture,
 } from 'three';
 import { heroScene } from '../hero.config';
+import type { RcBenchStatus } from './garage-path';
 
 // Size in world units, matching the existing photo cards in all four display cases.
 const card = { width: 2.62, height: 1.94, centerY: 1.02, centerZ: 0.19 };
@@ -38,7 +39,13 @@ export function limitBenchTexture(document: Document, source: Texture, maxSize: 
   return new CanvasTexture(canvas);
 }
 
-export function rcBenchFallback(document: Document, productName?: string) {
+const rcMessages: Record<RcBenchStatus, string> = {
+  loading: 'Finding RC models…',
+  ready: 'No RC products to display yet',
+  unavailable: 'RC models are temporarily unavailable',
+};
+
+export function rcBenchFallback(document: Document, status: RcBenchStatus, productName?: string) {
   const canvas = document.createElement('canvas');
   canvas.width = 320;
   canvas.height = 237;
@@ -57,7 +64,7 @@ export function rcBenchFallback(document: Document, productName?: string) {
     brush.fillText('RC TOYS', width / 2, height * 0.41, width - 40);
     brush.font = 'bold 18px sans-serif';
     brush.fillText(
-      productName || 'No RC products to display yet',
+      productName || rcMessages[status],
       width / 2,
       height * 0.63,
       width - 40,

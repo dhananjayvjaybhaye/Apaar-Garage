@@ -1,14 +1,13 @@
 import type { Renderer2 } from '@angular/core';
-import type { gsap } from 'gsap';
 import type { Product } from '../../catalog/product';
 import type { Motion } from '../../motion/motion';
 import { mediaQuery } from '../../ui/media-query';
-import { motionQueries } from '../../motion/motion-policy';
+import { heroLayout } from '../hero.config';
 import type { PreviewPoint } from '../../product-preview/product-preview';
 import { prefetchProductMedia } from '../../product-preview/prefetch-product-media';
 import type { EngineLoading } from '../../ui/engine-loading';
 import { connectInspection } from './garage-inspection';
-import { garageZoneFor } from './garage-path';
+import { garageZoneFor, type RcBenchStatus } from './garage-path';
 import { heroZones } from './hero-garage-camera';
 import type { mountGarage } from './garage-renderer';
 
@@ -18,9 +17,9 @@ interface SessionOptions {
   motion: Motion;
   loading: EngineLoading;
   manual: boolean;
-  scrollProgress: () => number;
-  activeIndex: () => number;
+  index: () => number;
   readProducts: () => readonly Product[];
+  readRcStatus: () => RcBenchStatus;
   selectProduct: (item: Product, point: PreviewPoint) => void;
   hoverProduct?: NonNullable<Parameters<typeof mountGarage>[1]['hover']>;
   onUnavailable?: () => void;
@@ -30,20 +29,17 @@ interface SessionOptions {
 
 export function observeGarage(options: SessionOptions) {
   const { stage, motion, loading } = options;
-  const view = stage.ownerDocument.defaultView;
+  const ownerView = stage.ownerDocument.defaultView;
   if (
-    !view ||
+    !ownerView ||
     typeof IntersectionObserver === 'undefined' ||
     typeof ResizeObserver === 'undefined'
   ) {
     options.onUnavailable?.();
     return;
   }
-  const desktop = mediaQuery(motionQueries[2] + ' and (pointer: fine)', view);
-  const device = view.navigator as Navigator & {
-    deviceMemory?: number;
-    connection?: { saveData?: boolean };
-  };
+  const view = ownerView;
+  const desktop = mediaQuery(heroLayout.desktopControlsQuery, view);
   let session: ReturnType<typeof connectGarage> | undefined;
   let job: ReturnType<EngineLoading['begin']> | undefined;
   let disposed = false;
@@ -59,23 +55,15 @@ export function observeGarage(options: SessionOptions) {
   const refresh = () => {
     observer.disconnect();
     stop();
-    const enoughCores = !device.hardwareConcurrency || device.hardwareConcurrency >= 4;
-    if (
-      !disposed &&
-      (options.manual ||
-        (desktop?.matches &&
-          enoughCores &&
-          !device.connection?.saveData &&
-          (device.deviceMemory ?? 4) > 2))
-    )
-      observer.observe(stage);
-    else options.onUnavailable?.();
+    if (disposed) return;
+    observer.observe(stage);
   };
   const observer = new IntersectionObserver(([entry]) => {
-    if (!entry.isIntersecting) {
-      stop();
-      return;
-    }
+    if (entry.isIntersecting) loadScene();
+    else stop();
+  });
+
+  function loadScene() {
     if (session || job) return;
     const current = generation;
     const loadingJob = (job = loading.begin());
@@ -92,23 +80,28 @@ export function observeGarage(options: SessionOptions) {
             options,
             view,
             world.mountGarage,
-            tools.gsap,
+            tools,
             options.manual || !desktop?.matches,
             () => loadingJob.finish(),
           ),
         );
       })
       .catch(() => {
-        if (!disposed && current === generation) options.onUnavailable?.();
+        if (!disposed && current === generation) {
+          options.onUnavailable?.();
+        }
         loadingJob.finish();
       });
-  });
+  }
   motion.zone.runOutsideAngular(() => {
     desktop?.addEventListener('change', refresh);
     refresh();
   });
   return {
-    scrollTo: (progress: number, index: number) => session?.setScrollFrame(progress, index),
+    setZone(index: number, done?: () => void) {
+      if (session) session.setZone(index, done);
+      else done?.();
+    },
     inspect: (...args: Parameters<ReturnType<typeof connectInspection>['inspect']>) =>
       session?.inspect(...args),
     destroy() {
@@ -124,13 +117,12 @@ function connectGarage(
   options: SessionOptions,
   view: Window,
   create: typeof mountGarage,
-  animator: typeof gsap,
+  tools: NonNullable<Awaited<ReturnType<Motion['loadScrollTools']>>>,
   mobile: boolean,
   finish: () => void,
 ) {
   const { stage, motion, dom } = options;
-  let progress = options.scrollProgress();
-  let activeZone = options.activeIndex();
+  let index = options.index();
   let canvas: HTMLCanvasElement | undefined;
   let still: HTMLImageElement | undefined;
   let scene: ReturnType<typeof mountGarage> = null;
@@ -168,6 +160,7 @@ function connectGarage(
         hover:
           options.hoverProduct && ((item) => motion.zone.run(() => options.hoverProduct?.(item))),
         failed: fallback,
+        prepared: () => scene?.setZone(options.index()),
         ready: () => {
           finish();
           still?.remove();
@@ -178,16 +171,16 @@ function connectGarage(
       mobile,
     );
     if (!scene) return false;
-    scene.setScrollFrame(progress, activeZone);
-    scene.setFeatured(options.readProducts());
+    scene.setZone(index);
+    scene.setFeatured(options.readProducts(), options.readRcStatus());
     options.onScene(scene);
     return true;
   }
 
-  function setScrollFrame(value: number, index: number) {
-    progress = value;
-    activeZone = index;
-    if (!held) scene?.setScrollFrame(progress, activeZone);
+  function setZone(value: number, done?: () => void) {
+    index = value;
+    if (!held && scene) scene.setZone(index, done);
+    else done?.();
   }
 
   function fallback() {
@@ -223,14 +216,14 @@ function connectGarage(
     stage,
     view,
     zone: motion.zone,
-    animator,
+    animator: tools.gsap,
     read: () => scene,
     cancelled: () => cancelled,
     restart: () => motion.zone.runOutsideAngular(start),
     freeze,
     holdSelection: (hold) => {
       held = hold;
-      if (!hold) scene?.setScrollFrame(progress, activeZone);
+      if (!hold) scene?.setZone(index);
     },
     zoneX: (product) =>
       heroZones.find(({ category }) => category === garageZoneFor(product))?.x ?? 0,
@@ -243,5 +236,5 @@ function connectGarage(
   } catch {
     fallback();
   }
-  return { inspect: inspection.inspect, setScrollFrame, destroy };
+  return { inspect: inspection.inspect, setZone, destroy };
 }

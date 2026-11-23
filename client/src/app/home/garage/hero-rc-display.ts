@@ -14,7 +14,8 @@ import { heroScene } from '../hero.config';
 
 export function addRcDisplayDetails(scene: Scene, x: number) {
   const hanger = new Group();
-  hanger.position.set(x, 6.43, 0.44);
+  const { xOffset, hangerY, z, drop } = heroScene.rcPlane;
+  hanger.position.set(x + xOffset, hangerY, z);
   scene.add(hanger);
   const fuselage = new MeshStandardMaterial({ color: heroScene.colors.strip, roughness: 0.48 });
   const accent = new MeshStandardMaterial({ color: heroScene.colors.rail, roughness: 0.52 });
@@ -26,7 +27,7 @@ export function addRcDisplayDetails(scene: Scene, x: number) {
 
   // The pivot is at the ceiling so the plane and its suspension wires move together.
   const plane = new Group();
-  plane.position.y = -1.4;
+  plane.position.y = -drop;
   plane.rotation.y = -0.48;
   hanger.add(plane);
   const body = new Mesh(new CapsuleGeometry(0.115, 0.94, 4, 8), fuselage);

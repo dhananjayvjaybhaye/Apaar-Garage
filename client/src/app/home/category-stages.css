@@ -12,22 +12,15 @@
   --scene-base: #18130f;
   position: relative;
   isolation: isolate;
-  min-block-size: var(--scene-height);
-  margin-block-start: calc(-1 * var(--scene-overlap));
-  padding-block: var(--scene-padding);
-  /* The existing scene minimum reserves space until its grid approaches the viewport. */
-  content-visibility: auto;
-  contain-intrinsic-block-size: auto 0px;
 }
 
-.category-scene:first-of-type {
-  margin-block-start: 0;
+.category-scene + .category-scene {
+  margin-block-start: clamp(4rem, 5vw, 6rem);
 }
 
-/* Skip to shop focuses the destination before scrolling. Measure the preceding sections
-   so their reserved heights cannot move the destination during the jump. */
-:host:has(+ #featured:focus) .category-scene {
-  content-visibility: visible;
+.category-scenes,
+.category-scene {
+  scroll-margin-top: var(--store-header-height, var(--header-offset));
 }
 
 [data-category='truck'] {
@@ -45,17 +38,6 @@
   --scene-base: #0e1819;
 }
 
-.scene-heading {
-  position: sticky;
-  z-index: 2;
-  top: calc(var(--store-header-height, var(--header-offset)) + var(--category-sticky-gap));
-  background: linear-gradient(
-    var(--scene-base) 72%,
-    color-mix(in srgb, var(--scene-base) 95%, transparent) 93%,
-    transparent
-  );
-}
-
 .scene-heading-inner,
 .scene-products {
   width: min(calc(100% - 2rem), 96rem);
@@ -67,8 +49,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 0.55rem 1.25rem;
-  padding-block: clamp(0.65rem, 2svh, 1.4rem);
-  border-bottom: 1px solid color-mix(in srgb, var(--scene-accent) 44%, transparent);
+  padding-block: 1.5rem 1rem;
 }
 
 .heading-mask {
@@ -78,29 +59,44 @@
 .scene-heading h3 {
   margin: 0 0 0.24rem;
   color: var(--text);
-  font: 700 clamp(2rem, 5vw, 4.7rem) / 1 var(--display);
+  font: 700 clamp(1.75rem, 3vw, 2.5rem) / 1 var(--display);
   text-transform: uppercase;
 }
 
 .scene-heading p {
   margin: 0;
   color: var(--muted);
+  font-size: 0.975rem;
   line-height: 1.4;
 }
 
-.scene-heading a {
+.scene-heading-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
   flex: none;
   min-height: 44px;
+  padding-inline: 0.65rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 650;
+  text-decoration: none;
   white-space: nowrap;
 }
 
-.scene-heading a:hover,
-.scene-catalog-link:hover {
-  border-color: var(--scene-accent);
+.scene-heading-link:hover {
+  border-color: var(--line);
+  color: var(--text);
 }
 
-.scene-products {
-  margin-block-start: clamp(1.3rem, 5svh, 3.75rem);
+.scene-heading-link span {
+  color: var(--scene-accent);
+}
+
+.scene-catalog-link:hover {
+  border-color: var(--scene-accent);
 }
 
 .scene-grid {
@@ -219,12 +215,6 @@
   .scene-skeleton:nth-child(n + 2) {
     display: none;
   }
-  .scene-heading-inner {
-    gap: 0.65rem;
-  }
-  .scene-heading p {
-    font-size: 0.86rem;
-  }
 }
 
 @media (40rem <= width < 64rem) {
@@ -233,4 +223,14 @@
   }
 }
 
+@media (max-width: 30rem) {
+  .scene-heading-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
 
+  .scene-heading-link {
+    padding-inline-start: 0;
+  }
+}

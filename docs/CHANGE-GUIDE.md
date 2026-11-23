@@ -13,7 +13,13 @@ Start with the dark amber palette in `client/src/styles.css`. Change a shared va
 
 ## Change animation speed
 
-Edit `hero.config.ts` for the hero entrance and camera animations. Edit `category-scenes.config.ts` for category section heights, scroll distances, and stagger timings. Test both normal motion and reduced motion.
+Edit `hero.config.ts` for the canvas fade and camera animations. The `heroSteps` settings control the dolly, cooldown, wheel sample window, quiet period, and swipe threshold. In a development build, add `?debugScroll=1` and open the browser console to inspect wheel units, deltas, timestamps, and pinch signals. Test a mouse notch, a light two-finger swipe, a long swipe with momentum, and a reversal. Leave the stall timeout longer than the move so the page returns to normal scroll if rendering stops. Edit `category-stages.css` for category heading size and section spacing, and `category-scenes.config.ts` for the reveal timings. Test both normal motion and reduced motion.
+
+The `heroScene` values in `hero.config.ts` control the zoom and emphasis of the active case. `activeZoneFill` sets the case width as a fraction of the garage opening beside the headline, and `signTopMargin` sets the minimum clearance in CSS pixels. `desktopFrame` and `compactFrame` set the case's screen position. The projection test covers all four zones at 1366×768, 1440×900, 1920×1080, and 2560×1440. `inactiveBrightness` controls the dimming, and the dolly distances use Three.js world units. Check all four zone centers and the transitions on a wide and narrow screen after changing these values.
+
+## Populate an empty RC bench
+
+Run `npm.cmd run seed` from `server` to load the sample listings into the database configured in `server/.env`. The seed includes 15 RC products. Use End to reach the RC display in the 3D hero, or choose RC in the static hero, after the seed completes.
 
 ## Change the COD fee
 

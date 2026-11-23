@@ -10,9 +10,10 @@ import {
 import { mediaQuery } from '../../ui/media-query';
 import type { Product } from '../../catalog/product';
 import { disposeModels } from '../../car-viewer/three-resources';
-import { heroScene } from '../hero.config';
+import { heroLayout, heroScene, heroSteps } from '../hero.config';
 import { createGarageModels, type GarageBay } from './garage-models';
-import { heroCameraAt, heroZoneAt, heroZones } from './hero-garage-camera';
+import type { RcBenchStatus } from './garage-path';
+import { heroCameraAt, heroZones } from './hero-garage-camera';
 import { createHeroGarage } from './hero-garage-scene';
 
 interface GarageEvents {
@@ -20,6 +21,7 @@ interface GarageEvents {
   prefetch: (product: Product) => void;
   hover?: (item: { product: Product; x: number; y: number } | undefined) => void;
   failed: () => void;
+  prepared: () => void;
   ready?: () => void;
 }
 
@@ -31,17 +33,27 @@ export function mountGarage(canvas: HTMLCanvasElement, events: GarageEvents, mob
   let renderer: WebGLRenderer | undefined;
   const scene = new Scene();
   let bays: GarageBay[] = [];
-  let animate: ((time: number, active: number, blend: number) => void) | undefined;
+  let animate:
+    | ((time: number, active: number, blend: number, immediate: boolean, signX: number) => void)
+    | undefined;
   let models: ReturnType<typeof createGarageModels> | undefined;
   let featured: readonly Product[] = [];
+  let rcStatus: RcBenchStatus = 'loading';
   const camera = new PerspectiveCamera(heroScene.fieldOfView, 1, 0.1, 85);
   const ray = new Raycaster();
   const ndc = new Vector2();
   let disposed = false;
   let visible = false;
   let frame = 0;
-  let progress = 0;
-  let activeZone: number | undefined;
+  let index = 0;
+  let move: { from: number; start: number; done: () => void } | undefined;
+
+  function finishMove() {
+    const done = move?.done;
+    move = undefined;
+    done?.();
+  }
+  let snapLighting = true;
   let pointer: { x: number; y: number } | null = null;
   let mx = 0;
   let my = 0;
@@ -67,8 +79,8 @@ export function mountGarage(canvas: HTMLCanvasElement, events: GarageEvents, mob
     ({ bays, animate } = yield* createHeroGarage(scene, document, mobile));
     yield;
     models = createGarageModels(bays, heroZones, () => !disposed, requestFrame, document, mobile);
-    models.select(activeZone ?? heroZoneAt(progress));
-    // Paint the scene before starting media work. The original photo stays visible until then.
+    models.select(index);
+    // Paint the scene before starting media work, with the matching backdrop underneath.
   }
 
   const preparation = prepare();
@@ -78,14 +90,17 @@ export function mountGarage(canvas: HTMLCanvasElement, events: GarageEvents, mob
     if (disposed) return;
     try {
       if (!preparation.next().done) preparationFrame = view!.requestAnimationFrame(prepareFrame);
-      else requestFrame();
+      else {
+        events.prepared();
+        requestFrame();
+      }
     } catch {
       events.failed();
     }
   }
 
   function pick(x: number, y: number) {
-    if (!painted || !visible || progress > 0.975) return undefined;
+    if (!painted || !visible) return undefined;
     const rect = canvas.getBoundingClientRect();
     if (!rect.width || !rect.height) return undefined;
     ndc.set(((x - rect.left) / rect.width) * 2 - 1, (1 - (y - rect.top) / rect.height) * 2 - 1);
@@ -102,7 +117,14 @@ export function mountGarage(canvas: HTMLCanvasElement, events: GarageEvents, mob
 
   function requestFrame() {
     if (models && !frame && !overlayFrame && !disposed && visible && !document.hidden)
-      frame = requestAnimationFrame(render);
+      frame = requestAnimationFrame((time) => {
+        try {
+          render(time);
+        } catch {
+          frame = 0;
+          events.failed();
+        }
+      });
   }
 
   function prioritizeOverlay() {
@@ -117,17 +139,33 @@ export function mountGarage(canvas: HTMLCanvasElement, events: GarageEvents, mob
 
   function render(time: number) {
     frame = 0;
-    if (!renderer || !visible || disposed || document.hidden) return;
+    if (!renderer || !measured.width || !visible || disposed || document.hidden) return;
     const targetX = pointer ? (pointer.x / canvas.clientWidth) * 2 - 1 : (drag?.x ?? 0);
     const targetY = pointer ? (pointer.y / canvas.clientHeight) * 2 - 1 : (drag?.y ?? 0);
     mx += (targetX - mx) * 0.18;
     my += (targetY - my) * 0.18;
-    const compact = mobile || camera.aspect < heroScene.maximumCompactAspect;
-    const base = heroCameraAt(progress, camera.aspect, compact);
-    const drift = Math.sin((time * 2 * Math.PI) / heroScene.driftCycleMs) * heroScene.drift;
+    const compact = measured.width < heroLayout.stackedWidthPx;
+    const phase = move ? Math.min(1, Math.max(0, (time - move.start) / heroSteps.moveMs)) : 1;
+    const base = heroCameraAt(index, measured.width, measured.height, compact, move?.from, phase);
+    const drift =
+      index === 0 || move
+        ? 0
+        : Math.sin((time * 2 * Math.PI) / heroScene.driftCycleMs) * heroScene.drift;
     const blend = inspection?.amount ?? 0;
     const x = inspection?.x ?? base.lookX;
     const mix = (from: number, to: number) => from + (to - from) * blend;
+    const { width, height } = measured;
+    const offsetX = width * (0.5 - base.screenX);
+    const offsetY = height * (0.5 - base.screenY);
+    const viewOffset = camera.view;
+    if (
+      viewOffset?.fullWidth !== width ||
+      viewOffset.fullHeight !== height ||
+      viewOffset.offsetX !== offsetX ||
+      viewOffset.offsetY !== offsetY
+    ) {
+      camera.setViewOffset(width, height, offsetX, offsetY, width, height);
+    }
     camera.position.set(
       mix(base.x, x + 0.9) + (mx * heroScene.parallax + drift) * (1 - blend),
       mix(base.y, 2.55) - my * 0.16 * (1 - blend),
@@ -136,10 +174,11 @@ export function mountGarage(canvas: HTMLCanvasElement, events: GarageEvents, mob
     camera.lookAt(
       mix(base.lookX, x) + mx * 0.16 * (1 - blend),
       mix(base.lookY, 1.85) - my * 0.13 * (1 - blend),
-      -1.5,
+      mix(base.lookZ, -1.5),
     );
     camera.updateMatrixWorld();
-    const index = activeZone ?? heroZoneAt(progress);
+    const immediate = snapLighting || (index === 0 && !move) || (!!move && phase === 1);
+    snapLighting = false;
     const previousHover = hover;
     if (pointer) {
       const rect = canvas.getBoundingClientRect();
@@ -157,23 +196,32 @@ export function mountGarage(canvas: HTMLCanvasElement, events: GarageEvents, mob
     bays.forEach((bay, bayIndex) => {
       const lit = bayIndex === index;
       const hovered = Boolean(hover && hover.slug === bay.product?.slug);
-      const intensity =
-        (lit ? heroScene.activeLight : heroScene.idleLight) + (hovered ? heroScene.hoverLight : 0);
-      bay.lightIntensity += (intensity - bay.lightIntensity) * 0.19;
+      bay.focus = immediate ? Number(lit) : bay.focus + (Number(lit) - bay.focus) * 0.19;
+      bay.setFocus(bay.focus);
+      const brightness =
+        heroScene.inactiveBrightness + bay.focus * (1 - heroScene.inactiveBrightness);
+      bay.card?.material.color.setScalar(brightness);
+      const intensity = heroScene.activeLight * brightness + (hovered ? heroScene.hoverLight : 0);
+      bay.lightIntensity = immediate
+        ? intensity
+        : bay.lightIntensity + (intensity - bay.lightIntensity) * 0.19;
       if (bay.light) bay.light.intensity = bay.lightIntensity;
       bay.rail.emissiveIntensity = 0.14 + bay.lightIntensity / 26;
       const opacity = hovered ? 0.95 : lit ? 0.25 : 0.06;
-      bay.halo.material.opacity += (opacity - bay.halo.material.opacity) * 0.2;
+      bay.halo.material.opacity = immediate
+        ? opacity
+        : bay.halo.material.opacity + (opacity - bay.halo.material.opacity) * 0.2;
     });
-    animate?.(time, index, blend);
+    animate?.(time, index, blend, immediate, base.signX);
     renderer.render(scene, camera);
+    if (phase === 1) finishMove();
     if (!painted) {
       painted = true;
       events.ready?.();
       preparationFrame = view!.requestAnimationFrame(() => {
         if (disposed) return;
         mediaReady = true;
-        models?.setFeatured(featured);
+        models?.setFeatured(featured, rcStatus);
       });
     }
     requestFrame();
@@ -191,9 +239,6 @@ export function mountGarage(canvas: HTMLCanvasElement, events: GarageEvents, mob
     // Use the untransformed stage size, so the animated frame never changes the viewport buffer.
     renderer.setDrawingBufferSize(width, height, ratio);
     camera.aspect = width / height;
-    const compact = mobile || camera.aspect < heroScene.maximumCompactAspect;
-    const offset = compact ? heroScene.mobileOffset : heroScene.desktopOffset;
-    camera.setViewOffset(width, height, -width * offset, 0, width, height);
     requestFrame();
   }
 
@@ -223,7 +268,16 @@ export function mountGarage(canvas: HTMLCanvasElement, events: GarageEvents, mob
   view.visualViewport?.addEventListener('resize', updateResolution, { passive: true, signal });
   document.addEventListener(
     'visibilitychange',
-    () => (document.hidden ? pause() : requestFrame()),
+    () => {
+      if (document.hidden) {
+        pause();
+        // The hidden tab cannot render intermediate frames. The first visible frame is the target.
+        if (move) {
+          finishMove();
+          snapLighting = true;
+        }
+      } else requestFrame();
+    },
     { signal },
   );
   canvas.addEventListener(
@@ -238,7 +292,7 @@ export function mountGarage(canvas: HTMLCanvasElement, events: GarageEvents, mob
         return;
       }
       if (event.pointerType !== 'mouse') return;
-      // Pointer parallax is a small offset on top of the tab position and scroll dolly.
+      // Pointer parallax is a small offset on top of the zone camera.
       pointer = { x: event.offsetX, y: event.offsetY };
       requestFrame();
     },
@@ -301,14 +355,22 @@ export function mountGarage(canvas: HTMLCanvasElement, events: GarageEvents, mob
   return {
     prioritizeOverlay,
     productAt: pick,
-    setFeatured(products: readonly Product[]) {
+    setFeatured(products: readonly Product[], status: RcBenchStatus) {
       featured = products;
-      if (mediaReady) models?.setFeatured(products);
+      rcStatus = status;
+      if (mediaReady) models?.setFeatured(products, rcStatus);
     },
-    setScrollFrame(value: number, index: number) {
+    setZone(value: number, onDone?: () => void) {
+      const from = index;
+      finishMove();
+      index = value;
+      if (onDone && painted && visible && !document.hidden && from !== value) {
+        move = { from, start: view.performance.now(), done: onDone };
+      } else {
+        snapLighting = true;
+        onDone?.();
+      }
       models?.select(index);
-      progress = value;
-      activeZone = index;
       requestFrame();
     },
     focus(x: number, amount: number) {
@@ -332,6 +394,7 @@ export function mountGarage(canvas: HTMLCanvasElement, events: GarageEvents, mob
     },
     destroy() {
       disposed = true;
+      finishMove();
       pause();
       view.cancelAnimationFrame(preparationFrame);
       preparation.return();

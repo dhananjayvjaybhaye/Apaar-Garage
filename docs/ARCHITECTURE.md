@@ -2,11 +2,11 @@
 
 ## Garage scene
 
-The home hero shows an image until the WebGL scene loads and keeps that fallback for unsupported or reduced-motion environments. `garage-renderer.ts` builds and draws the room, lights, and products. The original animated door opens from the Enter button or can be skipped for the rest of the session.
+The home hero shows its text over a dark background while WebGL starts. A CSS display case is the fallback for constrained devices, unavailable WebGL, and reduced motion. `garage-renderer.ts` builds and draws the room, lights, and products. The original animated door opens from the Enter button or can be skipped for the rest of the session.
 
-The hero pins while the camera moves through Cars, Trucks, Bikes, and RC Toys. The tabs scroll to the matching zone. `hero.config.ts` defines the zone order and scroll length. `garage-session.ts` releases the renderer when the hero leaves the viewport, and `garage-inspection.ts` hands it off to the product viewer during a 3D preview.
+The desktop hero holds its normal page position while one deliberate wheel gesture, swipe, or key press moves through Cars, Trucks, Bikes, and RC Toys. The glowing case label shows the active zone and a live region announces changes. The static fallback has four text buttons. `hero-gesture.ts` normalizes wheel units, accumulates small deltas over 100 ms, and waits for the camera and a 120 ms quiet gap before treating momentum as a separate gesture. `hero-scroll.ts` lets the page scroll away at either end and restores a saved zone at the hero. There is no extra page height for the tour. `garage-session.ts` releases the renderer when the hero leaves the viewport, and `garage-inspection.ts` hands it off to the product viewer during a 3D preview.
 
-Below the hero, `category-stages-motion.ts` links card entrances and background parallax to normal scrolling. Each category uses a CSS sticky heading and the standard product cards.
+Below the hero, `category-stages-motion.ts` links card entrances and background parallax to normal scrolling. Category headings stay in the regular page flow, with compact spacing and standard product cards. Section links use the measured store header height.
 
 ## Home content and accessibility
 
@@ -14,7 +14,9 @@ New Arrivals reads the latest products from the same catalog API as the home cat
 
 The home route fetches the first garage zone immediately. It fetches the other zones after the first paint or as soon as the shopper selects one. The active 3D bench prioritizes its photo and optional GLB. The other bench photos load during idle time, and their models wait until selected. For the RC bench, a sign with the listing name or an empty-catalog message stays visible if there is no usable product photo or model. Phones and constrained devices keep the static hero until the shopper chooses **Explore the garage**.
 
-The renderer starts after the first paint and after the entry dialog closes. Room, lighting, benches, and media setup run across separate animation frames. The static photo stays in place while the scene starts. The compact renderer caps the pixel ratio at 1, uses fewer lights, and keeps the existing shadow-free and post-processing-free rendering. Bench photos use a small WebP variant where one exists and are capped at 256 pixels per side on the compact renderer. The bundled car already uses `EXT_meshopt_compression`, which the lazy GLTF loader decodes. Global ambient visuals start in an idle slot, and the hero and category headings share the sticky header size reported by `ResizeObserver`. The category tour loads in an idle slot or when reached. Offscreen sections retain their minimum height until the browser lays out their contents.
+The hero paints its copy over the scene's dark palette while the renderer starts after the first paint and after the entry dialog closes. Room, lighting, benches, and media setup run across separate animation frames. A CSS display case provides the static view for reduced motion, manual opt-in and unavailable WebGL. The canvas fades in after its first frame. The camera fits the active display case according to the viewport and makes one eased move per selection. The static and mobile hero scroll normally, with direct category selection. The compact renderer caps the pixel ratio at 1 and uses fewer lights. Bench photos use a small WebP variant where one exists and are capped at 256 pixels per side on the compact renderer. The bundled car uses `EXT_meshopt_compression`, which the lazy GLTF loader decodes.
+
+Global ambient visuals start in an idle slot, and the hero and category headings share the sticky header size reported by `ResizeObserver`. Category headings render with the home page. Later category data still loads after the first paint, and product images load lazily with reserved space. The RC display prefers a featured product and queries the full RC catalog for the newest listing if there are no featured products.
 
 ## Storefront metadata
 

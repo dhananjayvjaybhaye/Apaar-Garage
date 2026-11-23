@@ -1,32 +1,52 @@
 import type { GarageZone } from './garage/garage-path';
 
+// Fraction of the garage opening to the right of the dark copy area.
+export const activeZoneFill = 0.53;
+// Minimum clearance between the neon sign and the top of the canvas, in CSS pixels.
+export const signTopMargin = 24;
+
+const baySpacing = 4.84;
+
+// Zone 0 is Cars. Camera X positions are Three.js world units.
 export const garageHeroZones = [
-  { category: 'car', name: 'Cars', sign: 'CARS' },
-  { category: 'truck', name: 'Trucks', sign: 'TRUCKS' },
-  { category: 'bike', name: 'Bikes', sign: 'BIKES' },
-  { category: 'rc', name: 'RC', sign: 'RC TOYS' },
-] as const satisfies ReadonlyArray<{ category: GarageZone; name: string; sign: string }>;
+  { category: 'car', name: 'Cars', sign: 'CARS', x: -1.5 * baySpacing },
+  { category: 'truck', name: 'Trucks', sign: 'TRUCKS', x: -0.5 * baySpacing },
+  { category: 'bike', name: 'Bikes', sign: 'BIKES', x: 0.5 * baySpacing },
+  { category: 'rc', name: 'RC', sign: 'RC TOYS', x: 1.5 * baySpacing },
+] as const satisfies ReadonlyArray<{ category: GarageZone; name: string; sign: string; x: number }>;
 
 // The existing overlap belongs to the section immediately below the hero.
 export const heroLayout = {
   overlap: 'clamp(1rem, 3vw, 2.4rem)',
   copyClearance: '24px',
+  automaticGarageQuery: '(min-width: 48rem) and (min-height: 28rem)',
+  desktopControlsQuery: '(min-width: 56rem) and (pointer: fine)',
+  // Keep the camera composition in step with the stacked hero's CSS breakpoint.
+  stackedWidthPx: 896,
 } as const;
 
-// Durations are seconds. Scroll length is in viewport heights.
 export const heroMotion = {
-  entrance: 0.8,
-  entranceStagger: 0.075,
-  reducedFade: 0.22,
-  scrub: 0.32,
-  // One viewport of scroll per zone.
-  scrollDistance: garageHeroZones.length,
-  exitStart: 0.9,
-  exitLiftPx: 24,
-  swipeDistancePx: 48,
-  swipeAxisRatio: 1.35,
+  sceneFadeMs: 600,
   // Native smooth scroll normally finishes sooner. This also covers browsers without scrollend.
   skipSettleMs: 1400,
+} as const;
+
+export const heroSteps = {
+  // Hold input during the dolly and for a short cooldown. A stalled dolly fails open.
+  moveMs: 1050,
+  cooldownMs: 150,
+  stallMs: 3000,
+  // Recognize a new wheel gesture after a quiet gap. Trackpad inertia extends this gap.
+  wheelQuietMs: 120,
+  // Accumulate normalized pixels within this rolling time window, in milliseconds.
+  wheelSampleMs: 100,
+  wheelThresholdPx: 40,
+  // A deliberate reversal can start a new gesture once the camera is unlocked.
+  wheelReversePx: 72,
+  wheelLinePx: 16,
+  swipeDistancePx: 40,
+  swipeAxisRatio: 1.35,
+  anchorTolerancePx: 3,
 } as const;
 
 // Product modal camera timing in seconds and milliseconds.
@@ -43,16 +63,36 @@ export const heroScene = {
   // Canvas texture widths in pixels for shelf signs, floor glows and light cones.
   desktopTextureWidth: 512,
   mobileTextureWidth: 256,
-  baySpacing: 4.72,
-  desktopOffset: 0.165,
-  mobileOffset: 0,
-  travel: 2.6,
-  minimumDistance: 16,
-  desktopSpan: 44,
-  mobileSpan: 28,
-  compactLookY: 4.55,
-  desktopLookY: 3.05,
-  maximumCompactAspect: 1.25,
+  // These are fractions of the canvas. The opening excludes the copy and its gradient.
+  desktopFrame: { x: 0.685, y: 0.525, heightFill: 0.63, openingWidth: 0.68 },
+  // On stacked screens pull back and leave space for the copy above the display.
+  compactFrame: { x: 0.53, y: 0.585, heightFill: 0.45, widthFill: 0.61 },
+  crossingCenterShift: 0.055,
+  frameEdgePadding: 0.035,
+  // The bounds include the raised label, the scaled case and room for pointer parallax.
+  caseHeight: 4.2,
+  caseHalfWidth: 2.52,
+  caseFront: -0.19,
+  cameraTargetY: 1.94,
+  // The single neon plane tracks the dolly along the back wall, above the case labels.
+  neonSign: { width: 6.2, height: 1.22, xOffset: -3.38, compactXOffset: -1.7, y: 6.15, z: -5.08 },
+  // The plane hangs above and to the right of the RC display. The bounds include its sway.
+  rcPlane: {
+    xOffset: 1.38,
+    hangerY: 6.43,
+    z: -1.65,
+    drop: 1.4,
+    halfWidth: 1.32,
+    bottom: 4.77,
+    top: 5.38,
+    front: -0.86,
+    back: -2.45,
+  },
+  // World units reserved for pointer motion and gentle scene drift.
+  framingClearance: 0.24,
+  cameraRise: 0.32,
+  cameraSide: 0.16,
+  crossingDolly: 0.44,
   dragRangePx: 95,
   parallax: 0.3,
   drift: 0.08,
@@ -62,7 +102,11 @@ export const heroScene = {
   dustCount: 34,
   mobileDustCount: 14,
   activeLight: 27,
-  idleLight: 7,
+  // Relative brightness and scale, interpolated when the active zone changes.
+  inactiveBrightness: 0.6,
+  activeScale: 1.04,
+  activeLabelScale: 1.37,
+  activeLabelGlow: 0.92,
   hoverLight: 11,
   planeSwayCycleMs: 5700,
   planeSwayRadians: 0.065,

@@ -26,8 +26,10 @@ import { categoryScenes } from './category-scenes.config';
 import { HomeArrivals } from './home-arrivals';
 import { HomeAssurance } from './home-assurance';
 import { AfterFirstPaint } from '../ui/after-first-paint';
+import { loadRcZone } from './home-rc-zone';
+import type { RcBenchStatus } from './garage/garage-path';
 
-type FeaturedState = { loading: boolean; items: Product[]; error?: boolean };
+type FeaturedState = { loading: boolean; items: Product[]; bench?: Product; error?: boolean };
 const loading: FeaturedState = { loading: true, items: [] };
 
 @Component({
@@ -44,8 +46,6 @@ export class Home {
   protected readonly heroOverlap = heroLayout.overlap;
   private readonly featuredRequest = new Subject<GarageZone>();
   private readonly paint = inject(AfterFirstPaint);
-  protected readonly tourReady = this.paint.idle;
-  protected readonly tourLayout = categoryScenes;
   private readonly secondaryReady = toObservable(this.paint.ready).pipe(filter(Boolean));
   private readonly zoneSelected = new Subject<GarageZone>();
   protected readonly category = signal<GarageZone>('car');
@@ -56,7 +56,12 @@ export class Home {
     car: this.loadFeatured('car'), truck: this.loadFeatured('truck'), bike: this.loadFeatured('bike'), rc: this.loadFeatured('rc'),
   };
   protected readonly featured = computed(() => this.featuredByCategory[this.category()]());
-  protected readonly garageProducts = computed(() => Object.values(this.featuredByCategory).flatMap((result) => result().items.slice(0, 1)));
+  protected readonly garageProducts = computed(() => Object.values(this.featuredByCategory)
+    .map((result) => result().bench).filter((item) => item !== undefined));
+  protected readonly rcBenchStatus = computed<RcBenchStatus>(() => {
+    const rc = this.featuredByCategory.rc();
+    return rc.loading ? 'loading' : rc.error ? 'unavailable' : 'ready';
+  });
 
   protected readonly categories = [
     {
@@ -83,7 +88,7 @@ export class Home {
     {
       id: 'rc',
       name: 'RC Toys',
-      note: 'Radio-controlled rides, aircraft and accessories',
+      note: 'RC rides, aircraft and accessories',
       image: '/images/rc-sample.png',
       imageAlt: 'Illustration of a remote-control handset',
     },
@@ -111,10 +116,12 @@ export class Home {
       this.zoneSelected.pipe(filter(matching)),
     ).pipe(take(1));
     return toSignal(merge(initial, this.featuredRequest.pipe(filter(matching))).pipe(
-      switchMap(() => this.api.getProducts({
-        ...(category === 'rc' ? { productType: 'rc' as const } : { category }), sort: 'featured', limit: categoryScenes.productLimit,
-      }).pipe(
-        map(({ items }): FeaturedState => ({ loading: false, items })),
+      switchMap(() => (category === 'rc'
+        ? loadRcZone(this.api, categoryScenes.productLimit)
+        : this.api.getProducts({ category, sort: 'featured', limit: categoryScenes.productLimit }).pipe(
+            map(({ items }) => ({ items, bench: items[0] })),
+          )).pipe(
+        map(({ items, bench }): FeaturedState => ({ loading: false, items, bench })),
         catchError(() => of<FeaturedState>({ loading: false, items: [], error: true })),
         startWith(loading),
       )),
