@@ -1,3 +1,4 @@
+import { adminAudit } from '../services/audit.js';
 import { z } from 'zod';
 import {
   adjustStock,
@@ -17,20 +18,21 @@ const patch = z
 const adjustment = z.strictObject({ delta: z.int().refine((delta) => delta !== 0) });
 
 const slug = (request) => validate(productSlug, request.params.slug);
-const actor = (response) => response.locals.user._id;
 
 export const adminProducts = {
   async detail(req, res) {
     res.json((await adminProduct(slug(req))).toObject());
   },
   async create(req, res) {
-    res.status(201).json((await createProduct(req.body, actor(res))).toObject());
+    res.status(201).json((await createProduct(req.body, adminAudit(req, res))).toObject());
   },
   async edit(req, res) {
-    res.json((await editProduct(slug(req), validate(patch, req.body))).toObject());
+    res.json(
+      (await editProduct(slug(req), validate(patch, req.body), adminAudit(req, res))).toObject(),
+    );
   },
   async stock(req, res) {
     const { delta } = validate(adjustment, req.body);
-    res.json((await adjustStock(slug(req), delta, actor(res))).toObject());
+    res.json((await adjustStock(slug(req), delta, adminAudit(req, res))).toObject());
   },
 };

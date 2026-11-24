@@ -86,6 +86,7 @@ async function serve(request, response) {
   if (!info) return response.writeHead(404).end();
   const extension = extname(file);
   const headers = { 'Content-Type': fileType[extension] ?? 'application/octet-stream' };
+  if (/^\/admin(?:\/|$)/.test(url.pathname)) headers['Cache-Control'] = 'no-store';
   const gzip =
     compressible.has(extension) &&
     /(?:^|,)\s*gzip\s*(?:,|$)/i.test(request.headers['accept-encoding'] ?? '');

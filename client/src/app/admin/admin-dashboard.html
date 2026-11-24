@@ -1,0 +1,55 @@
+<main class="container admin-screen">
+  <header class="admin-heading">
+    <div><h1>Admin dashboard</h1><p>{{ sessions.session()?.name }}</p></div>
+    <nav aria-label="Admin actions">
+      <a class="secondary-button" routerLink="/">View store</a>
+      <button type="button" class="secondary-button" (click)="signOut()">Sign out</button>
+    </nav>
+  </header>
+  @if (warning()) {
+    <div class="admin-warning" role="status">
+      @if (absoluteSoon()) {
+        <p>Your admin session is approaching its 12-hour limit. Sign in again when it ends.</p>
+      } @else {
+        <p>Your admin session will end soon. Stay signed in if you’re still working.</p>
+        <button class="secondary-button" type="button" [disabled]="renewing()" (click)="staySignedIn()">Stay signed in</button>
+      }
+    </div>
+  }
+  @if (sessionError()) { <p class="error-text" role="alert">{{ sessionError() }}</p> }
+  @if (setup()) {
+    <app-admin-totp-setup (completed)="setup.set(false); refreshAudit()" />
+  } @else if (!sessions.session()?.twoFactorEnabled) {
+    <button type="button" class="secondary-button" (click)="setup.set(true)">Set up two-factor authentication</button>
+  }
+  <section class="admin-panel" aria-labelledby="audit-heading">
+    <h2 id="audit-heading">Latest audit activity</h2>
+    @if (loading()) {
+      <p role="status">Loading audit activity…</p>
+      <div class="skeleton" aria-hidden="true"></div>
+    } @else if (error()) {
+      <p role="alert" class="error-text">{{ error() }}</p>
+      <button class="secondary-button" type="button" (click)="refreshAudit()">Retry</button>
+    } @else if (!entries().length) {
+      <p>No audit activity yet.</p>
+    } @else {
+      <ol class="audit-list">
+        @for (item of entries(); track item._id) {
+          <li>
+            <strong>{{ item.action }}</strong>
+            <time [attr.datetime]="item.at">{{ item.at | date: 'medium' }}</time>
+            <p>Actor {{ item.who ?? 'Terminal, guest or unverified' }} · Target {{ item.target ?? 'Unspecified' }}</p>
+            @if (item.ip) { <p>IP {{ item.ip }}</p> }
+            @if (item.before || item.after) {
+              <details>
+                <summary>Change summary</summary>
+                @if (item.before) { <p>Before</p><pre>{{ item.before | json }}</pre> }
+                @if (item.after) { <p>After</p><pre>{{ item.after | json }}</pre> }
+              </details>
+            }
+          </li>
+        }
+      </ol>
+    }
+  </section>
+</main>

@@ -1,5 +1,6 @@
 // Validates environment settings at the boundary that uses them.
 import { z } from 'zod';
+import { readAdminSecurity } from '../config/admin-security.js';
 import { readPaymentOptions } from './payment-options.js';
 
 const defaultPort = 3000;
@@ -39,11 +40,13 @@ export function readAppOptions(env = process.env) {
   const businessSecret = env.BUSINESS_KEY_SECRET || secret;
   if (Buffer.byteLength(businessSecret) < minimumSecretBytes)
     throw new Error('Set BUSINESS_KEY_SECRET to at least 32 bytes.');
+  const production = env.NODE_ENV === 'production';
   return {
+    adminSecurity: readAdminSecurity(env, secret, production),
     businessSecret,
     origins,
     secret,
-    production: env.NODE_ENV === 'production',
+    production,
     payment: readPaymentOptions(env),
   };
 }

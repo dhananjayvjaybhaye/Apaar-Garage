@@ -1,3 +1,5 @@
+import { recordAudit } from './audit.js';
+import { returnSummary } from './audit-summaries.js';
 import { Order } from '../models/order.js';
 import { ReturnRequest } from '../models/return-request.js';
 import { HttpError } from '../utils/http-error.js';
@@ -28,7 +30,7 @@ function notesFor(input, actor, at, internal) {
   return input.note ? [{ note: input.note, actor, at, internal }] : [];
 }
 
-export function requestReturn(filter, input, actor) {
+export function requestReturn(filter, input, actor, ip) {
   return transaction(async (session) => {
     const order = await lockDeliveredOrder(filter, session);
     const at = new Date();
@@ -46,7 +48,18 @@ export function requestReturn(filter, input, actor) {
       ],
       { session },
     );
-    return request.toObject();
+    const created = request.toObject();
+    await recordAudit(
+      'order.return_requested',
+      {
+        who: actor,
+        target: order.number + '/' + String(created._id),
+        ip,
+        after: returnSummary(created),
+      },
+      session,
+    );
+    return created;
   });
 }
 
@@ -95,7 +108,7 @@ async function transitionFields(order, request, input, at, session) {
   return {};
 }
 
-export function changeReturn(orderNumber, id, input, actor) {
+export function changeReturn(orderNumber, id, input, audit) {
   return transaction(async (session) => {
     const order = await lockDeliveredOrder({ number: orderNumber }, session);
     const request = await ReturnRequest.findOne({ _id: id, orderNumber }).session(session).lean();
@@ -110,7 +123,7 @@ export function changeReturn(orderNumber, id, input, actor) {
       { _id: id, status: request.status },
       {
         $set: { status: input.status, ...fields },
-        ...(input.note && { $push: { notes: { $each: notesFor(input, actor, at, true) } } }),
+        ...(input.note && { $push: { notes: { $each: notesFor(input, audit.who, at, true) } } }),
       },
       { session, returnDocument: 'after', runValidators: true },
     ).lean();
@@ -121,11 +134,21 @@ export function changeReturn(orderNumber, id, input, actor) {
         {
           reason: 'return',
           order: orderNumber,
-          actor,
+          actor: audit.who,
           session,
         },
       );
     }
+    await recordAudit(
+      input.status === 'refunded' ? 'order.refund_recorded' : 'order.return_changed',
+      {
+        ...audit,
+        target: orderNumber + '/' + id,
+        before: returnSummary(request),
+        after: returnSummary(updated),
+      },
+      session,
+    );
     return updated;
   });
 }

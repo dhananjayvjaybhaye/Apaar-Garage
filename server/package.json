@@ -5,10 +5,12 @@
   "type": "module",
   "scripts": {
     "start": "node --env-file=.env src/index.js",
+    "create-admin": "node --env-file-if-exists=.env scripts/create-admin.js",
+    "remove-admin": "node --env-file-if-exists=.env scripts/remove-admin.js",
     "dev": "node --watch --env-file=.env src/index.js",
     "seed": "node --env-file=.env scripts/seed.js",
     "seed:images": "node scripts/generate-placeholder-images.js",
-    "test": "node --test \"test/**/*.test.js\"",
+    "test": "node --test --test-concurrency=2 \"test/**/*.test.js\"",
     "lint": "eslint --max-warnings 0 src scripts test",
     "format": "prettier --write \"{src,scripts,test}/**/*.js\" eslint.config.mjs",
     "format:check": "prettier --check \"{src,scripts,test}/**/*.js\" eslint.config.mjs"
@@ -23,6 +25,8 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.0.0",
     "nodemailer": "^10.6.0",
+    "otpauth": "^9.6.0",
+    "qrcode": "^1.5.4",
     "zod": "^4.6.7"
   },
   "devDependencies": {

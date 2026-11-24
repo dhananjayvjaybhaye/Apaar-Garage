@@ -40,6 +40,8 @@ export const publicPages = {
   ],
 };
 const privatePages = {
+  '/admin': ['Admin dashboard', 'Administrator access for Apaar Garage.'],
+  '/admin/login': ['Admin sign-in', 'Administrator sign-in for Apaar Garage.'],
   '/newsletter/unsubscribe': ['Newsletter unsubscribe', 'Manage your Apaar Garage newsletter subscription.'],
   '/account/privacy': ['Account privacy', 'Manage your Apaar Garage account data.'],
   '/login': ['Sign in', 'Sign in to access your account and order history.'],

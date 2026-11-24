@@ -35,16 +35,32 @@ npm.cmd start
 
 Open [the storefront](http://localhost:4200). The Angular development proxy forwards `/products` and `/api/**` to the Express server. If you change the API port, update the targets in `client/src/proxy.conf.json` to match.
 
+## Set up administrator access
+
+Run the following in an interactive terminal from `server`.
+
+```powershell
+npm.cmd run create-admin
+```
+
+Enter the administrator email and the new password twice. If the email is already registered, the command promotes the account and requires a fresh sign-in. On macOS or Linux, use `npm run create-admin`.
+
+Open `/admin/login` after creating the account. Production requires authenticator enrollment. Save your one-time recovery codes. Use `npm.cmd run remove-admin` from `server` to revoke administrator access.
+
+In production, the API refuses to start until the seller legal name and address, customer care phone and email, grievance officer name, phone and email, and invoice prefix are configured. Hide or archive published demo listings before launch. See the [change guide](docs/CHANGE-GUIDE.md#complete-seller-details-and-policies-before-launch) for maintenance steps.
+
 ## Environment variables
 
 `server/.env.example` contains development defaults and placeholders. Monetary environment settings are in rupees unless the field name ends with `Paise`.
 
 | Variable | Purpose |
 | --- | --- |
-| `NODE_ENV` | Set to `production` to enable secure session cookies and HSTS. |
+| `NODE_ENV` | Set to `production` to enable secure session cookies, HSTS, and the launch check. |
 | `MONGODB_URI` | Development or deployment database URI. |
 | `PORT` | API port. Defaults to `3000`. |
 | `JWT_SECRET` | Random secret of at least 32 bytes. |
+| `ADMIN_REQUIRE_2FA`, `ADMIN_TOTP_KEY` | Authenticator enrollment is mandatory in production. An optional stable 64-character hex key encrypts authenticator secrets. |
+| `ADMIN_TRUST_LOOPBACK_PROXY` | Enable only when a trusted proxy on the same host overwrites forwarded IP headers. Without it, IP limits use the direct peer address. |
 | `CORS_ORIGINS` | Comma-separated HTTP(S) origins without trailing slashes. |
 | `PAYMENT_ONLINE_ENABLED` | Defaults to `false`. Online payment currently returns an unavailable response when enabled. |
 | `COD_FEE` | Cash on Delivery charge. Defaults to zero. |

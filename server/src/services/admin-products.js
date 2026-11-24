@@ -1,3 +1,5 @@
+import { recordAudit } from './audit.js';
+import { productSummary } from './audit-summaries.js';
 import { Product } from '../models/product.js';
 import { HttpError } from '../utils/http-error.js';
 import { productInput } from '../utils/product-input.js';
@@ -36,38 +38,61 @@ async function saveProduct(product, session) {
   }
 }
 
-export function createProduct(input, actor) {
+export function createProduct(input, audit) {
   const { stock, ...values } = validateProduct(input);
   return transaction(async (session) => {
     const product = new Product({ ...values, stock: 0 });
     await saveProduct(product, session);
     await applyStockMovements([{ product: product._id, delta: stock }], {
       reason: 'opening',
-      actor,
+      actor: audit.who,
       session,
     });
-    return adminProduct(product.slug, session);
+    const created = await adminProduct(product.slug, session);
+    await recordAudit(
+      'product.created',
+      { ...audit, target: created.slug, after: productSummary(created) },
+      session,
+    );
+    return created;
   });
 }
 
-export function editProduct(slug, input) {
+export function editProduct(slug, input, audit) {
   return transaction(async (session) => {
     const product = await adminProduct(slug, session);
     const values = validateProduct({ ...product.toObject(), ...input, slug, stock: product.stock });
+    const before = productSummary(product);
     product.set(values);
     await saveProduct(product, session);
+    await recordAudit(
+      'product.updated',
+      {
+        ...audit,
+        target: slug,
+        before,
+        after: { ...productSummary(product), fields: Object.keys(input) },
+      },
+      session,
+    );
     return product;
   });
 }
 
-export function adjustStock(slug, delta, actor) {
+export function adjustStock(slug, delta, audit) {
   return transaction(async (session) => {
     const product = await adminProduct(slug, session);
     await applyStockMovements([{ product: product._id, delta }], {
       reason: 'adjustment',
-      actor,
+      actor: audit.who,
       session,
     });
-    return adminProduct(slug, session);
+    const updated = await adminProduct(slug, session);
+    await recordAudit(
+      'product.stock_adjusted',
+      { ...audit, target: slug, before: productSummary(product), after: productSummary(updated) },
+      session,
+    );
+    return updated;
   });
 }

@@ -26,6 +26,14 @@ Global ambient visuals start in an idle slot, and the hero and category headings
 
 The Angular cart store refreshes its signals from the API after each write. Guests receive a secure-in-production, HTTP-only guest cookie on their first add. Signed-in customers use a separate HTTP-only session cookie. The server merges eligible guest quantities into the signed-in cart and keeps them within current stock and the quantity limit. Cart values are computed from the current product records.
 
+## Admin bootstrap and production startup
+
+The interactive `npm run create-admin` command uses the configured MongoDB connection and bcrypt. It creates or promotes an account and rotates its password and session version. Previous cookies for that account expire on their next request. Public registration accepts only customer fields.
+
+Admin sign-in uses a separate HTTP-only cookie and a MongoDB session with independent idle and absolute expiries. Requests validate the current account role and session version. Mutations also validate a session-bound CSRF token. The password-only enrollment session can only set up the authenticator or sign out. Authenticator codes follow [RFC 6238](https://www.rfc-editor.org/rfc/rfc6238). TOTP secrets use authenticated encryption, and recovery codes are stored as hashes and consumed atomically. Shared MongoDB counters enforce sliding 15-minute login limits across API processes. The audit log records IDs and reduced summaries without passwords, codes, or private request bodies.
+
+Production startup uses the same store-settings service as the API. Before opening the listener, it checks seller identity, customer care and grievance contacts, the invoice prefix, and published placeholder inventory. Development remains available for maintenance.
+
 ## Business rules and settings
 
 A validated StoreSettings document supplies seller details and checkout policy, with a short per-process read cache. Settings changes invalidate the local cache. Checkout serializes risk checks for a normalized mobile number and address using private lookup keys. Flagged orders require an explicit customer confirmation before packing. OTP and mobile notifications have interfaces ready for a provider.

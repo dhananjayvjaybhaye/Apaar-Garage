@@ -55,9 +55,11 @@ const calmRoutes = new Set([
     <a class="primary-button skip-link" href="#page-content" (click)="skip($event, content)"
       >Skip to content</a
     >
-    <app-store-header />
-    <app-stock-notices />
-    <app-mobile-nav />
+    @if (!adminArea()) {
+      <app-store-header />
+      <app-stock-notices />
+      <app-mobile-nav />
+    }
     <div #content id="page-content" class="route-content" tabindex="-1">
       @defer (when decorationsReady() && !calmBackground()) {
         @if (!calmBackground()) {
@@ -66,6 +68,7 @@ const calmRoutes = new Set([
       }
       <router-outlet />
     </div>
+    @if (!adminArea()) {
     <app-store-footer />
     <a
       class="secondary-button contact-float"
@@ -74,13 +77,14 @@ const calmRoutes = new Set([
       fragment="contact"
       ><span class="icon icon-chat" aria-hidden="true"></span> Contact us</a
     >
+    }
     <app-toasts />
     @defer (when decorationsReady() && showCursor()) {
       @if (showCursor()) {
         <app-cursor-glow />
       }
     }
-    <app-preview-modal />
+    @if (!adminArea()) { <app-preview-modal /> }
     @if (engine(); as status) {
       <app-engine-gauge class="engine-dock" [status]="status" [compact]="true" />
     }
@@ -109,6 +113,7 @@ export class App {
   private readonly page = computed(
     () => this.router.parseUrl(this.url()).root.children[PRIMARY_OUTLET]?.segments[0]?.path,
   );
+  protected readonly adminArea = computed(() => this.page() === 'admin');
   protected readonly calmBackground = computed(() => calmRoutes.has(this.page() ?? ''));
   protected readonly purchaseRoute = computed(
     () => this.page() === 'product' || this.page() === 'checkout',

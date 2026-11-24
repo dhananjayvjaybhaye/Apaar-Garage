@@ -43,9 +43,21 @@ Use an existing administrator account with the admin API. Create a product with 
 - Customers submit `POST /orders/:orderNumber/returns` with a reason such as `damaged` and `items: [{ "slug": "product-slug", "quantity": 1 }]`. Use the same endpoint with GET to see their requests. Staff review with `GET /admin/orders/:orderNumber/returns` and update with `PATCH /admin/orders/:orderNumber/returns/:id`. When receiving, include the condition for each item as `items: [{ "slug": "product-slug", "condition": "resalable" }]`. After recording COD collection, a refund can be recorded in paise with `refundAmountPaise`.
 - Use `POST /admin/orders/:orderNumber/notes` and `PATCH /admin/orders/:orderNumber/confirmation` for internal notes and customer confirmation. The customer return workflow is available through the API.
 
+## Create the first administrator
+
+From an interactive terminal in `server`, run `npm.cmd run create-admin` on Windows or `npm run create-admin` on macOS or Linux. Use the target database’s `MONGODB_URI`. Enter the email and type the new password twice. The password is hidden and must be at least 12 characters and at most 72 UTF-8 bytes. If that email already belongs to an account, the command promotes it, sets the password you entered, and requires the account to sign in again.
+
+Sign in at `/admin/login`. The store login keeps using its separate customer session. Admin sessions require a fresh sign-in after 30 minutes without activity or after 12 hours at most. The dashboard warns shortly before expiry.
+
+Production requires an authenticator. Set `ADMIN_REQUIRE_2FA=true` to test the same flow in development. Sign in with your password, generate the QR code, scan it in an authenticator app, and enter the current six-digit code. Store the recovery codes offline. On future sign-ins, enter a current authenticator code or one unused recovery code. Keep `ADMIN_TOTP_KEY` stable if configured. It must be 64 hex characters from a secure random source. Without it, the key is derived from `JWT_SECRET`.
+
+From `server`, run `npm.cmd run remove-admin` on Windows or `npm run remove-admin` on macOS or Linux. Enter the email and type `REMOVE` to confirm. This revokes admin sessions immediately and removes the old authenticator enrollment. The account can still use the storefront. An operator with database access can use the remove and create commands to re-enroll an administrator who has lost both the authenticator and all recovery codes.
+
+For direct admin API requests, sign in using `POST /auth/admin/login`, keep the admin cookie, and send the returned token as `X-Admin-CSRF` on writes. A non-renewing session check is available at `GET /auth/admin/session`. The dashboard shows the latest audit entries, including account lockouts and changes to settings, products, orders, and refunds.
+
 ## Complete seller details and policies before launch
 
-Use `GET /admin/settings`, edit the JSON, and save it with `PUT /admin/settings`. Review the result on `/seller-information`, in the footer, and at `/api/store-info`.
+Use `GET /admin/settings`, edit the JSON, and save it with `PUT /admin/settings`. If the production check blocks startup, use the development API on the host’s loopback interface to fix the settings and hide or archive published placeholders. In PowerShell, run `$env:NODE_ENV = 'development'` in the server terminal before `npm.cmd start`. Keep that maintenance process private. Restart with `NODE_ENV=production` once the check passes. Review the result on `/seller-information`, in the footer, and at `/api/store-info`.
 
 - Set the seller’s legal name, trade name and full business address. Verify the seller state and the GST registration setting. Supply the GSTIN if registered.
 - Fill in the customer care phone, email and hours, plus the grievance officer’s name, designation, email, phone and address.

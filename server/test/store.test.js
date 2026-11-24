@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
-import { User } from '../src/models/user.js';
 import { seedProducts } from '../scripts/products.js';
-import { address, shopper, startStore } from './store-fixture.js';
+import { address, makeAdmin, shopper, startStore } from './store-fixture.js';
 
 test('store HTTP contracts', async (t) => {
   const origin = await startStore(t);
@@ -132,14 +131,7 @@ test('store HTTP contracts', async (t) => {
   });
 
   await t.test('unregistered dispatch issues a bill of supply without tax lines', async () => {
-    const admin = shopper(origin);
-    const email = 'bill-admin@example.test';
-    await admin('/auth/register', {
-      method: 'POST',
-      body: { email, name: 'Bill Admin', password: credentials.password },
-      status: 201,
-    });
-    await User.updateOne({ email }, { $set: { role: 'admin' } });
+    const admin = await makeAdmin(origin);
     await buyer('/cart/items', { method: 'POST', body: { slug: model.slug, quantity: 1 } });
     const { value } = await buyer('/orders', {
       method: 'POST',

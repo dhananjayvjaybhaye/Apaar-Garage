@@ -1,0 +1,17 @@
+.admin-screen { padding-block: 2rem 4rem; }
+.admin-login { max-width: 33rem; }
+.admin-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; align-items: start; }
+nav { display: flex; gap: .5rem; flex-wrap: wrap; }
+form { display: grid; gap: .6rem; margin-block: 1rem; }
+input { min-height: 2.75rem; padding: .55rem; background: var(--background); color: var(--text); border: 1px solid var(--control-line); border-radius: .5rem; }
+form button { justify-self: start; }
+.admin-panel, .admin-warning { margin-block: 1rem; padding: 1rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+.admin-warning { border-color: var(--amber); }
+.audit-list { list-style: none; padding: 0; }
+.audit-list li { padding-block: .75rem; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+.audit-list time { margin-inline-start: .75rem; color: var(--muted); }
+.audit-list p { margin-block: .2rem; }
+.skeleton { height: 8rem; }
+pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+summary { min-height: 2.75rem; cursor: pointer; }
+.recovery-codes { padding-inline-start: 1.4rem; overflow-wrap: anywhere; }

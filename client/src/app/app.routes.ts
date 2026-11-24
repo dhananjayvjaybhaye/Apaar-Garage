@@ -2,6 +2,7 @@ import type { Routes } from '@angular/router';
 import { authGuard } from './auth/auth-guard';
 
 export const routes: Routes = [
+  { path: 'admin', loadChildren: () => import('./admin/admin.routes').then((module) => module.adminRoutes) },
   {
     path: '',
     pathMatch: 'full',

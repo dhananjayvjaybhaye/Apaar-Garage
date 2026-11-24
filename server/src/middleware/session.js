@@ -14,22 +14,23 @@ export function createSession(secret, secure) {
     const token = req.cookies[cookieName];
     if (!token) return null;
 
-    let subject;
+    let claims;
     try {
-      subject = jwt.verify(token, secret, { algorithms: ['HS256'], issuer, audience }).sub;
+      claims = jwt.verify(token, secret, { algorithms: ['HS256'], issuer, audience });
     } catch {
       return null;
     }
 
-    return mongoose.isObjectIdOrHexString(subject)
-      ? User.findById(subject).select('name email role').lean()
-      : null;
+    if (!mongoose.isObjectIdOrHexString(claims?.sub)) return null;
+    const user = await User.findById(claims.sub).select('name email role +sessionVersion').lean();
+    if (!user || (user.sessionVersion ?? 0) !== (claims.version ?? 0)) return null;
+    return user;
   }
 
   return {
     findUser,
     start(res, user) {
-      const token = jwt.sign({}, secret, {
+      const token = jwt.sign({ version: user.sessionVersion ?? 0 }, secret, {
         subject: user._id.toString(),
         algorithm: 'HS256',
         expiresIn: lifetimeSeconds,

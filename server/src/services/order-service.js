@@ -5,6 +5,8 @@ import { transaction } from './transaction.js';
 import { applyStockMovements, restockOrderItems } from './stock.js';
 import { priceOrderTax } from './order-tax.js';
 import { HttpError } from '../utils/http-error.js';
+import { recordAudit } from './audit.js';
+import { orderSummary } from './audit-summaries.js';
 import { notify } from './notifications.js';
 import { assessCod, codIdentity, holdCodLocks, prepareCodLocks, privateKey } from './cod-risk.js';
 import { redeemCoupon } from './discounts.js';
@@ -116,6 +118,16 @@ export async function placeOrder(user, input, options) {
           { session },
         );
       }
+      await recordAudit(
+        'order.placed',
+        {
+          who: input.guest ? undefined : user,
+          target: order.number,
+          ip: input.auditIp,
+          after: orderSummary(order),
+        },
+        session,
+      );
       return { order, created: true };
     });
   } catch (error) {
@@ -127,7 +139,11 @@ export async function placeOrder(user, input, options) {
   }
 }
 
-export function cancelOrder(filter, allowed, { actor, reasonCode, note, notifications = {} } = {}) {
+export function cancelOrder(
+  filter,
+  allowed,
+  { actor, reasonCode, note, notifications = {}, auditIp } = {},
+) {
   return transaction(async (session) => {
     const order = await Order.findOne(filter).select('+emailAddress').session(session);
     if (!order) throw new HttpError(404, 'Order not found.');
@@ -154,6 +170,17 @@ export function cancelOrder(filter, allowed, { actor, reasonCode, note, notifica
     );
     if (!updated) throw new HttpError(409, 'The order changed. Reload and try again.');
     await restockOrderItems(order.items, { reason: 'cancel', order: order.number, actor, session });
+    await recordAudit(
+      'order.cancelled',
+      {
+        who: actor,
+        target: order.number,
+        ip: auditIp,
+        before: orderSummary(order),
+        after: orderSummary(updated),
+      },
+      session,
+    );
     return updated;
   });
 }

@@ -1,0 +1,24 @@
+<main class="container admin-screen admin-login">
+  <h1>Administrator sign-in</h1>
+  @if (expired) { <p role="status">Your admin session ended. Sign in to continue.</p> }
+  @if (checking()) {
+    <p role="status">Checking your session…</p>
+  } @else if (enrolling() && sessions.session()) {
+    <p>Set up an authenticator before accessing the dashboard.</p>
+    <app-admin-totp-setup (completed)="openDashboard()" />
+    <button type="button" class="secondary-button" (click)="cancelSetup()">Sign out</button>
+  } @else {
+    <form (submit)="signIn($event, email.value, password, code)">
+      <label for="admin-email">Email</label>
+      <input #email id="admin-email" type="email" autocomplete="username" required maxlength="254" />
+      <label for="admin-password">Password</label>
+      <input #password id="admin-password" type="password" autocomplete="current-password" required />
+      <label for="admin-code">Authenticator or recovery code</label>
+      <input #code id="admin-code" type="text" autocomplete="one-time-code" maxlength="40" aria-describedby="admin-code-hint" />
+      <small id="admin-code-hint">Leave blank if you haven’t enrolled an authenticator yet.</small>
+      <button type="submit" class="primary-button" [disabled]="busy()">{{ busy() ? 'Signing in…' : 'Sign in' }}</button>
+    </form>
+  }
+  @if (error()) { <p role="alert" class="error-text">{{ error() }}</p> }
+  <a routerLink="/">Back to store</a>
+</main>

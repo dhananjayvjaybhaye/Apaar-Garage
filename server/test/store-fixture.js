@@ -7,6 +7,8 @@ import { createApp } from '../src/app.js';
 import { CartItem } from '../src/models/cart-item.js';
 import { Order } from '../src/models/order.js';
 import { Product } from '../src/models/product.js';
+import { createOrPromoteAdministrator } from '../src/services/admin-bootstrap.js';
+import { AdminLoginLimit, AdminSession, AuditLog } from '../src/models/admin-security.js';
 import { User } from '../src/models/user.js';
 import { seedProducts } from '../scripts/products.js';
 import { rcSamples } from '../scripts/rc-products.js';
@@ -24,6 +26,8 @@ export const address = {
 export async function startStore(t, environment = {}, appOptions = {}) {
   Object.assign(process.env, {
     NODE_ENV: 'test',
+    ADMIN_REQUIRE_2FA: 'false',
+    ADMIN_TRUST_LOOPBACK_PROXY: 'false',
     JWT_SECRET: randomBytes(32).toString('hex'),
     CORS_ORIGINS: 'http://localhost:4200',
     PAYMENT_ONLINE_ENABLED: 'false',
@@ -57,7 +61,15 @@ export async function startStore(t, environment = {}, appOptions = {}) {
     }
   });
   await mongoose.connect(database.getUri('store_test'));
-  await Promise.all([User.init(), Product.init(), Order.init(), CartItem.init()]);
+  await Promise.all([
+    User.init(),
+    Product.init(),
+    Order.init(),
+    CartItem.init(),
+    AdminSession.init(),
+    AdminLoginLimit.init(),
+    AuditLog.init(),
+  ]);
   await Product.insertMany([...seedProducts.slice(0, 2), rcSamples[0]]);
   server = createApp(appOptions).listen(0, '127.0.0.1');
   await once(server, 'listening');
@@ -66,8 +78,13 @@ export async function startStore(t, environment = {}, appOptions = {}) {
 
 export function shopper(origin) {
   const cookies = new Map();
-  return async (path, { method = 'GET', body, status = 200 } = {}) => {
-    const headers = {};
+  let csrfToken;
+  return async (
+    path,
+    { method = 'GET', body, status = 200, headers: extra = {}, sendCsrf = true } = {},
+  ) => {
+    const headers = { ...extra };
+    if (csrfToken && sendCsrf && method !== 'GET') headers['X-Admin-CSRF'] = csrfToken;
     if (body !== undefined) headers['Content-Type'] = 'application/json';
     if (cookies.size) headers.Cookie = [...cookies.values()].join('; ');
     const response = await fetch(origin + path, { method, body: JSON.stringify(body), headers });
@@ -76,6 +93,7 @@ export function shopper(origin) {
       cookies.set(pair.split('=', 1)[0], pair);
     }
     const value = response.status === 204 ? undefined : await response.json();
+    if (value?.csrfToken) csrfToken = value.csrfToken;
     const expected = Array.isArray(status) ? status : [status];
     assert.ok(
       expected.includes(response.status),
@@ -88,11 +106,8 @@ export function shopper(origin) {
 export async function makeAdmin(origin) {
   const admin = shopper(origin);
   const email = 'admin@example.test';
-  await admin('/auth/register', {
-    method: 'POST',
-    body: { email, name: 'Store Admin', password: 'sample-password' },
-    status: 201,
-  });
-  await User.updateOne({ email }, { $set: { role: 'admin' } });
+  const password = 'sample-password';
+  await createOrPromoteAdministrator(email, password);
+  await admin('/auth/admin/login', { method: 'POST', body: { email, password } });
   return admin;
 }

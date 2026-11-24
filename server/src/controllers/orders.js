@@ -1,5 +1,6 @@
 // Validates order requests and maps order results to their existing HTTP contracts.
 import { z } from 'zod';
+import { adminAudit } from '../services/audit.js';
 import { commerceOptions } from '../services/store-settings.js';
 import { privateKey } from '../services/cod-risk.js';
 import { indianPhone } from '../utils/indian-phone.js';
@@ -81,6 +82,7 @@ export function createOrdersController(options) {
         {
           ...input,
           guest: !user,
+          auditIp: req.ip,
           emailAddress: user?.email ?? input.email,
         },
         await commerceOptions(options),
@@ -136,6 +138,7 @@ export function createOrdersController(options) {
             note,
             actor: res.locals.shopper.id,
             notifications: options,
+            auditIp: req.ip,
           }),
         ),
       );
@@ -149,7 +152,7 @@ export function createOrdersController(options) {
             orderNumber,
             input,
             await commerceOptions(options),
-            res.locals.user._id,
+            adminAudit(req, res),
           ),
         ),
       );
@@ -157,7 +160,7 @@ export function createOrdersController(options) {
     async collectPayment(req, res) {
       const orderNumber = validate(orderNumberPattern, req.params.orderNumber);
       validate(collection, req.body);
-      res.json(publicOrder(await collectOrderPayment(orderNumber)));
+      res.json(publicOrder(await collectOrderPayment(orderNumber, adminAudit(req, res))));
     },
   };
 }

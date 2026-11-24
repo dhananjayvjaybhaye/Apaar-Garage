@@ -3,6 +3,7 @@ import { createApp } from './app.js';
 import { connectDatabase, DatabaseConnectionError } from './services/database.js';
 import mongoose from 'mongoose';
 import { createOrderMailer, startOrderEmailWorker } from './services/order-email.js';
+import { AdminLoginLimit, AdminSession, AuditLog } from './models/admin-security.js';
 import { Coupon, CouponRedemption } from './models/coupon.js';
 import { BlockedContact, CodLock } from './models/cod-risk.js';
 import { StoreSettings } from './models/store-settings.js';
@@ -16,16 +17,23 @@ import { Order } from './models/order.js';
 import { CartItem } from './models/cart-item.js';
 import { Review } from './models/review.js';
 import { User } from './models/user.js';
-import { bindAddress, readPort } from './utils/config.js';
+import { assertProductionReady, LaunchCheckError } from './services/launch-check.js';
+import { createSettingsService, settingsDefaults } from './services/store-settings.js';
+import { bindAddress, readAppOptions, readPort } from './utils/config.js';
 
 try {
   const port = readPort();
 
   const mailer = createOrderMailer();
-  const app = createApp({ orderEmailEnabled: Boolean(mailer) });
+  const options = readAppOptions();
+  const settings = createSettingsService(settingsDefaults(options.payment));
+  const app = createApp({ options, settings, orderEmailEnabled: Boolean(mailer) });
   await connectDatabase();
   await Promise.all([
     User.init(),
+    AdminLoginLimit.init(),
+    AdminSession.init(),
+    AuditLog.init(),
     CartItem.init(),
     Order.init(),
     Review.init(),
@@ -42,6 +50,8 @@ try {
     SupportRequest.init(),
   ]);
 
+  if (options.production) await assertProductionReady(await settings.read());
+
   app.listen(port, bindAddress, (error) => {
     if (error) {
       console.error('Could not start the API. Check that PORT is available.');
@@ -53,7 +63,7 @@ try {
   });
 } catch (error) {
   console.error(
-    error instanceof DatabaseConnectionError
+    error instanceof DatabaseConnectionError || error instanceof LaunchCheckError
       ? error.message
       : 'Could not start the API. Check the server environment settings and database access.',
   );

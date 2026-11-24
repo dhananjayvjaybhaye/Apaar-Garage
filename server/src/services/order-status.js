@@ -1,4 +1,6 @@
 import { adminCancellable, orderTransitions } from '../config/business.js';
+import { recordAudit } from './audit.js';
+import { orderSummary } from './audit-summaries.js';
 import { Order } from '../models/order.js';
 import { HttpError } from '../utils/http-error.js';
 import { allocateInvoice, financialYear, prepareInvoiceCounter } from './invoices.js';
@@ -38,20 +40,21 @@ async function statusFields(status, input, order, options, at, year, session) {
   }
 }
 
-export function changeOrderStatus(orderNumber, input, options, actor) {
+export function changeOrderStatus(orderNumber, input, options, audit) {
   const { status } = input;
   if (status === 'cancelled') {
     return cancelOrder({ number: orderNumber }, adminCancellable, {
       ...input,
-      actor,
+      actor: audit.who,
+      auditIp: audit.ip,
       reasonCode: input.reasonCode ?? 'admin_cancelled',
       notifications: options,
     });
   }
-  return transitionOrder(orderNumber, input, options, actor);
+  return transitionOrder(orderNumber, input, options, audit);
 }
 
-async function transitionOrder(orderNumber, input, options, actor) {
+async function transitionOrder(orderNumber, input, options, audit) {
   const { status } = input;
   const at = new Date();
   const year = financialYear(at);
@@ -102,31 +105,57 @@ async function transitionOrder(orderNumber, input, options, actor) {
     ).lean();
     if (!updated) throw new HttpError(409, 'The order changed. Reload and try again.');
     if (status === 'returned_to_seller' && input.condition === 'resalable') {
-      await restockOrderItems(order.items, { reason: 'rto', order: order.number, actor, session });
+      await restockOrderItems(order.items, {
+        reason: 'rto',
+        order: order.number,
+        actor: audit.who,
+        session,
+      });
     }
+    await recordAudit(
+      'order.status_changed',
+      { ...audit, target: order.number, before: orderSummary(order), after: orderSummary(updated) },
+      session,
+    );
     return updated;
   });
 }
 
-export async function collectOrderPayment(orderNumber) {
-  const order = await Order.findOneAndUpdate(
-    { number: orderNumber, status: 'delivered', paymentMethod: 'cod' },
-    { $set: { paymentStatus: 'collected' } },
-    { returnDocument: 'after' },
-  ).lean();
-  if (!order) {
-    if (!(await Order.exists({ number: orderNumber })))
-      throw new HttpError(404, 'Order not found.');
-    throw new HttpError(409, 'Mark COD collected only after delivery.');
-  }
-  return order;
+export function collectOrderPayment(orderNumber, audit) {
+  return transaction(async (session) => {
+    const order = await Order.findOne({ number: orderNumber }).session(session).lean();
+    if (!order) throw new HttpError(404, 'Order not found.');
+    if (order.status !== 'delivered' || order.paymentMethod !== 'cod')
+      throw new HttpError(409, 'Mark COD collected only after delivery.');
+    if (order.paymentStatus === 'collected') return order;
+    const updated = await Order.findByIdAndUpdate(
+      order._id,
+      { $set: { paymentStatus: 'collected' } },
+      { returnDocument: 'after', session },
+    ).lean();
+    await recordAudit(
+      'order.payment_collected',
+      { ...audit, target: orderNumber, before: orderSummary(order), after: orderSummary(updated) },
+      session,
+    );
+    return updated;
+  });
 }
 
-export async function updateOrderAdministration(orderNumber, update) {
-  const order = await Order.findOneAndUpdate({ number: orderNumber }, update, {
-    returnDocument: 'after',
-    runValidators: true,
-  }).lean();
-  if (!order) throw new HttpError(404, 'Order not found.');
-  return order;
+export function updateOrderAdministration(orderNumber, update, audit, action) {
+  return transaction(async (session) => {
+    const order = await Order.findOne({ number: orderNumber }).session(session).lean();
+    if (!order) throw new HttpError(404, 'Order not found.');
+    const updated = await Order.findByIdAndUpdate(order._id, update, {
+      returnDocument: 'after',
+      runValidators: true,
+      session,
+    }).lean();
+    await recordAudit(
+      action,
+      { ...audit, target: orderNumber, before: orderSummary(order), after: orderSummary(updated) },
+      session,
+    );
+    return updated;
+  });
 }

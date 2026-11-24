@@ -1,3 +1,4 @@
+import { adminAudit } from '../services/audit.js';
 import { z } from 'zod';
 import { customerInvoice } from '../services/invoices.js';
 import { findCustomerOrder, ownedOrderFilter } from '../services/order-history.js';
@@ -27,7 +28,7 @@ export const orderBusiness = {
   },
   async requestReturn(req, res) {
     const input = validate(returnInput, req.body);
-    const request = await requestReturn(owned(req, res), input, res.locals.shopper.id);
+    const request = await requestReturn(owned(req, res), input, res.locals.shopper.id, req.ip);
     res.status(201).json(publicReturn(request));
   },
   async adminDetail(req, res) {
@@ -50,22 +51,32 @@ export const orderBusiness = {
       orderNumber(req),
       validate(returnId, req.params.id),
       validate(returnTransition, req.body),
-      res.locals.user._id,
+      adminAudit(req, res),
     );
     res.json(result);
   },
   async addNote(req, res) {
     const { note } = validate(noteInput, req.body);
-    const order = await updateOrderAdministration(orderNumber(req), {
-      $push: { adminNotes: { note, by: res.locals.user._id, at: new Date() } },
-    });
+    const order = await updateOrderAdministration(
+      orderNumber(req),
+      {
+        $push: { adminNotes: { note, by: res.locals.user._id, at: new Date() } },
+      },
+      adminAudit(req, res),
+      'order.note_added',
+    );
     res.status(201).json({ adminNotes: order.adminNotes });
   },
   async confirm(req, res) {
     const { status } = validate(confirmationInput, req.body);
-    const order = await updateOrderAdministration(orderNumber(req), {
-      $set: { customerConfirmation: { status, by: res.locals.user._id, at: new Date() } },
-    });
+    const order = await updateOrderAdministration(
+      orderNumber(req),
+      {
+        $set: { customerConfirmation: { status, by: res.locals.user._id, at: new Date() } },
+      },
+      adminAudit(req, res),
+      'order.confirmation_changed',
+    );
     res.json({ customerConfirmation: order.customerConfirmation });
   },
 };

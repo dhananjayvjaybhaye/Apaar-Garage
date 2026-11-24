@@ -9,6 +9,9 @@ import {
   storeSettingsId,
 } from '../config/store-policy.js';
 import { StoreSettings } from '../models/store-settings.js';
+import { recordAudit } from './audit.js';
+import { settingsChanges } from './audit-summaries.js';
+import { transaction } from './transaction.js';
 import { settingsInput } from '../utils/store-settings-input.js';
 
 export function settingsDefaults(payment, env = process.env) {
@@ -48,7 +51,7 @@ export function settingsDefaults(payment, env = process.env) {
     freeDeliveryThresholdPaise: payment.freeDeliveryMinimum,
     deliveryEstimate: payment.deliveryEstimate,
     serviceablePincodeRules: payment.deliveryRules,
-    invoicePrefix: contact('INVOICE_PREFIX') ?? invoicePrefix,
+    invoicePrefix: contact('INVOICE_PREFIX'),
     firstOrderDiscountPercent: payment.firstOrderPercent,
     risk: {
       openPerPhone: number('COD_OPEN_PER_PHONE', codRiskDefaults.openPerPhone),
@@ -114,13 +117,23 @@ export function createSettingsService(defaults) {
         });
       return refreshing;
     },
-    async write(value) {
+    async write(value, audit) {
       const parsed = settingsInput.parse(value);
-      await StoreSettings.updateOne(
-        { _id: storeSettingsId },
-        { $set: { value: parsed } },
-        { upsert: true, runValidators: true },
-      );
+      await transaction(async (session) => {
+        const previous = await StoreSettings.findOneAndUpdate(
+          { _id: storeSettingsId },
+          { $set: { value: parsed } },
+          { upsert: true, runValidators: true, returnDocument: 'before', session },
+        ).lean();
+        const change = settingsChanges(previous?.value ?? {}, parsed);
+        if (Object.keys(change.after).length) {
+          await recordAudit(
+            'settings.updated',
+            { ...audit, target: storeSettingsId, ...change },
+            session,
+          );
+        }
+      });
       generation++;
       cache = parsed;
       expires = Date.now() + settingsCacheMs;
@@ -140,7 +153,7 @@ export async function commerceOptions(options) {
       address: settings.seller.address ?? undefined,
       gstin: settings.seller.gstin ?? undefined,
       gstRegistered: settings.gstRegistered,
-      invoicePrefix: settings.invoicePrefix,
+      invoicePrefix: settings.invoicePrefix ?? invoicePrefix,
     },
     risk: settings.risk,
     defaultReturnWindowDays: settings.defaultReturnWindowDays,

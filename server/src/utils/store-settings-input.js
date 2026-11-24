@@ -54,11 +54,13 @@ export const settingsInput = z
     freeDeliveryThresholdPaise: optional(paise),
     deliveryEstimate: text,
     serviceablePincodeRules: z.array(deliveryRule).max(500),
-    invoicePrefix: z
-      .string()
-      .trim()
-      .toUpperCase()
-      .regex(/^[A-Z0-9]{1,5}$/),
+    invoicePrefix: optional(
+      z
+        .string()
+        .trim()
+        .toUpperCase()
+        .regex(/^[A-Z0-9]{1,5}$/),
+    ),
     firstOrderDiscountPercent: z.int().min(0).max(100),
     risk: z.strictObject({
       openPerPhone: optional(z.int().positive()),

@@ -205,6 +205,13 @@ test('business foundation over the storefront API', async (t) => {
       patch({ status: 'refunded', refundAmountPaise: maximumRefundPaise + 1 }, 409),
     );
     await admin(adminReturn, patch({ status: 'refunded', refundAmountPaise: maximumRefundPaise }));
+    const latest = (await admin('/admin/overview/audit')).value.items;
+    const refundAudit = latest.find(({ action }) => action === 'order.refund_recorded');
+    assert.equal(refundAudit.target, `${number}/${id}`);
+    assert.equal(refundAudit.before.status, 'received');
+    assert.equal(refundAudit.after.refundAmountPaise, maximumRefundPaise);
+    assert.ok(latest.some(({ action }) => action === 'product.updated'));
+    assert.ok(latest.some(({ action }) => action === 'order.status_changed'));
 
     const damaged = await buyer(
       path,

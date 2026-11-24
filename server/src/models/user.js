@@ -24,6 +24,18 @@ const userSchema = new mongoose.Schema(
         pincode: String,
       },
     ],
+    adminTotp: {
+      type: new mongoose.Schema(
+        {
+          encrypted: String,
+          lastStep: Number,
+          recoveryHashes: [String],
+        },
+        { _id: false },
+      ),
+      select: false,
+    },
+    sessionVersion: { type: Number, default: 0, select: false },
     checkoutVersion: { type: Number, default: 0, select: false },
     passwordHash: { type: String, required: true, select: false },
   },
