@@ -8,6 +8,7 @@ import { RouterLink } from '@angular/router';
 import { catchError, firstValueFrom, map, of, startWith, switchMap } from 'rxjs';
 import { apiMessage } from '../api-message';
 import { ShopState } from '../ui/shop-state';
+import { orderStatusLabel } from './order-status-label';
 import { OrdersApi, type OrderPage } from './orders-api';
 
 type State = { loading: boolean; page?: OrderPage; error?: string };
@@ -20,6 +21,7 @@ type State = { loading: boolean; page?: OrderPage; error?: string };
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OrderHistory {
+  protected readonly statusLabel = orderStatusLabel;
   private readonly api = inject(OrdersApi);
   private readonly request = signal({ page: 1 });
   protected readonly confirm = signal<string | null>(null);

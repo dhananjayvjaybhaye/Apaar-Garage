@@ -1,80 +1,9 @@
 import assert from 'node:assert/strict';
-import { randomBytes, randomUUID } from 'node:crypto';
-import { once } from 'node:events';
+import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
-import mongoose from 'mongoose';
-import { MongoMemoryReplSet } from 'mongodb-memory-server-core';
-import { createApp } from '../src/app.js';
-import { CartItem } from '../src/models/cart-item.js';
-import { Order } from '../src/models/order.js';
-import { Product } from '../src/models/product.js';
 import { User } from '../src/models/user.js';
 import { seedProducts } from '../scripts/products.js';
-import { rcSamples } from '../scripts/rc-products.js';
-
-const address = {
-  fullName: 'Test Customer',
-  phone: '9876543210',
-  addressLine1: '10 Test Street',
-  city: 'Pune',
-  state: 'Maharashtra',
-  pincode: '411001',
-};
-
-// Use a dedicated replica set because checkout and cancellation require transactions.
-async function startStore(t) {
-  Object.assign(process.env, {
-    NODE_ENV: 'test',
-    JWT_SECRET: randomBytes(32).toString('hex'),
-    CORS_ORIGINS: 'http://localhost:4200',
-    PAYMENT_ONLINE_ENABLED: 'false',
-    COD_FEE: '30',
-    COD_MIN_ORDER_VALUE: '',
-    COD_MAX_ORDER_VALUE: '',
-    ORDER_DELIVERY_ESTIMATE: 'Expected in 4–6 business days.',
-    DELIVERY_FEE: '',
-    FREE_DELIVERY_MIN_ORDER_VALUE: '',
-    DELIVERY_PINCODE_RULES: '',
-    FIRST_ORDER_DISCOUNT_PERCENT: '0',
-    COUPONS_JSON: '[]',
-  });
-  const database = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
-  let server;
-  t.after(async () => {
-    try {
-      if (server?.listening) await new Promise((resolve) => server.close(resolve));
-    } finally {
-      try {
-        await mongoose.disconnect();
-      } finally {
-        await database.stop();
-      }
-    }
-  });
-  await mongoose.connect(database.getUri('store_test'));
-  await Promise.all([User.init(), Product.init(), Order.init(), CartItem.init()]);
-  await Product.insertMany([...seedProducts.slice(0, 2), rcSamples[0]]);
-  server = createApp().listen(0, '127.0.0.1');
-  await once(server, 'listening');
-  return 'http://127.0.0.1:' + server.address().port;
-}
-
-function shopper(origin) {
-  const cookies = new Map();
-  return async (path, { method = 'GET', body, status = 200 } = {}) => {
-    const headers = {};
-    if (body !== undefined) headers['Content-Type'] = 'application/json';
-    if (cookies.size) headers.Cookie = [...cookies.values()].join('; ');
-    const response = await fetch(origin + path, { method, body: JSON.stringify(body), headers });
-    for (const cookie of response.headers.getSetCookie()) {
-      const pair = cookie.split(';', 1)[0];
-      cookies.set(pair.split('=', 1)[0], pair);
-    }
-    const value = response.status === 204 ? undefined : await response.json();
-    assert.equal(response.status, status, method + ' ' + path + ' ' + JSON.stringify(value));
-    return { value, headers: response.headers };
-  };
-}
+import { address, shopper, startStore } from './store-fixture.js';
 
 test('store HTTP contracts', async (t) => {
   const origin = await startStore(t);
@@ -162,7 +91,14 @@ test('store HTTP contracts', async (t) => {
     await buyer('/cart/items', { method: 'POST', body: { slug: model.slug, quantity: 2 } });
     const { value: quote } = await buyer('/orders/quote?pincode=' + address.pincode);
     assert.equal(quote.codFeePaise, 3000);
-    const checkout = { address, checkoutKey: randomUUID(), quote: quote.quote };
+    assert.equal(quote.taxPaise, null);
+    await buyer('/orders', { method: 'POST', body: { address }, status: 400 });
+    const checkout = {
+      acceptPolicies: true,
+      address,
+      checkoutKey: randomUUID(),
+      quote: quote.quote,
+    };
     await buyer('/orders', {
       method: 'POST',
       body: { ...checkout, paymentMethod: 'online' },
@@ -193,5 +129,33 @@ test('store HTTP contracts', async (t) => {
     );
     assert.equal((await buyer(cancel, { method: 'POST', body: {} })).value.status, 'cancelled');
     assert.equal((await buyer('/products/' + model.slug)).value.stock, model.stock);
+  });
+
+  await t.test('unregistered dispatch issues a bill of supply without tax lines', async () => {
+    const admin = shopper(origin);
+    const email = 'bill-admin@example.test';
+    await admin('/auth/register', {
+      method: 'POST',
+      body: { email, name: 'Bill Admin', password: credentials.password },
+      status: 201,
+    });
+    await User.updateOne({ email }, { $set: { role: 'admin' } });
+    await buyer('/cart/items', { method: 'POST', body: { slug: model.slug, quantity: 1 } });
+    const { value } = await buyer('/orders', {
+      method: 'POST',
+      body: { acceptPolicies: true, address },
+      status: 201,
+    });
+    for (const status of ['confirmed', 'packed', 'shipped']) {
+      await admin('/admin/orders/' + value.orderNumber + '/status', {
+        method: 'PATCH',
+        body: { status },
+      });
+    }
+    const invoice = (await buyer('/orders/' + value.orderNumber + '/invoice')).value;
+    assert.equal(invoice.invoiceType, 'bill_of_supply');
+    assert.equal(invoice.seller.name, 'Apaar Garage');
+    assert.equal(invoice.taxBreakup, undefined);
+    assert.equal(invoice.items[0].taxPaise, undefined);
   });
 });

@@ -1,3 +1,4 @@
+import { sampleCompliance } from './sample-compliance.js';
 import { placeholderPath } from './placeholder-path.js';
 
 const vehicleKit = [
@@ -269,4 +270,5 @@ export const rcSamples = samples.map((sample) => ({
   boxContents: vehicleKit,
   placeholder: true,
   ...sample,
+  ...sampleCompliance({ ...sample, productType: 'rc' }),
 }));

@@ -32,9 +32,45 @@ node scripts/check-category-layout.mjs
 
 Set `PREVIEW_URL` when using a different preview port. The check measures the last product and View all card on all four sections, then simulates loading and an empty inventory. Keep bottom padding on the section and clipping on its decorative backdrop so the card shadows and tilt stay visible.
 
-## Change the COD fee
+## Publish products and manage inventory
 
-Set `COD_FEE` in `server/.env` to a nonnegative rupee amount with up to two decimal places, then restart the API. Use `COD_MIN_ORDER_VALUE` and `COD_MAX_ORDER_VALUE` for merchandise subtotal limits. The server recalculates the fee in the cart quote and on checkout.
+Use an existing administrator account with the admin API. Create a product with `POST /admin/products`, read it by slug with `GET /admin/products/:slug`, and send changed fields using `PATCH /admin/products/:slug`. To publish, set `status` to `published`. A 400 response includes a `details` array with each missing or invalid field. Use `PATCH /admin/products/:slug/stock` with a signed integer `delta` for a stock adjustment. The order, product and stock APIs do not physically delete inventory records.
+
+## Dispatch and handle returns
+
+- Send `PATCH /admin/orders/:orderNumber/status` with `status: "shipped"` and optional `shipment` fields `courier`, `awb` and `trackingUrl`. This creates the invoice or bill, available from order tracking or `GET /orders/:orderNumber/invoice`.
+- A failed delivery uses `status: "undelivered"` with `reasonCode` set to `refused`, `unreachable`, or `failed_attempts`. Once the parcel arrives back, send `status: "returned_to_seller"` and a `condition` of `resalable` or `damaged`.
+- Customers submit `POST /orders/:orderNumber/returns` with a reason such as `damaged` and `items: [{ "slug": "product-slug", "quantity": 1 }]`. Use the same endpoint with GET to see their requests. Staff review with `GET /admin/orders/:orderNumber/returns` and update with `PATCH /admin/orders/:orderNumber/returns/:id`. When receiving, include the condition for each item as `items: [{ "slug": "product-slug", "condition": "resalable" }]`. After recording COD collection, a refund can be recorded in paise with `refundAmountPaise`.
+- Use `POST /admin/orders/:orderNumber/notes` and `PATCH /admin/orders/:orderNumber/confirmation` for internal notes and customer confirmation. The customer return workflow is available through the API.
+
+## Complete seller details and policies before launch
+
+Use `GET /admin/settings`, edit the JSON, and save it with `PUT /admin/settings`. Review the result on `/seller-information`, in the footer, and at `/api/store-info`.
+
+- Set the seller’s legal name, trade name and full business address. Verify the seller state and the GST registration setting. Supply the GSTIN if registered.
+- Fill in the customer care phone, email and hours, plus the grievance officer’s name, designation, email, phone and address.
+- Fill `policyDetails.returnConditions`, `nonReturnableItems`, `refundTimeline`, `exchangeTerms`, `warrantyTerms`, and `otherDataRetention` with the store’s actual terms. Verify the default return window, delivery estimate, pincode rules, and configured anonymized-order retention.
+- Replace demo listings with real product data. Verify the MRP inclusive of taxes, selling price, net quantity, origin, manufacturer or importer details, age grade, warranty, return window, and battery transport notes. Supply the actual BIS licence and an authorized packaging image in `isiMarkImageUrl` where applicable. The storefront displays the image only with a declared certification and licence.
+- Update the checkout policy version in `server/src/config/store-policy.js` when substantially changing what buyers agree to. Checkout records the version and time on the order. Direct `POST /orders` callers must send `acceptPolicies: true` after obtaining the customer’s agreement. Update the newsletter consent version in the server and home signup together if its consent wording changes.
+
+## Change store settings and COD rules
+
+Read the complete settings using an administrator session with `GET /admin/settings`. Update that JSON with `PUT /admin/settings`. Amounts in the settings API are integer paise. Keep currency values in rupees in the initial environment defaults. Changes take effect when saved on the current API instance. Other instances refresh within 30 seconds.
+
+- By default, the store allows two open COD orders per normalized mobile number and three per normalized address over the last 24 hours. The first-order cap is ₹2,500 until there is a delivered COD order for that phone or account. A total over ₹4,000 needs customer confirmation. Both risk thresholds use the final payable amount.
+- The default repeated-failure rule flags three undelivered COD orders within 90 days. Set `risk.repeatedUndeliveredAction` to `block` to refuse subsequent COD orders. Use `/admin/blocked-contacts` to add or remove manual blocks by phone, pincode, or both. For flagged or high-value orders, record customer confirmation using `PATCH /admin/orders/:orderNumber/confirmation` before packing.
+- Set `codFeePaise`, `codMinPaise`, `codMaxPaise`, `deliveryFeePaise`, and `freeDeliveryThresholdPaise` in settings. Checkout uses the **merchandise subtotal after discount** for free delivery, before shipping and COD fees. The cart’s estimate is based on the cart contents before checkout discounts.
+- Use `serviceablePincodeRules` for exceptions. The longest matching prefix wins. Set `serviceable: false` to turn off checkout for a prefix. A product-specific return window overrides the store default on new orders.
+
+## Manage coupons
+
+Use `GET /admin/coupons` and `PUT /admin/coupons`. The PUT body includes `code` and either `percent` or `amountPaise`, with optional `minimumPaise`, `startsAt`, `endsAt`, `totalLimit` and `perCustomerLimit`. Set `active: false` to retire an offer while preserving redemption history. Coupon use is recorded when an order is placed. A coupon replaces the separate automatic discount on an eligible first signed-in order. Guest usage is checked with the shipping phone at checkout.
+
+## Manage tickets, consent and account data
+
+- Customers submit tickets and check status from the support page or via `POST /support/status` with `ticketNumber` and `email`. Staff can list or update tickets from `/admin/support`. Acknowledge within 48 hours and resolve within one month. New tickets use the earlier of one calendar month and 30 days for their resolution deadline.
+- Newsletter sign-up records consent for the text shown at signup. An authorized sender can request a token from `POST /admin/newsletter/unsubscribe-token` with `email`. Configure the sender to POST to `/api/newsletter/unsubscribe/:token` for one-click unsubscribe. A human-readable email link can open `/newsletter/unsubscribe#<token>` on the storefront. Sign-up tokens and the sender’s list stay private.
+- Signed-in customers can download their linked data and close their account from `/account/privacy`. Closing requires the current password and completion of open orders or returns. Tickets and newsletter records are linked when submitted while signed in using the account email. For older or guest records, use the support channel where ownership can be checked. MongoDB expires anonymized order records after the configured retention period.
 
 ## Add a page
 

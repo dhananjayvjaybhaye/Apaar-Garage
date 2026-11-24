@@ -126,7 +126,9 @@ export class Home {
     ), { initialValue: loading });
   }
 
-  protected async subscribe(event: Event, input: HTMLInputElement) {
+  protected readonly consentMissing = signal(false);
+
+  protected async subscribe(event: Event, input: HTMLInputElement, consent: HTMLInputElement) {
     event.preventDefault();
     if (this.signupPending()) return;
     if (!input.validity.valid || !input.value.trim()) {
@@ -135,11 +137,18 @@ export class Home {
       return;
     }
     this.signupInvalid.set(false);
+    if (!consent.checked) {
+      this.consentMissing.set(true);
+      consent.focus();
+      return;
+    }
+    this.consentMissing.set(false);
     this.signupPending.set(true);
     this.signupStatus.set(null);
     try {
-      await firstValueFrom(this.http.post('/api/newsletter', { email: input.value.trim() }));
+      await firstValueFrom(this.http.post('/api/newsletter', { email: input.value.trim(), consent: true, textVersion: 'newsletter-v2', source: 'home' }));
       input.value = '';
+      consent.checked = false;
       this.signupStatus.set({ text: 'You’re on the list.' });
     } catch (error) {
       this.signupStatus.set({

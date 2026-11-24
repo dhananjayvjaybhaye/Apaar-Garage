@@ -24,12 +24,14 @@ import { Seo } from '../seo/seo';
 
 type DetailState = { status: 'loading' | 'missing' | 'error' } | { status: 'ready'; product: Product };
 const loading: DetailState = { status: 'loading' };
+import { ProductDisclosures } from './product-disclosures';
+
 const sections = ['Details', 'Specs', 'Shipping'] as const;
 type Section = (typeof sections)[number];
 
 @Component({
   selector: 'app-product-detail',
-  imports: [AmbientVisible, Magnetic, CurrencyPipe, RouterLink, ProductMedia, WishlistButton, StockAlert, DeliveryCheck, ProductRecommendations, ShopState, ProductReviews, StarSummary, RcSpecs],
+  imports: [AmbientVisible, Magnetic, CurrencyPipe, RouterLink, ProductMedia, WishlistButton, StockAlert, DeliveryCheck, ProductRecommendations, ShopState, ProductReviews, StarSummary, RcSpecs, ProductDisclosures],
   templateUrl: './product-detail.html',
   styleUrl: './product-detail.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

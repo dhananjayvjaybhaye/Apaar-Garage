@@ -1,9 +1,16 @@
 // Validates order requests and maps order results to their existing HTTP contracts.
 import { z } from 'zod';
+import { commerceOptions } from '../services/store-settings.js';
+import { privateKey } from '../services/cod-risk.js';
+import { indianPhone } from '../utils/indian-phone.js';
 import { HttpError, validate } from '../utils/http-error.js';
 import { pincode } from '../services/delivery.js';
 import { couponCode } from '../services/discounts.js';
-import { orderStatuses } from '../models/order.js';
+import {
+  cancellationInput,
+  orderNumberPattern,
+  orderTransition,
+} from '../utils/order-business-input.js';
 import { cancelOrder, placeOrder } from '../services/order-service.js';
 import { EmptyCartError, quoteCart } from '../services/order-quote.js';
 import { customerCancellable, publicItems, publicOrder } from '../utils/order-response.js';
@@ -22,10 +29,7 @@ const field = (label, max) =>
     .max(max);
 const address = z.strictObject({
   fullName: field('your full name', 100),
-  phone: z
-    .string()
-    .trim()
-    .regex(/^[6-9]\d{9}$/, 'Enter a valid 10-digit Indian mobile number.'),
+  phone: indianPhone,
   addressLine1: field('your street address', 160),
   addressLine2: z.string().trim().max(160).optional(),
   city: field('your city', 80),
@@ -34,6 +38,7 @@ const address = z.strictObject({
 });
 const checkout = z.strictObject({
   address,
+  acceptPolicies: z.literal(true, 'Accept the store terms and policies before placing your order.'),
   paymentMethod: z.enum(['cod', 'online']).default('cod'),
   quote: z
     .string()
@@ -44,7 +49,6 @@ const checkout = z.strictObject({
   coupon: couponCode.optional(),
   email: z.string().trim().toLowerCase().max(254).pipe(z.email()).optional(),
 });
-const orderNumberPattern = z.string().regex(/^AG-[0-9A-F]{14}$/, 'Invalid order number.');
 const pageQuery = z.object({
   page: z
     .string()
@@ -52,7 +56,6 @@ const pageQuery = z.object({
     .transform(Number)
     .default(1),
 });
-const orderTransition = z.strictObject({ status: z.enum(orderStatuses) });
 const collection = z.strictObject({ paymentStatus: z.literal('collected') });
 const allowEmptyQuote = z.literal('ok').optional();
 
@@ -80,7 +83,7 @@ export function createOrdersController(options) {
           guest: !user,
           emailAddress: user?.email ?? input.email,
         },
-        options,
+        await commerceOptions(options),
       );
       res.status(created ? 201 : 200).json({ orderNumber: order.number });
     },
@@ -89,9 +92,18 @@ export function createOrdersController(options) {
       const coupon = validate(couponCode.optional(), req.query.coupon);
       const empty = validate(allowEmptyQuote, req.query.empty);
       const { id, user } = res.locals.shopper;
+      const current = await commerceOptions(options);
+      if (coupon) await options.initializeCoupons();
       let result;
       try {
-        result = await quoteCart(id, options, { pin, coupon, guest: !user });
+        result = await quoteCart(id, current, {
+          pin,
+          coupon,
+          guest: !user,
+          accountKey: user
+            ? privateKey(options.riskSecret, 'coupon-account', id.toString())
+            : undefined,
+        });
       } catch (error) {
         if (empty === 'ok' && error instanceof EmptyCartError) return res.json({ empty: true });
         throw error;
@@ -102,7 +114,7 @@ export function createOrdersController(options) {
         items: publicItems(items),
         paymentMethod: 'cod',
         emailUpdates: options.orderEmailEnabled,
-        firstOrderPercent: options.firstOrderPercent,
+        firstOrderPercent: current.firstOrderPercent,
       });
     },
     async list(req, res) {
@@ -113,12 +125,34 @@ export function createOrdersController(options) {
       res.json(publicOrder(await findCustomerOrder(orderFilter(req, res))));
     },
     async cancel(req, res) {
-      res.json(publicOrder(await cancelOrder(orderFilter(req, res), customerCancellable)));
+      const { reasonCode = 'customer_cancelled', note } = validate(
+        cancellationInput,
+        req.body ?? {},
+      );
+      res.json(
+        publicOrder(
+          await cancelOrder(orderFilter(req, res), customerCancellable, {
+            reasonCode,
+            note,
+            actor: res.locals.shopper.id,
+            notifications: options,
+          }),
+        ),
+      );
     },
     async changeStatus(req, res) {
       const orderNumber = validate(orderNumberPattern, req.params.orderNumber);
-      const { status } = validate(orderTransition, req.body);
-      res.json(publicOrder(await changeOrderStatus(orderNumber, status, options)));
+      const input = validate(orderTransition, req.body);
+      res.json(
+        publicOrder(
+          await changeOrderStatus(
+            orderNumber,
+            input,
+            await commerceOptions(options),
+            res.locals.user._id,
+          ),
+        ),
+      );
     },
     async collectPayment(req, res) {
       const orderNumber = validate(orderNumberPattern, req.params.orderNumber);

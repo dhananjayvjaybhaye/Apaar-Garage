@@ -1,29 +1,29 @@
 // Owns checkout and cancellation transactions, including inventory updates.
+import { checkoutPolicyVersion } from '../config/store-policy.js';
 import { randomBytes } from 'node:crypto';
-import mongoose from 'mongoose';
+import { transaction } from './transaction.js';
+import { applyStockMovements, restockOrderItems } from './stock.js';
+import { priceOrderTax } from './order-tax.js';
 import { HttpError } from '../utils/http-error.js';
-import { orderEmailEvent } from './order-email.js';
-import { quoteCart, stockError } from './order-quote.js';
+import { notify } from './notifications.js';
+import { assessCod, codIdentity, holdCodLocks, prepareCodLocks, privateKey } from './cod-risk.js';
+import { redeemCoupon } from './discounts.js';
+import { quoteCart } from './order-quote.js';
+import { lockAccount } from './account-write.js';
 import { User } from '../models/user.js';
 import { CartItem } from '../models/cart-item.js';
 import { Order } from '../models/order.js';
-import { Product } from '../models/product.js';
-
-async function transaction(action) {
-  try {
-    return await mongoose.connection.transaction(action, {
-      readPreference: 'primary',
-    });
-  } catch (error) {
-    if (error.code === 20 && /transaction/i.test(error.message)) {
-      throw new HttpError(503, 'Checkout requires a MongoDB replica set or sharded cluster.');
-    }
-    throw error;
-  }
-}
 
 export async function placeOrder(user, input, options) {
   const keyFilter = input.checkoutKey ? { user, checkoutKey: input.checkoutKey } : null;
+  const keys = codIdentity(input.address, options.riskSecret);
+  const customerKey = privateKey(options.riskSecret, 'coupon-phone', input.address.phone);
+  const accountKey = input.guest
+    ? undefined
+    : privateKey(options.riskSecret, 'coupon-account', user.toString());
+  await prepareCodLocks(keys);
+  if (input.coupon) await options.initializeCoupons();
+
   try {
     return await transaction(async (session) => {
       if (keyFilter) {
@@ -31,15 +31,16 @@ export async function placeOrder(user, input, options) {
         if (existing) return { order: existing, created: false };
       }
 
+      await holdCodLocks(keys, session);
       // Serialize the first-order eligibility check across concurrent orders for this account.
-      if (!input.guest && options.firstOrderPercent) {
-        await User.updateOne({ _id: user }, { $inc: { checkoutVersion: 1 } }, { session });
-      }
+      if (!input.guest) await lockAccount(user, session);
       const cart = await quoteCart(user, options, {
         session,
         pin: input.address.pincode,
         guest: input.guest,
         coupon: input.coupon,
+        customerKey,
+        accountKey,
       });
       if (input.quote && input.quote !== cart.quote) {
         throw new HttpError(
@@ -47,23 +48,41 @@ export async function placeOrder(user, input, options) {
           'Your cart or total changed. Review the updated summary before placing your order.',
         );
       }
-      const inventory = await Product.bulkWrite(
-        cart.items.map((item) => ({
-          updateOne: {
-            filter: { _id: item.product, stock: { $gte: item.quantity } },
-            update: { $inc: { stock: -item.quantity, sales: item.quantity } },
-          },
-        })),
-        { session },
+      const risk = await assessCod({
+        user,
+        input,
+        keys,
+        totalPaise: cart.totalPaise,
+        policy: options.risk,
+        session,
+      });
+      const number = 'AG-' + randomBytes(7).toString('hex').toUpperCase();
+      await redeemCoupon({
+        coupon: input.coupon,
+        customerKey,
+        accountKey,
+        orderNumber: number,
+        session,
+      });
+      await applyStockMovements(
+        cart.items.map(({ product, quantity }) => ({ product, delta: -quantity })),
+        {
+          reason: 'sale',
+          order: number,
+          actor: user,
+          session,
+        },
       );
-      if (inventory.matchedCount !== cart.items.length) throw stockError();
-
+      const tax = priceOrderTax(cart, options.seller, input.address.state);
       const order = new Order({
-        number: 'AG-' + randomBytes(7).toString('hex').toUpperCase(),
+        number,
+        seller: options.seller,
+        ...tax,
+        ...risk,
         user,
         checkoutKey: input.checkoutKey,
+        policyAcceptance: { version: checkoutPolicyVersion, at: new Date() },
         address: input.address,
-        items: cart.items,
         subtotalPaise: cart.subtotalPaise,
         codFeePaise: cart.codFeePaise,
         shippingPaise: cart.shippingPaise,
@@ -71,8 +90,7 @@ export async function placeOrder(user, input, options) {
         discountCode: cart.discountCode,
         guest: input.guest,
         emailAddress: input.emailAddress,
-        emailEvents:
-          options.orderEmailEnabled && input.emailAddress ? [orderEmailEvent('confirmed')] : [],
+        emailEvents: [notify(input, 'placed', options)].filter(Boolean),
         totalPaise: cart.totalPaise,
         deliveryEstimate: cart.deliveryEstimate,
         paymentMethod: 'cod',
@@ -109,36 +127,33 @@ export async function placeOrder(user, input, options) {
   }
 }
 
-export function cancelOrder(filter, allowed) {
+export function cancelOrder(filter, allowed, { actor, reasonCode, note, notifications = {} } = {}) {
   return transaction(async (session) => {
-    const order = await Order.findOne(filter).session(session);
+    const order = await Order.findOne(filter).select('+emailAddress').session(session);
     if (!order) throw new HttpError(404, 'Order not found.');
     if (order.status === 'cancelled') return order;
     if (!allowed.includes(order.status))
       throw new HttpError(409, 'This order can no longer be cancelled.');
 
-    order.status = 'cancelled';
-    order.statusHistory.push({ status: 'cancelled', at: new Date() });
-    if (order.paymentStatus === 'pending') order.paymentStatus = 'failed';
-    await order.save({ session });
-    await Product.bulkWrite(
-      order.items.map((item) => ({
-        updateOne: {
-          filter: { _id: item.product },
-          update: { $inc: { stock: item.quantity } },
+    const at = new Date();
+    const notice = notify(order, 'cancelled', notifications, at);
+    const updated = await Order.findOneAndUpdate(
+      { _id: order._id, status: order.status },
+      {
+        $set: {
+          status: 'cancelled',
+          cancellation: { reasonCode, note, cancelledBy: actor, at },
+          ...(order.paymentStatus === 'pending' && { paymentStatus: 'failed' }),
         },
-      })),
-      { session },
-    );
-    await Product.bulkWrite(
-      order.items.map((item) => ({
-        updateOne: {
-          filter: { _id: item.product, sales: { $gte: item.quantity } },
-          update: { $inc: { sales: -item.quantity } },
+        $push: {
+          statusHistory: { status: 'cancelled', at },
+          ...(notice && { emailEvents: notice }),
         },
-      })),
-      { session },
+      },
+      { session, returnDocument: 'after' },
     );
-    return order;
+    if (!updated) throw new HttpError(409, 'The order changed. Reload and try again.');
+    await restockOrderItems(order.items, { reason: 'cancel', order: order.number, actor, session });
+    return updated;
   });
 }

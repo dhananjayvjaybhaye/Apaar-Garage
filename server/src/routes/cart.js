@@ -17,6 +17,7 @@ export function createCartRouter(shopper, options) {
   router.get('/', cart.list);
   router.post('/items', cart.add);
   router.patch('/items/:slug', cart.update);
+  router.delete('/unavailable', cart.removeUnavailable);
   router.delete('/items/:slug', cart.remove);
   return router;
 }

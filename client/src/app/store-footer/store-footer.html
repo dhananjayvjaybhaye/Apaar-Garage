@@ -37,8 +37,11 @@
       <a routerLink="/orders">Order history</a>
       <a routerLink="/about">About Apaar Garage</a>
       <a routerLink="/faq">FAQ</a>
-      <a routerLink="/faq" fragment="contact">Contact</a>
+      <a routerLink="/contact">Contact</a>
+      <a routerLink="/seller-information">Seller information</a>
+      <a routerLink="/contact" fragment="track-complaint">Track a complaint</a>
     </nav>
   </div>
+  <app-seller-contacts class="container seller-footer" [compact]="true" />
   <div class="container legal">© Apaar Garage</div>
 </footer>

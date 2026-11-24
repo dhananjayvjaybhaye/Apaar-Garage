@@ -18,6 +18,7 @@ interface Cart {
   items: CartItem[];
   totalQuantity: number;
   subtotal: number;
+  unavailableCount?: number;
   freeDeliveryRemainingPaise?: number | null;
 }
 
@@ -75,6 +76,10 @@ export class CartStore {
 
   remove(slug: string) {
     return this.mutate(() => this.http.delete<Cart>(this.itemUrl(slug)));
+  }
+
+  removeUnavailable() {
+    return this.mutate(() => this.http.delete<Cart>(cartUrl + '/unavailable'));
   }
 
   private itemUrl(slug: string) {

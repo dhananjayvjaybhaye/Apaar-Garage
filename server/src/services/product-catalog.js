@@ -1,4 +1,5 @@
 // Builds product queries and maps database records to the public catalog.
+import { publicProductFilter } from '../utils/product-compliance.js';
 import { Product } from '../models/product.js';
 import { HttpError } from '../utils/http-error.js';
 import { categoriesByType, productCategories, rcCategories } from '../utils/product-input.js';
@@ -12,7 +13,7 @@ const sorting = {
   popular: { sales: -1, featured: -1, slug: 1 },
 };
 
-function publicProduct({ _id, ratingTotal, ratingCount = 0, ...product }) {
+function publicProduct({ _id, ratingTotal, ratingCount = 0, costPrice: _costPrice, ...product }) {
   return {
     productType: rcCategories.includes(product.category) ? 'rc' : 'diecast',
     ...product,
@@ -42,7 +43,10 @@ function productScope(query) {
   } = query;
   const scopeType =
     productType ?? (category ? (rcCategories.includes(category) ? 'rc' : 'diecast') : undefined);
-  const typeScope = scopeType ? { category: { $in: categoriesByType[scopeType] } } : {};
+  const typeScope = {
+    ...publicProductFilter(),
+    ...(scopeType && { category: { $in: categoriesByType[scopeType] } }),
+  };
   const filter = {
     ...typeScope,
     ...(category && { category }),
@@ -127,7 +131,9 @@ export async function listProducts(query) {
 }
 
 export async function findProduct(slug) {
-  const product = await Product.findOne({ slug: slug }).select('-__v').lean();
+  const product = await Product.findOne({ ...publicProductFilter(), slug })
+    .select('-__v')
+    .lean();
   if (!product) throw new HttpError(404, 'Product not found.');
   return publicProduct(product);
 }

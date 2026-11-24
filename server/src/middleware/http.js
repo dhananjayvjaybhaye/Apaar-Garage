@@ -39,7 +39,9 @@ export function protectWrites(origins) {
         throw new HttpError(403, 'This request origin is not allowed.');
       }
       // JSON writes require a CORS preflight when issued by another origin.
-      if (jsonWriteMethods.has(req.method) && !req.is('application/json')) {
+      const oneClick =
+        req.method === 'POST' && /^\/newsletter\/unsubscribe\/[a-f0-9]{64}$/.test(req.path);
+      if (!oneClick && jsonWriteMethods.has(req.method) && !req.is('application/json')) {
         throw new HttpError(415, 'Send an application/json request body.');
       }
     }

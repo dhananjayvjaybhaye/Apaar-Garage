@@ -1,0 +1,53 @@
+@let item = product();
+<section aria-labelledby="disclosures-heading">
+  <h2 id="disclosures-heading">Product and packaging information</h2>
+  @if (item.placeholder) { <p>These product declarations are sample data.</p> }
+  <dl>
+    <div><dt>Net quantity</dt><dd>{{ item.netQuantity ?? 'Net quantity to be supplied' }}</dd></div>
+    <div><dt>Country of origin</dt><dd>{{ item.countryOfOrigin ?? 'Country of origin to be supplied' }}</dd></div>
+    @if (item.manufacturerName || item.manufacturerAddress || !item.importerName) {
+      <div><dt>Manufacturer name</dt><dd>{{ item.manufacturerName ?? 'Manufacturer name to be supplied' }}</dd></div>
+      <div><dt>Manufacturer address</dt><dd>{{ item.manufacturerAddress ?? 'Manufacturer address to be supplied' }}</dd></div>
+    }
+    @if (item.importerName || item.importerAddress) {
+      <div><dt>Importer name</dt><dd>{{ item.importerName ?? 'Importer name to be supplied' }}</dd></div>
+      <div><dt>Importer address</dt><dd>{{ item.importerAddress ?? 'Importer address to be supplied' }}</dd></div>
+    }
+    <div>
+      <dt>ISI mark / BIS certification</dt>
+      <dd>
+        @if (item.bisCertified === true && item.bisLicenceNumber && item.isiMarkImageUrl && !item.placeholder) {
+          <img [src]="item.isiMarkImageUrl" alt="ISI mark on the product packaging" width="144" height="92" loading="lazy" />
+        } @else if (item.bisCertified === true) {
+          BIS certification declared. ISI mark image to be supplied.
+        } @else {
+          ISI mark not listed.
+        }
+      </dd>
+    </div>
+    @if (item.bisCertified === true || item.bisLicenceNumber) {
+      <div><dt>BIS licence number</dt><dd>{{ item.bisLicenceNumber ?? 'BIS licence number to be supplied' }}</dd></div>
+    }
+    <div>
+      <dt>Age grade</dt>
+      <dd>{{ item.ageGradeMin != null ? (item.ageGradeMin + ' years and up') : 'Age grade to be supplied' }}</dd>
+    </div>
+    <div>
+      <dt>Warranty</dt>
+      <dd>{{ item.warrantyDays == null ? 'Warranty details to be supplied' : item.warrantyDays === 0 ? 'No warranty listed' : (item.warrantyDays + ' days') }}</dd>
+    </div>
+    <div>
+      <dt>Return window</dt>
+      <dd>{{ returnDays() == null ? 'Return window to be supplied' : returnDays() === 0 ? 'No standard return window listed. Contact us about order issues.' : (returnDays() + ' days from delivery') }}</dd>
+    </div>
+    <div>
+      <dt>Battery shipping notes</dt>
+      <dd>
+        @if (item.hasLithiumBattery === true) { Lithium battery declared. }
+        @else if (item.hasLithiumBattery === false) { No lithium battery declared. }
+        @if (item.batteryWh != null) { Battery energy {{ item.batteryWh }} Wh. }
+        {{ item.shippingNote ?? 'Product-specific shipping notes to be supplied.' }}
+      </dd>
+    </div>
+  </dl>
+</section>

@@ -26,11 +26,25 @@ Global ambient visuals start in an idle slot, and the hero and category headings
 
 The Angular cart store refreshes its signals from the API after each write. Guests receive a secure-in-production, HTTP-only guest cookie on their first add. Signed-in customers use a separate HTTP-only session cookie. The server merges eligible guest quantities into the signed-in cart and keeps them within current stock and the quantity limit. Cart values are computed from the current product records.
 
+## Business rules and settings
+
+A validated StoreSettings document supplies seller details and checkout policy, with a short per-process read cache. Settings changes invalidate the local cache. Checkout serializes risk checks for a normalized mobile number and address using private lookup keys. Flagged orders require an explicit customer confirmation before packing. OTP and mobile notifications have interfaces ready for a provider.
+
+Coupon availability and redemptions are checked inside the order transaction. Each redemption writes the coupon record, so concurrent transactions compete on the same counter. Order email events are transactional outbox entries delivered by the existing worker after commit. Tickets use a private number-and-email lookup and track acknowledgement and resolution independently. Account closure removes or anonymizes linked personal fields and gives anonymous order records a retention expiry.
+
+The storefront shares one public store-info resource across the footer, seller page, policy pages, and product disclosures. Checkout uses the same server tax calculation as invoices, displays GST already included in the merchandise total, and records the terms and policies version the buyer accepted.
+
 ## COD orders
 
 The checkout asks for a server quote based on current prices, inventory, delivery, discounts, and the COD fee. The quote hash helps detect changes between review and submission, and the checkout key lets a retry return the original order. The server checks the cart again inside a MongoDB transaction, creates the order, decrements inventory, and clears the purchased cart entries. Prices are stored in paise in order responses.
 
-Customers can cancel orders while they are placed or confirmed. Cancellation restores stock in a transaction, and a repeated cancellation returns the already-cancelled order. Admin order status and payment changes use their own transition rules.
+Customers can cancel while the order is placed or confirmed. A store administrator can also cancel a packed order. After dispatch, failed delivery goes through `undelivered` and then `returned_to_seller`. Each transition checks the current status. A resalable return restores inventory once. A damaged receipt records its condition with no stock increase.
+
+Checkout includes SKU, HSN, MRP, GST rate, price, discount and return-window snapshots on each line. The server splits the merchandise discount proportionally, extracts GST from the remaining price, and reconciles rounding on the last eligible line for each GST rate. It splits tax into CGST and SGST for an in-state shipment and IGST otherwise. Delivery and COD fees stay separate from the merchandise breakdown. Dispatch assigns an invoice number inside the order transaction using the next number for the Indian financial year. Unregistered sellers issue a bill of supply with no tax lines. Order tracking links to the owner-only document with the seller’s name and details. Orders dispatched before this change keep their original records without an invoice backfill.
+
+Delivered orders support partial returns. The parent order serializes reservations, so parallel requests cannot reserve the same units or exceed their paid value. Receiving a resalable item writes the stock adjustment and the movement together. Refund amounts are capped by the purchased units’ discounted value and the remaining amount collected. Return resolution records a refund or replacement after staff completes it.
+
+Products default to draft and publish only after validation. Public product queries share one visibility filter, including the production placeholder exclusion. Admin product APIs alone select cost price. Historical orders continue using their snapshots when a listing is hidden or archived.
 
 ## API contracts
 

@@ -3,6 +3,15 @@ import { createApp } from './app.js';
 import { connectDatabase, DatabaseConnectionError } from './services/database.js';
 import mongoose from 'mongoose';
 import { createOrderMailer, startOrderEmailWorker } from './services/order-email.js';
+import { Coupon, CouponRedemption } from './models/coupon.js';
+import { BlockedContact, CodLock } from './models/cod-risk.js';
+import { StoreSettings } from './models/store-settings.js';
+import { NewsletterSubscriber } from './models/newsletter-subscriber.js';
+import { SupportRequest } from './models/support-request.js';
+import { InvoiceCounter } from './models/invoice-counter.js';
+import { Product } from './models/product.js';
+import { ReturnRequest } from './models/return-request.js';
+import { StockMovement } from './models/stock-movement.js';
 import { Order } from './models/order.js';
 import { CartItem } from './models/cart-item.js';
 import { Review } from './models/review.js';
@@ -15,7 +24,23 @@ try {
   const mailer = createOrderMailer();
   const app = createApp({ orderEmailEnabled: Boolean(mailer) });
   await connectDatabase();
-  await Promise.all([User.init(), CartItem.init(), Order.init(), Review.init()]);
+  await Promise.all([
+    User.init(),
+    CartItem.init(),
+    Order.init(),
+    Review.init(),
+    Product.init(),
+    InvoiceCounter.init(),
+    ReturnRequest.init(),
+    StockMovement.init(),
+    Coupon.init(),
+    CouponRedemption.init(),
+    BlockedContact.init(),
+    CodLock.init(),
+    StoreSettings.init(),
+    NewsletterSubscriber.init(),
+    SupportRequest.init(),
+  ]);
 
   app.listen(port, bindAddress, (error) => {
     if (error) {

@@ -1,4 +1,5 @@
 // Fictional diecast listings with generated artwork. Replace sample images with real product photos.
+import { sampleCompliance } from './sample-compliance.js';
 import { placeholderPath } from './placeholder-path.js';
 
 const items = [
@@ -150,6 +151,7 @@ const items = [
 
 export const seedProducts = items.map((item) => ({
   ...item,
+  ...sampleCompliance(item),
   placeholder: true,
   images: [placeholderPath(item.name)],
 }));

@@ -26,6 +26,7 @@ const calmRoutes = new Set([
   'login',
   'register',
   'auth',
+  'account',
   'orders',
   'track-order',
   'admin',

@@ -58,7 +58,7 @@
   <p class="muted">{{ order.deliveryEstimate }}</p>
   <div class="mobile-total">
     <span
-      >Total
+      >Total (incl. applicable taxes)
       <strong>{{ order.totalPaise / 100 | currency: 'INR' : 'symbol' : '1.2-2' }}</strong></span
     >
     <a href="#checkout-summary" (click)="showSummary($event)">View summary</a>

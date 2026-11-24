@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { SellerContacts } from './seller-contacts';
 import { TrustStrip } from './trust-strip';
 import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-store-footer',
-  imports: [RouterLink, TrustStrip],
+  imports: [RouterLink, TrustStrip, SellerContacts],
   templateUrl: './store-footer.html',
   styleUrl: './store-footer.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

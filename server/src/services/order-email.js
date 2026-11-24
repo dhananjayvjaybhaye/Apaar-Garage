@@ -4,16 +4,14 @@ import { Order } from '../models/order.js';
 import { readOrderEmailOptions } from '../utils/config.js';
 
 const statuses = {
+  placed: 'Order received',
   confirmed: 'Order confirmation',
   shipped: 'Order shipped',
   delivered: 'Order delivered',
+  cancelled: 'Order cancelled',
 };
 const retryLimit = 6;
 const minute = 60_000;
-
-export function orderEmailEvent(kind) {
-  return { kind, nextAttemptAt: new Date() };
-}
 
 export function createOrderMailer() {
   const config = readOrderEmailOptions();
@@ -60,13 +58,16 @@ async function deliverOrderEmails({ from, transport }) {
       },
       { returnDocument: 'after', sort: { 'emailEvents.nextAttemptAt': 1 }, timestamps: false },
     )
-      .select('number totalPaise deliveryEstimate +emailAddress emailEvents')
+      .select('number status totalPaise deliveryEstimate +emailAddress emailEvents')
       .lean();
     if (!order) return;
     const event = order.emailEvents.find((entry) => entry.lease === lease);
     const filter = { _id: order._id, 'emailEvents.lease': lease };
+    if (!order.emailAddress || !(await Order.exists(filter))) continue;
     try {
-      await transport.sendMail(emailMessage(order, event.kind, from));
+      // Older queues used the confirmation event when an order was only placed.
+      const kind = event.kind === 'confirmed' && order.status === 'placed' ? 'placed' : event.kind;
+      await transport.sendMail(emailMessage(order, kind, from));
     } catch {
       if (event.attempts < retryLimit) {
         await Order.updateOne(
@@ -111,11 +112,13 @@ function emailMessage(order, kind, from) {
     order.totalPaise / 100,
   );
   const status = {
-    confirmed:
+    placed:
       'We received your order. Pay ' +
       total +
       ' in cash when it arrives. ' +
       order.deliveryEstimate,
+    confirmed: 'We confirmed your order. ' + order.deliveryEstimate,
+    cancelled: 'Your order has been cancelled. Contact customer care if you need help.',
     shipped: 'Your order is on its way. ' + order.deliveryEstimate,
     delivered:
       'Your order has been marked delivered. If you need help, use the Contact us form and include your order number.',

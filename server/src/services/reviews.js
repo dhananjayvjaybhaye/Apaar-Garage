@@ -1,12 +1,16 @@
 // Reads reviews and verifies deliveries before updating product ratings transactionally.
 import mongoose from 'mongoose';
+import { publicProductFilter } from '../utils/product-compliance.js';
 import { Product } from '../models/product.js';
 import { Order } from '../models/order.js';
 import { Review } from '../models/review.js';
+import { lockAccount } from './account-write.js';
 import { HttpError } from '../utils/http-error.js';
 
 async function productFor(slug) {
-  const product = await Product.findOne({ slug }).select('_id').lean();
+  const product = await Product.findOne({ ...publicProductFilter(), slug })
+    .select('_id')
+    .lean();
   if (!product) throw new HttpError(404, 'Product not found.');
   return product._id;
 }
@@ -71,12 +75,14 @@ export async function submitReview(slug, shopper, { rating, comment }) {
       const buyer = await verifiedBuyer(buyers, product, session);
       if (!buyer)
         throw new HttpError(403, 'You can review this model after your order is delivered.');
+      if (shopper.user && buyer.toString() === shopper.user._id.toString())
+        await lockAccount(buyer, session);
       if (await Review.exists({ product, buyer: { $in: buyers } }).session(session)) {
         throw new HttpError(409, 'You already reviewed this model.');
       }
       await Review.create([{ product, buyer, rating, comment }], { session });
       const updated = await Product.findOneAndUpdate(
-        { _id: product },
+        { ...publicProductFilter(), _id: product },
         { $inc: { ratingCount: 1, ratingTotal: rating } },
         { session, returnDocument: 'after', projection: 'ratingCount ratingTotal' },
       ).lean();

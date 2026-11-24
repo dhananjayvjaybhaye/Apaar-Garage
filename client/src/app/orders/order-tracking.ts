@@ -6,7 +6,10 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { firstValueFrom, map } from 'rxjs';
 import { apiMessage } from '../api-message';
 import { ShopLoading, ShopState } from '../ui/shop-state';
-import { type CustomerOrder, OrdersApi } from './orders-api';
+import { type CustomerOrder, type OrderStatus, OrdersApi } from './orders-api';
+import { orderStatusLabel } from './order-status-label';
+
+const interrupted: OrderStatus[] = ['cancelled', 'returned', 'undelivered', 'returned_to_seller'];
 
 const stages = ['placed', 'confirmed', 'packed', 'shipped', 'delivered'] as const;
 
@@ -19,17 +22,20 @@ const stages = ['placed', 'confirmed', 'packed', 'shipped', 'delivered'] as cons
       @if (order.isLoading()) { <app-shop-loading label="Loading tracking…" /> }
       @else if (order.hasValue()) {
         @let current = order.value();
-        <p><strong>{{ current.orderNumber }}</strong> · {{ current.status | titlecase }}</p>
+        <p><strong>{{ current.orderNumber }}</strong> · {{ statusLabel(current.status) | titlecase }}</p>
         @if (stagesInProgress()) { <p>{{ current.deliveryEstimate }}</p> }
         <ol aria-label="Order status timeline">
           @for (entry of timeline(); track entry.status) {
             <li [class.reached]="entry.reached" [attr.aria-current]="entry.status === current.status ? 'step' : null">
-              <strong>{{ entry.status | titlecase }}</strong>
+              <strong>{{ statusLabel(entry.status) | titlecase }}</strong>
               @if (entry.at) { <time [attr.datetime]="entry.at">{{ entry.at | date: 'medium' }}</time> }
               @else if (!entry.reached) { <span>Upcoming</span> }
             </li>
           }
         </ol>
+        @if (current.shipment?.courier; as courier) { <p>Courier {{ courier }} · {{ current.shipment?.awb }}</p> }
+        @if (current.shipment?.trackingUrl; as url) { <p><a [href]="url" rel="noopener noreferrer">Track with courier</a></p> }
+        @if (current.invoiceNumber) { <p><a [routerLink]="['/track-order', current.orderNumber, 'invoice']">View invoice or bill</a></p> }
         @if (current.guest && current.canCancel) {
           @if (confirmCancel()) {
             <p>Cancel this order?</p>
@@ -74,9 +80,10 @@ export class OrderTracking {
     return number ? '/api/orders/' + encodeURIComponent(number) : undefined;
   });
 
+  protected readonly statusLabel = orderStatusLabel;
   protected readonly stagesInProgress = computed(() => {
     const status = this.order.hasValue() ? this.order.value().status : undefined;
-    return status !== undefined && status !== 'cancelled' && status !== 'returned' && status !== 'delivered';
+    return status !== undefined && !interrupted.includes(status) && status !== 'delivered';
   });
 
   protected readonly timeline = computed(() => {
@@ -85,6 +92,11 @@ export class OrderTracking {
     const dates = new Map((order.statusHistory ?? []).map(({ status, at }) => [status, at]));
     const status = order.status;
     const currentIndex = status === 'returned' ? stages.length - 1 : stages.findIndex((stage) => stage === status);
+    if (status === 'undelivered' || status === 'returned_to_seller') {
+      const failedPath: OrderStatus[] = ['placed', 'confirmed', 'packed', 'shipped', 'undelivered'];
+      if (status === 'returned_to_seller') failedPath.push(status);
+      return failedPath.map((step) => ({ status: step, at: dates.get(step), reached: true }));
+    }
     if (status === 'cancelled' || status === 'returned') {
       const completed = stages.filter((stage, index) => dates.has(stage) || index === 0 || index <= currentIndex);
       return [...completed, status].map((step) => ({ status: step, at: dates.get(step), reached: true }));

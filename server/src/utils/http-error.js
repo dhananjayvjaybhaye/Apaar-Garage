@@ -1,8 +1,9 @@
 // Maps request failures to the public API error response.
 export class HttpError extends Error {
-  constructor(status, message) {
+  constructor(status, message, details) {
     super(message);
     this.status = status;
+    this.details = details;
   }
 }
 
@@ -16,7 +17,7 @@ export function validate(schema, value) {
 
 function logUnexpected(req, res) {
   // Express route templates are defined by the app, unlike request URLs and error text.
-  const path = typeof req.route?.path === 'string' ? req.baseUrl + req.route.path : '(middleware)';
+  const path = typeof req.route?.path === 'string' ? req.route.path : '(middleware)';
   console.error(
     JSON.stringify({
       message: 'Unhandled API error',
@@ -34,7 +35,9 @@ export function errorHandler(error, req, res, _next) {
   }
 
   if (error instanceof HttpError) {
-    return res.status(error.status).json({ message: error.message });
+    return res
+      .status(error.status)
+      .json({ message: error.message, ...(error.details && { details: error.details }) });
   }
   if (error.type === 'entity.parse.failed') {
     return res.status(400).json({ message: 'Request body is not valid JSON.' });

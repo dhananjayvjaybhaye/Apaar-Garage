@@ -4,6 +4,8 @@ const schema = 'https://schema.org';
 const shareImage = '/images/share-garage.jpg';
 
 export const publicPages = {
+  '/seller-information': ['Seller information', 'Find seller details, customer care, and the grievance contact for Apaar Garage.'],
+  '/contact': ['Contact and complaints', 'Send a support ticket or track your complaint.'],
   '/': [
     store + ' | Diecast Collectibles & RC Toys',
     'Explore diecast cars, trucks and bikes, plus radio-controlled vehicles, aircraft and accessories.',
@@ -38,6 +40,8 @@ export const publicPages = {
   ],
 };
 const privatePages = {
+  '/newsletter/unsubscribe': ['Newsletter unsubscribe', 'Manage your Apaar Garage newsletter subscription.'],
+  '/account/privacy': ['Account privacy', 'Manage your Apaar Garage account data.'],
   '/login': ['Sign in', 'Sign in to access your account and order history.'],
   '/register': ['Create an account', 'Create an account to save your wishlist and track orders.'],
   '/cart': ['Your cart', 'Review your selected models and quantities before checkout.'],

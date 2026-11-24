@@ -1,6 +1,8 @@
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
+import { lockAccount } from '../services/account-write.js';
 import { CartItem } from '../models/cart-item.js';
+import { publicProductFilter } from '../utils/product-compliance.js';
 import { Product } from '../models/product.js';
 import { maxCartQuantity } from '../utils/commerce.js';
 
@@ -54,7 +56,11 @@ async function mergeCart(user, guest) {
   await mongoose.connection.transaction(async (session) => {
     const lines = await CartItem.find({ user: guest }).session(session).lean();
     if (!lines.length) return;
-    const products = await Product.find({ _id: { $in: lines.map((line) => line.product) } })
+    await lockAccount(user, session);
+    const products = await Product.find({
+      ...publicProductFilter(),
+      _id: { $in: lines.map((line) => line.product) },
+    })
       .select('stock')
       .session(session)
       .lean();

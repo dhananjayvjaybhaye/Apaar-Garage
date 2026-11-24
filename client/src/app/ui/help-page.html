@@ -1,14 +1,34 @@
 <main class="container help">
-  <h1>FAQ and support</h1>
+  <h1>{{ contactOnly ? 'Contact and complaints' : 'FAQ and support' }}</h1>
+  @if (!contactOnly) {
   <section appReveal [gentleReveal]="true" aria-labelledby="support-faq-title" class="questions">
     <h2 id="support-faq-title" class="visually-hidden">Frequently asked questions</h2>
     <app-faq-list [entries]="questions" />
   </section>
+  } @else {
+    <p><a routerLink="/faq">Read frequently asked questions</a> · <a routerLink="/seller-information">Customer care and grievance officer</a></p>
+  }
 
   <section appTilt [tiltDegrees]="2" id="contact" class="contact" aria-labelledby="contact-title">
     <h2 id="contact-title">Contact us</h2>
     <p>Send a question about a product or order. For an existing order, include the order number.</p>
     <form #supportForm [formGroup]="form" (ngSubmit)="submit(supportForm)" novalidate>
+      <label for="support-name">Name</label>
+      <input id="support-name" autocomplete="name" formControlName="name" maxlength="100" required />
+      @if (form.controls.name.touched && form.controls.name.invalid) { <p class="error-text">Enter your name.</p> }
+      <label for="support-phone">Mobile number</label>
+      <input id="support-phone" type="tel" inputmode="numeric" autocomplete="tel-national" formControlName="phone" required />
+      @if (form.controls.phone.touched && form.controls.phone.invalid) { <p class="error-text">Enter a valid 10-digit Indian mobile number.</p> }
+      <label for="support-category">Topic</label>
+      <select id="support-category" formControlName="category">
+        <option value="order">Order</option><option value="delivery">Delivery</option>
+        <option value="return">Return</option><option value="product">Product</option>
+        <option value="payment">Payment</option><option value="privacy">Privacy</option>
+        <option value="grievance">Grievance</option>
+      </select>
+      <label for="support-order">Order number (optional)</label>
+      <input id="support-order" formControlName="orderNumber" maxlength="17" />
+      @if (form.controls.orderNumber.touched && form.controls.orderNumber.invalid) { <p class="error-text">Enter the order number from your confirmation.</p> }
       <label for="support-email">Email</label>
       <input id="support-email" type="email" autocomplete="email" inputmode="email" formControlName="email" maxlength="254" required
         [attr.aria-invalid]="form.controls.email.touched && form.controls.email.invalid"
@@ -23,10 +43,17 @@
       @if (form.controls.message.touched && form.controls.message.invalid) {
         <p class="error-text" id="support-message-error">Enter a message up to 2,000 characters.</p>
       }
-      <div role="status">@if (reference()) { <p>Message received. Reference <strong>{{ reference() }}</strong></p> }</div>
+      <div role="status">
+        @if (receipt(); as ticket) {
+          <p>Ticket received. Your ticket number is <strong>{{ ticket.ticketNumber }}</strong>.</p>
+          <p>We’ll acknowledge your complaint within {{ details()?.complaints?.acknowledgementHours ?? 48 }} hours. Acknowledgement is due by {{ ticket.acknowledgeBy | date: 'medium' }}.</p>
+          <a [routerLink]="[]" fragment="track-complaint">Track your complaint</a>
+        }
+      </div>
       @if (error()) { <p class="error-text" role="alert">{{ error() }}</p> }
       <button appMagnetic type="submit" class="primary-button" [disabled]="sending()">{{ sending() ? 'Sending…' : error() ? 'Try again' : 'Send message' }}</button>
     </form>
   </section>
+  <app-ticket-status [ticketNumber]="receipt()?.ticketNumber ?? ''" />
 </main>
 

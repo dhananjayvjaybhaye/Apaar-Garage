@@ -103,6 +103,29 @@
           <div class="place">
             <p class="kicker">Cash on Delivery</p>
             <p>Pay in cash when your order arrives.</p>
+            <p>We may call or message you on WhatsApp to confirm your order.</p>
+            <p>If you can’t accept delivery, cancel before packing or contact customer care. Refused or unreachable COD parcels may be returned to the seller, and repeated failed deliveries may limit future COD orders.</p>
+            <div class="policy-consent">
+              <label class="save-address" for="checkout-policies">
+                <input
+                  id="checkout-policies" type="checkbox" required
+                  [formControl]="shipping.acceptPolicies"
+                  [attr.aria-invalid]="shipping.acceptPolicies.touched && shipping.acceptPolicies.invalid ? 'true' : null"
+                  [attr.aria-describedby]="shipping.acceptPolicies.touched && shipping.acceptPolicies.invalid ? 'checkout-policies-error checkout-policy-links' : 'checkout-policy-links'"
+                />
+                I agree to the store terms and policies.
+              </label>
+              <p id="checkout-policy-links">
+                <a routerLink="/policies/terms" target="_blank" rel="noopener">Terms</a> ·
+                <a routerLink="/policies/shipping" target="_blank" rel="noopener">Shipping</a> ·
+                <a routerLink="/policies/returns" target="_blank" rel="noopener">Returns</a> ·
+                <a routerLink="/policies/privacy" target="_blank" rel="noopener">Privacy</a>
+                <span class="visually-hidden"> (open in a new tab)</span>
+              </p>
+              @if (shipping.acceptPolicies.touched && shipping.acceptPolicies.invalid) {
+                <p id="checkout-policies-error" class="error-text">Accept the store terms and policies before placing your order.</p>
+              }
+            </div>
             @if (submit.error()) {
               <p role="alert" class="error-text">{{ submit.error() }}</p>
             }

@@ -28,6 +28,7 @@ export interface OrderSummary {
   discountCode?: string | null;
   shippingPaise: number;
   totalPaise: number;
+  taxPaise?: number | null;
   deliveryEstimate: string;
 }
 
@@ -38,11 +39,24 @@ export interface OrderQuote extends OrderSummary {
   paymentMethod: 'cod';
 }
 
+export type OrderStatus =
+  | 'placed'
+  | 'confirmed'
+  | 'packed'
+  | 'shipped'
+  | 'delivered'
+  | 'undelivered'
+  | 'returned_to_seller'
+  | 'cancelled'
+  | 'returned';
+
 export interface CustomerOrder extends OrderSummary {
   orderNumber: string;
   paymentMethod: 'cod' | 'online';
   paymentStatus: 'pending' | 'collected' | 'failed';
-  status: 'placed' | 'confirmed' | 'packed' | 'shipped' | 'delivered' | 'cancelled' | 'returned';
+  status: OrderStatus;
+  invoiceNumber?: string;
+  shipment?: { courier?: string; awb?: string; trackingUrl?: string };
   createdAt: string;
   canCancel: boolean;
   guest: boolean;
@@ -63,7 +77,7 @@ export class OrdersApi {
     address: ShippingAddress,
     quote: string,
     checkoutKey: string,
-    options: { saveAddress?: boolean; coupon?: string; email?: string } = {},
+    options: { acceptPolicies: true; saveAddress?: boolean; coupon?: string; email?: string },
   ) {
     return this.http.post<{ orderNumber: string }>('/api/orders', {
       address,

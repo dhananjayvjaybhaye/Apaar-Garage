@@ -152,9 +152,9 @@
       <div>
         <p class="kicker">Garage updates</p>
         <h2>Get the next drop</h2>
-        <p>Get updates on new models and restocks.</p>
+        <p>Sign up for emails about new models and restocks. Unsubscribe any time.</p>
       </div>
-      <form (submit)="subscribe($event, newsletterEmail)" novalidate>
+      <form (submit)="subscribe($event, newsletterEmail, newsletterConsent)" novalidate>
         <label class="visually-hidden" for="newsletter-email">Newsletter email address</label>
         <div class="newsletter-fields">
           <input
@@ -174,13 +174,20 @@
             {{ signupPending() ? 'Signing up…' : 'Sign up' }}
           </button>
         </div>
+        <label class="newsletter-consent" for="newsletter-consent">
+          <input #newsletterConsent id="newsletter-consent" type="checkbox" required
+            [attr.aria-invalid]="consentMissing() ? 'true' : null"
+            [attr.aria-describedby]="consentMissing() ? 'newsletter-consent-error' : null"
+            (change)="consentMissing.set(false)" />
+          I agree to receive emails about new models and restocks from Apaar Garage.
+        </label>
+        @if (consentMissing()) { <p id="newsletter-consent-error" class="error-text">Choose whether to sign up by checking the consent box.</p> }
+        <p><a routerLink="/policies/privacy">Privacy policy</a> · <a routerLink="/newsletter/unsubscribe">Unsubscribe</a></p>
         @if (signupInvalid()) { <p id="newsletter-error" class="error-text">Enter a valid email address.</p> }
         @if (signupStatus(); as status) {
           <p [class.error-text]="status.failed" [attr.role]="status.failed ? 'alert' : 'status'">
             {{ status.text }}
           </p>
-        } @else {
-          <p><a routerLink="/policies/privacy">Privacy policy</a></p>
         }
       </form>
     </div>

@@ -1,0 +1,11 @@
+.seller-sections {
+  display: grid;
+  gap: 1.5rem 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+}
+h2 { margin: 0 0 .8rem; font-size: 1.2rem; }
+dl { display: grid; gap: .55rem; margin: 0 0 .75rem; }
+dt { font-size: .85rem; color: var(--muted); }
+dd { margin: .15rem 0 0; white-space: pre-line; overflow-wrap: anywhere; }
+p { color: var(--muted); }
+a { display: inline-flex; align-items: center; min-height: 2.75rem; }

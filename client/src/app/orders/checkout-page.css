@@ -94,6 +94,8 @@ address {
   margin-bottom: 1rem;
   font-style: normal;
 }
+.policy-consent { margin-block: 1rem; }
+.policy-consent p { margin: .25rem 0; }
 .place {
   margin-top: 1.25rem;
   border-top: 1px solid var(--line);

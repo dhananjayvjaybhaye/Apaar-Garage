@@ -25,7 +25,7 @@
               <p class="muted">{{ order.createdAt | date: 'mediumDate' }}</p>
             </div>
             <span class="badge" [attr.data-status]="order.status">{{
-              order.status | titlecase
+              statusLabel(order.status) | titlecase
             }}</span>
           </div>
           <ul>

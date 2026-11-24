@@ -12,6 +12,7 @@ nav a:hover { color: var(--text); text-decoration: underline; }
 .socials { display: flex; gap: .5rem; }
 .socials a { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: var(--radius); border: 1px solid var(--line); color: var(--text); }
 .socials a:hover { border-color: var(--amber); }
+.seller-footer { display: block; border-top: 1px solid var(--line); padding-block: 1.5rem; }
 .legal { border-top: 1px solid var(--line); padding-block: 1rem; font-size: .8rem; }
 @media (min-width: 44rem) {
   .footer-grid { grid-template-columns: 2fr 1fr 1fr; }

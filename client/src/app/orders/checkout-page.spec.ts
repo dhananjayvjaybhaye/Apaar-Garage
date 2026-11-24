@@ -27,6 +27,7 @@ function quote(token: string): OrderQuote {
     codFeePaise: 0,
     shippingPaise: 0,
     totalPaise: 10000,
+    taxPaise: 1525,
     deliveryEstimate: 'Estimated delivery in two days.',
     paymentMethod: 'cod',
   };
@@ -57,6 +58,9 @@ describe('Checkout delivery quote', () => {
     fixture.detectChanges();
     http.expectOne('/api/orders/quote?empty=ok').flush(quote('general-quote'));
     await fixture.whenStable();
+    fixture.detectChanges();
+    expect(page.querySelector('#checkout-summary')?.textContent).toContain('GST included in merchandise');
+    expect(page.querySelector('#checkout-summary')?.textContent).toContain('15.25');
 
     for (const [key, value] of Object.entries(address)) {
       const input = page.querySelector<HTMLInputElement>('#shipping-' + key)!;
@@ -66,6 +70,12 @@ describe('Checkout delivery quote', () => {
     fixture.detectChanges();
 
     const submit = page.querySelector<HTMLButtonElement>('.place button')!;
+    submit.click();
+    fixture.detectChanges();
+    expect(page.querySelector('#checkout-policies-error')?.textContent).toContain('Accept the store');
+    http.expectNone({ method: 'POST', url: '/api/orders' });
+    (page.querySelector('#checkout-policies') as HTMLInputElement).click();
+    fixture.detectChanges();
     expect(submit.getAttribute('aria-disabled')).toBe('true');
     expect(submit.textContent).toContain('Updating delivery');
     submit.click();
@@ -86,6 +96,7 @@ describe('Checkout delivery quote', () => {
       address,
       quote: 'matching-quote',
       paymentMethod: 'cod',
+      acceptPolicies: true,
     });
     order.flush({ orderNumber: 'AG-0123456789ABCD' });
     await fixture.whenStable();

@@ -4,7 +4,6 @@ import type { ShippingAddress } from './orders-api';
 // Delivery estimates wait for typing to pause before requesting a new quote.
 export const deliveryDebounceMs = 250;
 export const requiredText = [Validators.required, Validators.pattern(/\S/)];
-export const phonePattern = /^[6-9]\d{9}$/;
 export const pinPattern = /^[1-9]\d{5}$/;
 interface CheckoutField {
   key: keyof ShippingAddress;

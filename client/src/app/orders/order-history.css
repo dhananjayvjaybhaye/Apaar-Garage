@@ -67,7 +67,7 @@ h2 {
   background: #22334c;
   color: #bed9ff;
 }
-.badge:is([data-status='cancelled'], [data-status='returned']) {
+.badge:is([data-status='cancelled'], [data-status='returned'], [data-status='undelivered'], [data-status='returned_to_seller']) {
   background: #4d231f;
   color: #ffc1b8;
 }

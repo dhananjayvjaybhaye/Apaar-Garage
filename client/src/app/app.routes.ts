@@ -31,6 +31,12 @@ export const routes: Routes = [
     title: 'Create an account | Apaar Garage',
   },
   {
+    path: 'account/privacy',
+    canActivate: [authGuard],
+    loadComponent: () => import('./auth/account-privacy-page').then((page) => page.AccountPrivacyPage),
+    title: 'Account privacy | Apaar Garage',
+  },
+  {
     path: 'cart',
     loadComponent: () => import('./cart/cart-page').then((page) => page.CartPage),
     title: 'Your cart | Apaar Garage',
@@ -50,6 +56,11 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () => import('./orders/order-history').then((page) => page.OrderHistory),
     title: 'Order history | Apaar Garage',
+  },
+  {
+    path: 'track-order/:orderNumber/invoice',
+    loadComponent: () => import('./orders/order-invoice').then((page) => page.OrderInvoice),
+    title: 'Order invoice | Apaar Garage',
   },
   {
     path: 'track-order/:orderNumber',
@@ -72,7 +83,22 @@ export const routes: Routes = [
     data: { policy: 'about' },
     title: 'About | Apaar Garage',
   },
-  { path: 'contact', redirectTo: '/faq#contact', pathMatch: 'full' },
+  {
+    path: 'contact',
+    loadComponent: () => import('./ui/help-page').then((page) => page.HelpPage),
+    data: { contactOnly: true },
+    title: 'Contact and complaints | Apaar Garage',
+  },
+  {
+    path: 'seller-information',
+    loadComponent: () => import('./store-footer/seller-information-page').then((page) => page.SellerInformationPage),
+    title: 'Seller information | Apaar Garage',
+  },
+  {
+    path: 'newsletter/unsubscribe',
+    loadComponent: () => import('./ui/newsletter-unsubscribe-page').then((page) => page.NewsletterUnsubscribePage),
+    title: 'Newsletter unsubscribe | Apaar Garage',
+  },
   ...(['privacy', 'shipping', 'returns', 'terms'] as const).map((policy) => ({
     path: 'policies/' + policy,
     loadComponent: () => import('./store-footer/policy-page').then((page) => page.PolicyPage),

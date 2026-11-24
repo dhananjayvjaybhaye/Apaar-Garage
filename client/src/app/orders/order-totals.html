@@ -20,8 +20,14 @@
       <dd>{{ order.codFeePaise / 100 | currency: 'INR' : 'symbol' : '1.2-2' }}</dd>
     </div>
   }
+  @if (order.taxPaise !== undefined) {
+    <div>
+      <dt>GST included in merchandise</dt>
+      <dd>{{ order.taxPaise === null ? 'No GST charged by the seller' : (order.taxPaise / 100 | currency: 'INR' : 'symbol' : '1.2-2') }}</dd>
+    </div>
+  }
   <div class="total">
-    <dt>Total</dt>
+    <dt>{{ order.taxPaise !== undefined ? 'Total (including applicable taxes)' : 'Total' }}</dt>
     <dd>{{ order.totalPaise / 100 | currency: 'INR' : 'symbol' : '1.2-2' }}</dd>
   </div>
 </dl>

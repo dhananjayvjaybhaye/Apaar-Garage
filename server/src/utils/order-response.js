@@ -1,5 +1,6 @@
 // Maps persisted orders and lines to the public CustomerOrder and OrderItem contracts.
-export const customerCancellable = ['placed', 'confirmed'];
+import { customerCancellable } from '../config/business.js';
+export { customerCancellable };
 
 export function publicItems(items) {
   return items.map(({ slug, name, quantity, unitPricePaise }) => ({
@@ -27,6 +28,22 @@ export function publicOrder(order) {
     status: order.status,
     createdAt: order.createdAt,
     deliveryEstimate: order.deliveryEstimate,
+    ...(order.invoiceNumber && { invoiceNumber: order.invoiceNumber }),
+    ...(order.shipment && {
+      shipment: {
+        courier: order.shipment.courier,
+        awb: order.shipment.awb,
+        trackingUrl: order.shipment.trackingUrl,
+        shippedAt: order.shipment.shippedAt,
+        deliveredAt: order.shipment.deliveredAt,
+        undeliveredReason: order.shipment.undeliveredReason,
+        returnedToSellerAt: order.shipment.returnedToSellerAt,
+      },
+    }),
+    ...(order.cancellation && {
+      cancellation: { reasonCode: order.cancellation.reasonCode, at: order.cancellation.at },
+    }),
+    ...(order.needsConfirmation && { needsConfirmation: true }),
     canCancel: customerCancellable.includes(order.status),
   };
 }

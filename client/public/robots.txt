@@ -5,3 +5,4 @@ Disallow: /cart
 Disallow: /checkout
 Disallow: /orders
 Disallow: /track-order/
+Disallow: /account/

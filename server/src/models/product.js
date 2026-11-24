@@ -1,4 +1,6 @@
 import mongoose from 'mongoose';
+import { productBusinessFields } from './product-business-fields.js';
+import { publicationIssues, validRupeeAmount } from '../utils/product-compliance.js';
 import {
   categoriesByType,
   controlTypes,
@@ -10,6 +12,7 @@ import {
 } from '../utils/product-input.js';
 
 const productSchema = new mongoose.Schema({
+  ...productBusinessFields,
   name: { type: String, required: true, trim: true },
   slug: {
     type: String,
@@ -30,7 +33,7 @@ const productSchema = new mongoose.Schema({
     trim: true,
     match: /^1:[1-9][0-9]*$/,
   },
-  price: { type: Number, required: true, min: 0 },
+  price: { type: Number, required: true, validate: validRupeeAmount },
   stock: { type: Number, required: true, min: 0, validate: Number.isSafeInteger },
   images: {
     type: [String],
@@ -61,6 +64,7 @@ const productSchema = new mongoose.Schema({
 });
 
 productSchema.pre('validate', function () {
+  for (const issue of publicationIssues(this)) this.invalidate(issue.field, issue.message);
   if (this.category && !categoriesByType[this.productType]?.includes(this.category)) {
     this.invalidate('category', 'Choose a category for this product type.');
   }
@@ -68,5 +72,12 @@ productSchema.pre('validate', function () {
 
 productSchema.index({ featured: -1, slug: 1 });
 productSchema.index({ category: 1, featured: -1, slug: 1 });
+
+productSchema.set('toJSON', {
+  transform: (_document, record) => {
+    delete record.costPrice;
+  },
+});
+productSchema.index({ status: 1, category: 1, featured: -1, slug: 1 });
 
 export const Product = mongoose.model('Product', productSchema);

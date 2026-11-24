@@ -46,9 +46,10 @@ export class CheckoutSubmit {
     this.error.set('');
     this.shipping.form.markAllAsTouched();
     this.shipping.email.markAsTouched();
+    this.shipping.acceptPolicies.markAsTouched();
     const quote = this.delivery.quote();
     const useEmail = !this.auth.user() && quote?.emailUpdates;
-    if (this.shipping.form.invalid || (useEmail && this.shipping.email.invalid)) {
+    if (this.shipping.form.invalid || this.shipping.acceptPolicies.invalid || (useEmail && this.shipping.email.invalid)) {
       form.querySelector<HTMLElement>('.ng-invalid')?.focus();
       return;
     }
@@ -65,6 +66,7 @@ export class CheckoutSubmit {
     try {
       const result = await firstValueFrom(
         this.api.place(address, quote.quote, this.checkoutKey, {
+          acceptPolicies: true,
           saveAddress: Boolean(this.auth.user() && this.shipping.saveAddress.value),
           coupon: this.delivery.coupon() || undefined,
           email: useEmail ? this.shipping.email.value.trim() || undefined : undefined,

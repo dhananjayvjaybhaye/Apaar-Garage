@@ -1,14 +1,7 @@
 import mongoose from 'mongoose';
-
-export const orderStatuses = [
-  'placed',
-  'confirmed',
-  'packed',
-  'shipped',
-  'delivered',
-  'cancelled',
-  'returned',
-];
+import { notificationEvents } from '../config/store-policy.js';
+import { orderStatuses } from '../config/business.js';
+import { itemBusinessFields, orderBusinessFields } from './order-business-fields.js';
 
 const addressSchema = new mongoose.Schema(
   {
@@ -30,6 +23,7 @@ const itemSchema = new mongoose.Schema(
       required: true,
       ref: 'Product',
     },
+    ...itemBusinessFields,
     slug: { type: String, required: true },
     name: { type: String, required: true },
     quantity: {
@@ -57,6 +51,7 @@ const money = {
 };
 const schema = new mongoose.Schema(
   {
+    ...orderBusinessFields,
     number: { type: String, required: true, unique: true },
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     checkoutKey: String,
@@ -64,7 +59,7 @@ const schema = new mongoose.Schema(
     emailEvents: [
       {
         _id: false,
-        kind: { type: String, enum: ['confirmed', 'shipped', 'delivered'] },
+        kind: { type: String, enum: notificationEvents },
         attempts: { type: Number, default: 0 },
         nextAttemptAt: Date,
         lease: String,
@@ -105,6 +100,11 @@ const schema = new mongoose.Schema(
 );
 
 schema.index({ user: 1, createdAt: -1, _id: -1 });
+schema.index({ 'risk.phoneKey': 1, createdAt: -1 }, { sparse: true });
+schema.index({ 'risk.addressKey': 1, createdAt: -1 }, { sparse: true });
+schema.index({ 'address.phone': 1, createdAt: -1 }, { sparse: true });
+schema.index({ 'address.pincode': 1, createdAt: -1 }, { sparse: true });
+schema.index({ purgeAfter: 1 }, { expireAfterSeconds: 0 });
 schema.index({ user: 1, status: 1, 'items.product': 1 });
 schema.index({ 'emailEvents.nextAttemptAt': 1 }, { sparse: true });
 schema.index(

@@ -36,7 +36,11 @@ export function readAppOptions(env = process.env) {
   if (!secret || Buffer.byteLength(secret) < minimumSecretBytes) {
     throw new Error('Set JWT_SECRET in server/.env to a random secret at least 32 bytes long.');
   }
+  const businessSecret = env.BUSINESS_KEY_SECRET || secret;
+  if (Buffer.byteLength(businessSecret) < minimumSecretBytes)
+    throw new Error('Set BUSINESS_KEY_SECRET to at least 32 bytes.');
   return {
+    businessSecret,
     origins,
     secret,
     production: env.NODE_ENV === 'production',

@@ -1,6 +1,14 @@
 <main class="cart-page">
   <h1>Your cart</h1>
 
+  @if (actionError()) {
+    <p class="action-error" role="alert">{{ actionError() }}</p>
+  }
+  @if (store.cart().unavailableCount) {
+    <p>Some items in your cart are no longer available.</p>
+    <button class="secondary-button" type="button" [disabled]="store.busy()" (click)="removeUnavailable()">Remove unavailable items</button>
+  }
+
   @if (store.loading() && store.cart().items.length === 0) {
     <p class="visually-hidden" role="status">Loading your cart…</p>
     <div class="skeleton cart-skeleton" appAmbientVisible aria-hidden="true"></div>
@@ -9,9 +17,6 @@
   } @else if (store.cart().items.length === 0) {
     <app-shop-state illustration="garage" title="Your cart is empty" message="Find a model you’d like to add to your collection." link="/catalog" />
   } @else {
-    @if (actionError()) {
-      <p class="action-error" role="alert">{{ actionError() }}</p>
-    }
     <ul class="cart-items">
       @for (item of store.cart().items; track item.slug) {
         <li appTilt [tiltDegrees]="2" appReveal [gentleReveal]="true">

@@ -1,0 +1,59 @@
+@let details = info();
+@let resolution = details?.complaints?.resolutionMonths ?? 1;
+@if (store.resource.isLoading() && !details) {
+  <p role="status">Loading seller information…</p>
+} @else {
+  @if (store.resource.error()) {
+    <p role="status">Seller information could not be loaded.</p>
+    <button class="secondary-button" type="button" (click)="store.resource.reload()">Retry</button>
+  }
+  <div class="seller-sections" [class.compact]="compact()">
+    <section [attr.aria-label]="'Seller identity'">
+      <h2>Seller information</h2>
+      <dl>
+        <div><dt>Legal name</dt><dd>{{ name() ?? 'Legal name to be supplied' }}</dd></div>
+        @if (details?.seller?.tradeName; as tradeName) {
+          <div><dt>Trade name</dt><dd>{{ tradeName }}</dd></div>
+        }
+        <div><dt>Business address</dt><dd>{{ address() ?? 'Business address to be supplied' }}</dd></div>
+        @if (details?.gstRegistered) {
+          <div><dt>GSTIN</dt><dd>{{ details?.seller?.gstin ?? 'GSTIN to be supplied' }}</dd></div>
+        }
+      </dl>
+    </section>
+    <section aria-label="Customer care contact">
+      <h2>Customer care</h2>
+      <dl>
+        <div><dt>Phone</dt><dd>
+          @if (details?.customerCare?.phone; as phone) { <a [href]="'tel:+91' + phone">{{ phone }}</a> }
+          @else { Customer care phone to be supplied }
+        </dd></div>
+        <div><dt>Email</dt><dd>
+          @if (details?.customerCare?.email; as email) { <a [href]="'mailto:' + email">{{ email }}</a> }
+          @else { Customer care email to be supplied }
+        </dd></div>
+        <div><dt>Hours</dt><dd>{{ supplied(details?.customerCare?.hours) ?? 'Customer care hours to be supplied' }}</dd></div>
+      </dl>
+    </section>
+    <section aria-label="Grievance officer contact">
+      <h2>Grievance officer</h2>
+      <dl>
+        <div><dt>Name</dt><dd>{{ supplied(details?.grievanceOfficer?.name) ?? 'Officer name to be supplied' }}</dd></div>
+        @if (!compact()) {
+          <div><dt>Designation</dt><dd>{{ supplied(details?.grievanceOfficer?.designation) ?? 'Designation to be supplied' }}</dd></div>
+          <div><dt>Address</dt><dd>{{ supplied(details?.grievanceOfficer?.address) ?? 'Officer address to be supplied' }}</dd></div>
+        }
+        <div><dt>Email</dt><dd>
+          @if (details?.grievanceOfficer?.email; as email) { <a [href]="'mailto:' + email">{{ email }}</a> }
+          @else { Officer email to be supplied }
+        </dd></div>
+        <div><dt>Phone</dt><dd>
+          @if (details?.grievanceOfficer?.phone; as phone) { <a [href]="'tel:+91' + phone">{{ phone }}</a> }
+          @else { Officer phone to be supplied }
+        </dd></div>
+      </dl>
+      <p>We’ll acknowledge complaints within {{ details?.complaints?.acknowledgementHours ?? 48 }} hours and resolve them within {{ resolution === 1 ? 'one month' : (resolution + ' months') }}.</p>
+      @if (!compact()) { <a routerLink="/contact" fragment="track-complaint">Track a complaint</a> }
+    </section>
+  </div>
+}

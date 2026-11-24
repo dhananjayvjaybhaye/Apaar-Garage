@@ -1,9 +1,11 @@
 // Prices the cart and creates a quote that can be verified again inside checkout.
 import { createHash } from 'node:crypto';
 import { CartItem } from '../models/cart-item.js';
+import { publicProductFilter } from '../utils/product-compliance.js';
 import { Product } from '../models/product.js';
 import { HttpError } from '../utils/http-error.js';
 import { paisePerRupee, toPaise } from '../utils/commerce.js';
+import { priceOrderTax } from './order-tax.js';
 import { discountFor } from './discounts.js';
 import { deliveryFor, shippingCost } from './delivery.js';
 
@@ -32,9 +34,10 @@ async function readCartProducts(user, session) {
   if (!lines.length) throw new EmptyCartError();
 
   const products = await Product.find({
+    ...publicProductFilter(),
     _id: { $in: lines.map((line) => line.product) },
   })
-    .select('slug name price stock')
+    .select('slug name price stock sku hsnCode gstRatePercent mrp returnWindowDays')
     .session(session)
     .lean();
   return {
@@ -43,11 +46,15 @@ async function readCartProducts(user, session) {
   };
 }
 
-function priceOrderItem(line, product) {
+function priceOrderItem(line, product, options) {
   if (!product) throw new HttpError(409, 'A product in your cart is no longer available.');
   if (product.stock < line.quantity) throw stockError(product.name);
   const unitPricePaise = toPaise(product.price);
-  if (!Number.isSafeInteger(unitPricePaise) || unitPricePaise < 0) {
+  if (
+    !Number.isSafeInteger(unitPricePaise) ||
+    unitPricePaise < 0 ||
+    !Number.isSafeInteger(toPaise(product.mrp ?? product.price))
+  ) {
     throw new HttpError(409, 'A price is unavailable for ' + product.name + '.');
   }
   return {
@@ -56,15 +63,17 @@ function priceOrderItem(line, product) {
     name: product.name,
     quantity: line.quantity,
     unitPricePaise,
+    sku: product.sku,
+    hsn: product.hsnCode,
+    gstRatePercent: product.gstRatePercent ?? 0,
+    mrpPaise: toPaise(product.mrp ?? product.price),
+    returnWindowDays: product.returnWindowDays ?? options.defaultReturnWindowDays,
   };
 }
 
 function quoteDelivery(options, pin, subtotalPaise) {
   const delivery = deliveryFor(options, pin);
   if (!delivery.cod) throw new HttpError(409, 'Cash on Delivery is unavailable for this pincode.');
-  const shippingPaise = shippingCost(options, subtotalPaise);
-  if (!Number.isSafeInteger(subtotalPaise + options.fee + shippingPaise))
-    throw new HttpError(409, 'The cart total is too large.');
   if (subtotalPaise < options.minimum) {
     throw new HttpError(
       409,
@@ -81,7 +90,7 @@ function quoteDelivery(options, pin, subtotalPaise) {
         '.',
     );
   }
-  return { delivery, shippingPaise };
+  return delivery;
 }
 
 function createQuoteHash(user, options, shippingPaise, discount, items) {
@@ -90,10 +99,11 @@ function createQuoteHash(user, options, shippingPaise, discount, items) {
       JSON.stringify([
         user,
         options.fee,
+        options.seller,
         shippingPaise,
         discount.discountCode,
         discount.discountPaise,
-        items.map(({ product, quantity, unitPricePaise }) => [product, quantity, unitPricePaise]),
+        items,
       ]),
     )
     .digest('hex');
@@ -102,23 +112,37 @@ function createQuoteHash(user, options, shippingPaise, discount, items) {
 export async function quoteCart(
   user,
   options,
-  { session = null, pin, guest = false, coupon } = {},
+  { session = null, pin, guest = false, coupon, customerKey, accountKey } = {},
 ) {
   const { lines, productsById } = await readCartProducts(user, session);
   const items = lines.map((line) =>
-    priceOrderItem(line, productsById.get(line.product.toString())),
+    priceOrderItem(line, productsById.get(line.product.toString()), options),
   );
   const subtotalPaise = items.reduce((sum, item) => sum + item.unitPricePaise * item.quantity, 0);
-  const { delivery, shippingPaise } = quoteDelivery(options, pin, subtotalPaise);
+  if (!Number.isSafeInteger(subtotalPaise))
+    throw new HttpError(409, 'The cart total is too large.');
+  const delivery = quoteDelivery(options, pin, subtotalPaise);
   const discount = await discountFor({
     user,
     guest,
     coupon,
+    customerKey,
+    accountKey,
     subtotal: subtotalPaise,
     options,
     session,
   });
-  const totalPaise = subtotalPaise - discount.discountPaise + options.fee + shippingPaise;
+  const netMerchandisePaise = Math.max(0, subtotalPaise - discount.discountPaise);
+  const shippingPaise = shippingCost(options, netMerchandisePaise);
+  const totalPaise = netMerchandisePaise + options.fee + shippingPaise;
+  if (!Number.isSafeInteger(totalPaise)) throw new HttpError(409, 'The cart total is too large.');
+  const taxPaise = options.seller.gstRegistered
+    ? priceOrderTax(
+        { items, subtotalPaise, ...discount },
+        options.seller,
+        options.seller.state,
+      ).items.reduce((sum, item) => sum + item.taxPaise, 0)
+    : null;
   const quote = createQuoteHash(user, options, shippingPaise, discount, items);
   return {
     lines,
@@ -127,6 +151,7 @@ export async function quoteCart(
     subtotalPaise,
     codFeePaise: options.fee,
     totalPaise,
+    taxPaise,
     shippingPaise,
     ...discount,
     deliveryEstimate: delivery.estimate,

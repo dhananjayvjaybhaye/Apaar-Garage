@@ -160,7 +160,9 @@
   flex-wrap: wrap;
   gap: 0.5rem;
 }
-.newsletter input {
+.newsletter-consent { display: flex; align-items: center; gap: .65rem; min-height: 2.75rem; }
+.newsletter-consent input[type='checkbox'] { width: 1.1rem; min-width: 1.1rem; min-height: 1.1rem; padding: 0; }
+.newsletter input[type='email'] {
   flex: 1 1 12rem;
   min-width: 0;
   min-height: 2.75rem;

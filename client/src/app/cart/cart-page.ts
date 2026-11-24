@@ -33,6 +33,10 @@ export class CartPage {
     return this.update(() => this.store.remove(item.slug));
   }
 
+  protected removeUnavailable() {
+    return this.update(() => this.store.removeUnavailable());
+  }
+
   private async update(action: () => Promise<boolean>) {
     this.actionError.set('');
     try {

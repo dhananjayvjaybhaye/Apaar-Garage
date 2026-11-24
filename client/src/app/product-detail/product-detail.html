@@ -18,7 +18,20 @@
           <app-star-summary [average]="reviewSummary()?.ratingAverage ?? product.ratingAverage ?? null" [count]="reviewSummary()?.ratingCount ?? product.ratingCount ?? 0" />
           <a [routerLink]="[]" fragment="reviews" (click)="reviewRequested.set(true)">Read reviews</a>
         </div>
-        <p class="price">{{ product.price | currency: 'INR' : 'symbol' : '1.0-2' }}</p>
+        <p class="price"><span class="visually-hidden">Selling price </span>{{ product.price | currency: 'INR' : 'symbol' : '1.0-2' }}</p>
+        @if (product.mrp != null) {
+          <p class="price-disclosure">
+            MRP (inclusive of all taxes)
+            @if (product.mrp > product.price) {
+              <s>{{ product.mrp | currency: 'INR' }}</s>
+              <strong>Save {{ product.mrp - product.price | currency: 'INR' }}</strong>
+            } @else {
+              {{ product.mrp | currency: 'INR' }}
+            }
+          </p>
+        } @else {
+          <p class="price-disclosure">MRP (inclusive of all taxes) to be supplied.</p>
+        }
         @if (product.placeholder) {
           <p class="sample-notice">Sample listing. Artwork, specs and pricing are for demonstration.</p>
         }
@@ -152,6 +165,7 @@
             }
           </div>
         </section>
+        <app-product-disclosures class="rc-detail" [product]="product" />
         @if (product.productType === 'rc') {
           <section class="rc-detail" aria-labelledby="rc-box-title">
             <h2 id="rc-box-title">What’s in the box</h2>
@@ -161,7 +175,7 @@
           </section>
           <section class="rc-detail" aria-labelledby="rc-safety-title">
             <h2 id="rc-safety-title">Battery and safety</h2>
-            <p><strong>Recommended for ages {{ product.recommendedAge }} and up.</strong> An adult should supervise children during use. Keep small parts away from younger children.</p>
+            <p><strong>Recommended for ages {{ product.ageGradeMin ?? product.recommendedAge }} and up.</strong> An adult should supervise children during use. Keep small parts away from younger children.</p>
             @if (product.batteryType) {
               <p>Follow the manufacturer’s charging instructions. Use a compatible charger, charge on a nonflammable surface, and stay nearby while it charges. Stop using damaged or swollen batteries.</p>
             }

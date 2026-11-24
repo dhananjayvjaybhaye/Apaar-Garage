@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { productBusinessInput } from './product-business-input.js';
+import { publicationIssues, validRupeeAmount } from './product-compliance.js';
 
 export const diecastCategories = ['car', 'truck', 'bike'];
 export const rcCategories = [
@@ -31,11 +33,13 @@ const positive = z.number().positive();
 const text = z.string().trim().min(1);
 const whole = z.int().nonnegative();
 const common = z.object({
+  ...productBusinessInput,
   name: text,
-  slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  slug: productSlug,
   brand: text,
-  price: z.number().nonnegative(),
+  price: z.number().refine(validRupeeAmount, 'Enter a nonnegative price with up to two decimals.'),
   stock: whole,
+  warrantyDays: whole.optional(),
   images: z.array(text).nonempty(),
   glbUrl: text.optional(),
   description: text,
@@ -51,7 +55,7 @@ const common = z.object({
 });
 
 // Shared write validation for seed data and the future product editor.
-export const productInput = z.discriminatedUnion('productType', [
+export const productFields = z.discriminatedUnion('productType', [
   common.extend({ productType: z.literal('diecast'), category: z.enum(diecastCategories), scale }),
   common.extend({
     productType: z.literal('rc'),
@@ -72,3 +76,9 @@ export const productInput = z.discriminatedUnion('productType', [
     boxContents: z.array(text).nonempty(),
   }),
 ]);
+
+export const productInput = productFields.superRefine((product, context) => {
+  for (const { field, message } of publicationIssues(product)) {
+    context.addIssue({ code: 'custom', path: [field], message });
+  }
+});

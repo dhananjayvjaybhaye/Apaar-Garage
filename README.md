@@ -4,7 +4,7 @@ Apaar Garage is a storefront for diecast collectibles and RC toys. The Angular c
 
 ## Set up and run
 
-Use Node.js 24 with npm, and a MongoDB replica set or Atlas cluster. Checkout, cancellation, guest-cart merging, and reviews use MongoDB transactions.
+Use Node.js 24 with npm, and a MongoDB replica set or Atlas cluster. Checkout, inventory changes, returns, invoices, guest-cart merging, and reviews use MongoDB transactions.
 
 From the project root in PowerShell, install the server dependencies and create a local environment file if one is absent.
 
@@ -23,7 +23,7 @@ npm.cmd run seed
 npm.cmd start
 ```
 
-The seed script adds missing products by slug. It preserves existing inventory and price records. The RC listings are marked as samples. The API binds to `127.0.0.1:3000` by default.
+The seed adds 12 diecast and 15 RC sample listings, preserves existing prices and stock, and upgrades known legacy sample listings with demo compliance fields. All samples are placeholders and stay out of the storefront when `NODE_ENV=production`. Existing real listings without a publication status must be reviewed and published through the admin API. The API binds to `127.0.0.1:3000` by default.
 
 In another PowerShell window at the project root, start Angular.
 
@@ -51,8 +51,14 @@ Open [the storefront](http://localhost:4200). The Angular development proxy forw
 | `COD_MIN_ORDER_VALUE`, `COD_MAX_ORDER_VALUE` | Merchandise subtotal limits before fees and discounts. The maximum is unlimited when blank. |
 | `DELIVERY_FEE`, `FREE_DELIVERY_MIN_ORDER_VALUE` | Flat delivery charge and optional free-delivery threshold. |
 | `ORDER_DELIVERY_ESTIMATE`, `DELIVERY_PINCODE_RULES` | Default delivery estimate and optional JSON prefix rules such as `[{"prefix":"411","estimate":"2–3 business days","cod":true}]`. |
-| `FIRST_ORDER_DISCOUNT_PERCENT`, `COUPONS_JSON` | First-order percentage and the JSON array of coupon rules. See the environment example for a coupon. |
+| `FIRST_ORDER_DISCOUNT_PERCENT`, `COUPONS_JSON` | Defaults for the first-order offer and initial coupon records. Edit live offers through the admin API. |
+| `COD_OPEN_PER_PHONE`, `COD_OPEN_PER_ADDRESS`, `COD_FIRST_ORDER_MAX`, `COD_CONFIRM_ABOVE`, `COD_UNDELIVERED_*` | Initial COD risk defaults. Monetary environment values are in rupees. |
+| `BUSINESS_KEY_SECRET`, `ORDER_RETENTION_DAYS` | Stable secret for private lookup keys and tokens, and days to keep anonymized orders from order creation. |
+| `SELLER_NAME`, `SELLER_ADDRESS`, `SELLER_STATE` | Seller identity snapshotted on each order. Match the state name used at checkout for GST splitting. |
+| `GST_REGISTERED`, `SELLER_GSTIN` | Defaults to false and issues a bill of supply without tax lines. If true, enter the seller name, address, state and GSTIN. |
 | `ORDER_EMAIL_ENABLED`, `ORDER_EMAIL_FROM` | Enable order email and set your verified sender address. |
+
+The first settings read saves the defaults into MongoDB. After that, use the admin settings API to change store details and checkout rules. The storefront’s public details are available at `/api/store-info`. Before launch, complete seller and grievance contacts, policy terms and real product disclosures using the [change guide](docs/CHANGE-GUIDE.md#complete-seller-details-and-policies-before-launch).
 | `ORDER_SMTP_HOST`, `ORDER_SMTP_PORT`, `ORDER_SMTP_USER`, `ORDER_SMTP_PASSWORD` | SMTP connection and credentials. Email defaults to off. |
 
 ## Checks
