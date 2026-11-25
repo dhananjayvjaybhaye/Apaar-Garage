@@ -1,4 +1,5 @@
 .missing-page { max-width: 40rem; padding-block: clamp(2.5rem, 9vw, 6.5rem); text-align: center; }
+.missing-page app-brand-logo { margin: 0 auto 1rem; }
 .crash-scene {
   position: relative;
   overflow: clip;

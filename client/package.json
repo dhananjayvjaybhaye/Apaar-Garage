@@ -9,7 +9,9 @@
     "preview": "node scripts/preview.mjs",
     "seo:emit": "node scripts/seo-build.mjs",
     "watch": "ng build --watch --configuration development",
+    "pretest": "npm run test:brand",
     "test": "ng test",
+    "test:brand": "node --test scripts/brand-assets.test.mjs",
     "test:forms": "node --test scripts/admin-product-form.test.mjs"
   },
   "private": true,

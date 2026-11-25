@@ -1,7 +1,8 @@
 // Shared by Angular navigation and the static SEO build.
 const store = 'Apaar Garage';
 const schema = 'https://schema.org';
-const brandLogo = '/logo/apaar_garage_rc_racing_logo.png';
+const brandLogo = '/logo/organization.png';
+const shareImage = '/logo/share.jpg';
 
 export const publicPages = {
   '/seller-information': ['Seller information', 'Find seller details, customer care, and the grievance contact for Apaar Garage.'],
@@ -94,7 +95,7 @@ function imageUrl(source, origin) {
       /* Use the default image for invalid URLs. */
     }
   }
-  return new URL(brandLogo, origin).href;
+  return new URL(shareImage, origin).href;
 }
 
 function breadcrumbs(items, origin) {
@@ -121,7 +122,12 @@ export function pageMetadata(address, origin, product) {
   let type = 'website';
   let image = imageUrl(undefined, origin);
   if (path === '/') {
-    graph.push({ '@type': 'Organization', name: store, url: new URL('/', origin).href, logo: image });
+    graph.push({
+      '@type': 'Organization',
+      name: store,
+      url: new URL('/', origin).href,
+      logo: new URL(brandLogo, origin).href,
+    });
   } else if (path === '/catalog') {
     const category = route.searchParams.get('category');
     const kind = route.searchParams.get('productType');

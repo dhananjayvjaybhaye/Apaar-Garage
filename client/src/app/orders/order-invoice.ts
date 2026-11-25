@@ -5,6 +5,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { ShopLoading, ShopState } from '../ui/shop-state';
+import { BrandLogo } from '../ui/brand-logo';
 
 interface Invoice {
   invoiceType: 'tax_invoice' | 'bill_of_supply';
@@ -35,11 +36,12 @@ interface Invoice {
 
 @Component({
   selector: 'app-order-invoice',
-  imports: [CurrencyPipe, DatePipe, RouterLink, ShopLoading, ShopState],
+  imports: [CurrencyPipe, DatePipe, RouterLink, ShopLoading, ShopState, BrandLogo],
   template: `
-    <main class="container invoice">
+    <main class="container invoice" [class.print-document]="invoice.hasValue()">
       @if (invoice.hasValue()) {
         @let bill = invoice.value();
+        <app-brand-logo />
         <h1>{{ bill.invoiceType === 'tax_invoice' ? 'Tax invoice' : 'Bill of supply' }}</h1>
         <p>{{ bill.invoiceNumber }} · {{ bill.issuedAt | date: 'mediumDate' : '+0530' }}</p>
         <h2>{{ bill.seller.name }}</h2>
@@ -85,6 +87,7 @@ interface Invoice {
         <p>
           <strong>Order total {{ bill.totalPaise / paisePerRupee | currency: 'INR' }}</strong>
         </p>
+        <button class="secondary-button no-print" type="button" (click)="print()">Print invoice</button>
       } @else {
         <h1>Order invoice</h1>
         @if (invoice.isLoading()) {
@@ -99,7 +102,7 @@ interface Invoice {
         }
       }
       @if (number(); as orderNumber) {
-        <a class="secondary-button" [routerLink]="['/track-order', orderNumber]"
+        <a class="secondary-button no-print" [routerLink]="['/track-order', orderNumber]"
           >Back to tracking</a
         >
       }
@@ -113,6 +116,10 @@ interface Invoice {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OrderInvoice {
+  protected print() {
+    window.print();
+  }
+
   protected readonly paisePerRupee = 100;
   protected readonly number = toSignal(
     inject(ActivatedRoute).paramMap.pipe(map((params) => params.get('orderNumber'))),

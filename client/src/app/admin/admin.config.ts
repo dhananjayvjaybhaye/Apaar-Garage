@@ -14,7 +14,6 @@ export const sessionClockMs = 1_000;
 export const paisePerRupee = 100;
 
 export const upcomingAdminSections = [
-  { segment: 'orders', label: 'Orders' },
   { segment: 'returns', label: 'Returns' },
   { segment: 'support', label: 'Support' },
   { segment: 'customers', label: 'Customers' },
@@ -26,6 +25,7 @@ export const upcomingAdminSections = [
 export const adminNavigation = [
   { path: '/admin', label: 'Dashboard' },
   { path: '/admin/products', label: 'Products' },
+  { path: '/admin/orders', label: 'Orders' },
   ...upcomingAdminSections.map(({ segment, label }) => ({ path: '/admin/' + segment, label })),
 ];
 export const dashboardCards = [

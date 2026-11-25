@@ -1,5 +1,6 @@
 @import './motion.css';
 @import './touch-targets.css';
+@import './print.css';
 @font-face {
   font-family:'Inter Variable';
   src:url('/fonts/inter-latin-wght-normal.woff2') format('woff2');

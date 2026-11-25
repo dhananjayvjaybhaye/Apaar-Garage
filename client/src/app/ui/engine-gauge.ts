@@ -17,6 +17,9 @@ import type { EngineStatus } from './engine-loading';
         <i class="needle" [class.idle]="engine.progress === null" aria-hidden="true"></i>
         <i class="hub" aria-hidden="true"></i>
       </div>
+      @if (!engine.ready) {
+        <img class="engine-brand" src="/logo/favicon.svg" alt="Apaar Garage" width="24" height="24" loading="lazy" />
+      }
       <p role="status">{{ engine.ready ? 'Ready' : 'Starting engine…' }}</p>
     </div>
   `,

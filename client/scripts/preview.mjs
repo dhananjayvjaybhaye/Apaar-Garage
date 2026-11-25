@@ -16,19 +16,21 @@ const fileType = {
   '.css': 'text/css',
   '.glb': 'model/gltf-binary',
   '.html': 'text/html',
+  '.ico': 'image/x-icon',
   '.jpg': 'image/jpeg',
   '.js': 'text/javascript',
   '.json': 'application/json',
   '.mp3': 'audio/mpeg',
   '.png': 'image/png',
   '.svg': 'image/svg+xml',
+  '.webmanifest': 'application/manifest+json',
   '.txt': 'text/plain',
   '.wav': 'audio/wav',
   '.webp': 'image/webp',
   '.woff2': 'font/woff2',
   '.xml': 'application/xml',
 };
-const compressible = new Set(['.css', '.html', '.js', '.json', '.svg', '.txt', '.xml']);
+const compressible = new Set(['.css', '.html', '.js', '.json', '.svg', '.txt', '.webmanifest', '.xml']);
 if (
   !['http:', 'https:'].includes(api.protocol) ||
   api.pathname !== '/' ||

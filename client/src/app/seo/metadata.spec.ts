@@ -25,7 +25,7 @@ describe('Storefront metadata', () => {
   it('uses a raster share image and the actual listing image in the product schema', () => {
     const info = pageMetadata('/product/midnight-coupe?from=home', site, model);
     expect(info.title).toBe('Midnight Coupe | Apaar Garage');
-    expect(info.image).toBe(site + '/logo/apaar_garage_rc_racing_logo.png');
+    expect(info.image).toBe(site + '/logo/share.jpg');
     expect(info.graph).toContainEqual(
       expect.objectContaining({
         '@type': 'Product',

@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AmbientVisible } from '../motion/ambient-visible';
+import { BrandLogo } from './brand-logo';
 
 @Component({
   selector: 'app-not-found',
-  imports: [RouterLink, AmbientVisible],
+  imports: [RouterLink, AmbientVisible, BrandLogo],
   template: `
     <main class="container missing-page">
       <div class="crash-scene" appAmbientVisible aria-hidden="true">
@@ -13,6 +14,7 @@ import { AmbientVisible } from '../motion/ambient-visible';
         <img class="cone" src="/images/ambient/cone.svg" width="50" height="68" alt="" />
         <span class="impact"></span>
       </div>
+      <app-brand-logo />
       <p class="kicker">404</p>
       <h1>Missed the turn.</h1>
       <p>We couldn’t find that page. Let’s get you back to the garage.</p>

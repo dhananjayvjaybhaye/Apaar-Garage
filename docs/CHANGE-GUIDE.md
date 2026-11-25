@@ -118,3 +118,20 @@ Edit question text and answers in `client/src/app/ui/faq-content.ts`. The home p
 
 Edit the layered artwork in `client/src/app/ui/garage-ambience.css` and the SVGs in `client/public/images/ambient`. The reusable `Parallax` directive controls how decorative layers move.
 
+## Brand artwork
+
+The original 1254 px artwork lives at `design/apaar_garage_rc_racing_logo.png`. Angular only copies web assets from `client/public`, so the master stays out of the production site.
+
+| Files | Use |
+| --- | --- |
+| `client/public/logo/header.webp`, `header@2x.webp`, `header.png`, `header@2x.png` | Tight transparent crops at 140 × 75 and 280 × 150. The PNG also works in order emails. |
+| `client/public/logo/display.webp` | Higher-resolution artwork for the garage entrance and footer. |
+| `design/wheel.svg` and `client/public/logo/favicon.svg` | Editable red wheel artwork and its web export. |
+| `client/public/logo/favicon.ico`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png` | Browser and launcher icons, including a maskable variant with safe padding. |
+| `client/public/logo/share.jpg` | Default 1200 × 630 Open Graph and Twitter image with the home page tagline. |
+| `client/public/logo/organization.png` | Square image for Organization structured data. |
+| `client/public/manifest.webmanifest` and `client/src/index.html` | App name, theme colors, launcher icons, and browser links. |
+
+Replace the master PNG in `design/` with a transparent export. If the brand mark changes, update `design/wheel.svg` too. With server dependencies installed, run `node design/build-brand-assets.mjs` from the repository root. If the horizontal proportions change, update the generator's target dimensions and the width and height in `client/src/app/ui/brand-logo.ts` together. Run `npm --prefix client run test:brand` to check asset budgets and metadata links.
+
+Set `ORDER_EMAIL_SITE_URL` in the server environment to the public HTTPS storefront origin to include the hosted PNG in emails. The name also appears as text in email clients that block images. Keep the logo URL reachable from outside the store session.

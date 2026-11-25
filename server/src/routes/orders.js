@@ -45,6 +45,7 @@ export function createAdminOrdersRouter(requireUser, options) {
   const router = Router();
   const orders = createOrdersController(options);
   router.use(noStore, requireUser, requireAdministrator);
+  router.get('/:orderNumber/packing-slip', orderBusiness.packingSlip);
   router.get('/:orderNumber', orderBusiness.adminDetail);
   router.get('/:orderNumber/returns', orderBusiness.adminReturns);
   router.patch('/:orderNumber/returns/:id', orderBusiness.changeReturn);

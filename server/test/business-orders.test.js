@@ -110,6 +110,13 @@ test('business foundation over the storefront API', async (t) => {
     const buyer = newBuyer();
     await add(buyer, car.slug);
     const number = await place(buyer);
+    const packingPath = adminPath(number) + '/packing-slip';
+    await buyer(packingPath, { status: 401 });
+    const { value: packingSlip } = await admin(packingPath);
+    assert.equal(packingSlip.orderNumber, number);
+    const { phone: _phone, ...packingAddress } = address;
+    assert.deepEqual(packingSlip.address, packingAddress);
+    assert.deepEqual(packingSlip.items, [{ name: car.name, sku: car.sku, quantity: 1 }]);
     const before = await stock(car.slug);
     await buyer(orderPath(number) + '/invoice', { status: 404 });
     await advance(admin, number, 'confirmed', 'packed');

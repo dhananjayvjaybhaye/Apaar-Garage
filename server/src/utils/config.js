@@ -65,8 +65,13 @@ export function readOrderEmailOptions(env = process.env) {
   const from = z.email().parse(env.ORDER_EMAIL_FROM?.trim());
   const user = z.string().min(1).parse(env.ORDER_SMTP_USER?.trim());
   const pass = z.string().min(1).parse(env.ORDER_SMTP_PASSWORD);
+  const site = env.ORDER_EMAIL_SITE_URL?.trim();
+  if (site && (new URL(site).origin !== site || !site.startsWith('https://'))) {
+    throw new Error('Set ORDER_EMAIL_SITE_URL to the HTTPS storefront origin without a trailing slash.');
+  }
   return {
     from,
+    logoUrl: site ? new URL('/logo/header.png', site).href : undefined,
     smtp: {
       host: env.ORDER_SMTP_HOST?.trim() || 'smtp-relay.brevo.com',
       port: Number(port),

@@ -43,6 +43,16 @@ export const orderBusiness = {
       cancellation: order.cancellation,
     });
   },
+  async packingSlip(req, res) {
+    const order = await findCustomerOrder({ number: orderNumber(req) });
+    const { fullName, addressLine1, addressLine2, city, state, pincode } = order.address;
+    res.json({
+      orderNumber: order.number,
+      createdAt: order.createdAt,
+      address: { fullName, addressLine1, addressLine2, city, state, pincode },
+      items: order.items.map(({ sku, name, quantity }) => ({ sku, name, quantity })),
+    });
+  },
   async adminReturns(req, res) {
     res.json({ items: await listReturns({ number: orderNumber(req) }) });
   },

@@ -50,6 +50,11 @@ export const adminRoutes: Routes = [
             (module) => module.ProductImportHistory,
           ),
       },
+      {
+        path: 'orders',
+        title: 'Orders | Apaar Garage Admin',
+        loadComponent: () => import('./admin-packing-slip').then((module) => module.AdminPackingSlip),
+      },
       ...upcomingAdminSections.map(({ segment, label }) => ({
         path: segment,
         title: label + ' | Apaar Garage Admin',
