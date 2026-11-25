@@ -78,6 +78,53 @@ export class AdminSessionStore {
     }
   }
 
+  // Only replay requests rejected before the write reached its handler.
+  async saveProduct<T>(method: 'POST' | 'PATCH', path: string, body: object) {
+    const previous = this.session();
+    try {
+      return await this.request<T>(method, path, body);
+    } catch (error) {
+      if (
+        !previous ||
+        !(error instanceof HttpErrorResponse) ||
+        error.status !== 403 ||
+        error.error?.code !== 'ADMIN_CSRF_MISMATCH'
+      )
+        throw error;
+    }
+
+    const current = await this.request<AdminSession>('GET', adminAuthApi + '/session');
+    if (current.email !== previous.email || current.setupRequired) {
+      this.expire();
+      throw new HttpErrorResponse({ status: 401 });
+    }
+    this.store(current);
+    return this.request<T>(method, path, body);
+  }
+
+  async upload<T>(path: string, file: File, contentType: string) {
+    const current = this.session();
+    const headers = new HttpHeaders({
+      'Content-Type': contentType,
+      ...(current && { [adminCsrfHeader]: current.csrfToken }),
+    });
+    try {
+      return await firstValueFrom(this.http.post<T>(path, file, { headers }));
+    } catch (error) {
+      if (error instanceof HttpErrorResponse && error.status === 401) this.expire();
+      throw error;
+    }
+  }
+
+  async download(path: string) {
+    try {
+      return await firstValueFrom(this.http.get(path, { responseType: 'blob' }));
+    } catch (error) {
+      if (error instanceof HttpErrorResponse && error.status === 401) this.expire();
+      throw error;
+    }
+  }
+
   async activity() {
     const current = this.session();
     const renewed = await this.request<AdminSession>('POST', adminAuthApi + '/activity', {});

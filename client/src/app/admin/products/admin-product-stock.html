@@ -1,0 +1,52 @@
+<section class="admin-box">
+  <h2>Stock adjustment</h2>
+  <p>
+    Current stock <strong>{{ stock() }}</strong>
+  </p>
+  <form novalidate (submit)="adjust($event, delta, reason)">
+    <div class="form-grid-container">
+      <div class="form-grid form-grid-compact">
+        <app-form-field
+          #quantityField
+          controlId="stock-delta"
+          label="Quantity change"
+          [required]="true"
+          hint="Use a negative number to remove units."
+          [error]="quantityError()"
+        >
+          <input
+            #delta
+            [appFieldControl]="quantityField"
+            type="number"
+            inputmode="numeric"
+            step="1"
+            required
+            (input)="quantityError.set('')"
+          />
+        </app-form-field>
+        <app-form-field
+          #reasonField
+          controlId="stock-reason"
+          label="Reason"
+          [required]="true"
+          [error]="reasonError()"
+        >
+          <input
+            #reason
+            [appFieldControl]="reasonField"
+            type="text"
+            maxlength="240"
+            required
+            (input)="reasonError.set('')"
+          />
+        </app-form-field>
+      </div>
+    </div>
+    @if (error()) {
+      <p class="error-text" role="alert">{{ error() }}</p>
+    }
+    <button class="secondary-button" type="submit" [disabled]="adjusting()">
+      Record adjustment
+    </button>
+  </form>
+</section>

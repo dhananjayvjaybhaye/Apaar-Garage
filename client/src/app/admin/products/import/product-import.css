@@ -1,0 +1,30 @@
+.import-section {
+  display: grid;
+  gap: 0.65rem;
+  margin-block-end: 0.8rem;
+}
+.import-section :is(p, h2, ul) {
+  margin-block: 0;
+}
+.import-section fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.import-table {
+  table-layout: auto;
+  overflow-wrap: anywhere;
+}
+.import-table small {
+  display: block;
+}
+.import-table ul {
+  padding-inline-start: 1.2rem;
+}
+.cost-option {
+  display: flex;
+  align-items: center;
+  min-height: 2.75rem;
+  gap: 0.55rem;
+}

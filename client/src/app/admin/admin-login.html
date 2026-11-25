@@ -1,6 +1,7 @@
 <main class="container admin-screen admin-login">
+  <app-brand-logo />
   <h1>Administrator sign-in</h1>
-  @if (expired) { <p role="status">Your admin session ended. Sign in to continue.</p> }
+  @if (expired) { <p role="status">Your session expired, sign in again.</p> }
   @if (checking()) {
     <p role="status">Checking your session…</p>
   } @else if (enrolling() && sessions.session()) {
@@ -9,13 +10,16 @@
     <button type="button" class="secondary-button" (click)="cancelSetup()">Sign out</button>
   } @else {
     <form (submit)="signIn($event, email.value, password, code)">
-      <label for="admin-email">Email</label>
-      <input #email id="admin-email" type="email" autocomplete="username" required maxlength="254" />
-      <label for="admin-password">Password</label>
-      <input #password id="admin-password" type="password" autocomplete="current-password" required />
-      <label for="admin-code">Authenticator or recovery code</label>
-      <input #code id="admin-code" type="text" autocomplete="one-time-code" maxlength="40" aria-describedby="admin-code-hint" />
-      <small id="admin-code-hint">Leave blank if you haven’t enrolled an authenticator yet.</small>
+      <app-form-field #emailField controlId="admin-email" label="Email" [required]="true">
+        <input #email [appFieldControl]="emailField" type="email" autocomplete="username" required maxlength="254" />
+      </app-form-field>
+      <app-form-field #passwordField controlId="admin-password" label="Password" [required]="true">
+        <input #password [appFieldControl]="passwordField" type="password" autocomplete="current-password" required />
+      </app-form-field>
+      <app-form-field #codeField controlId="admin-code" label="Authenticator or recovery code"
+        hint="Leave blank if you haven’t enrolled an authenticator yet.">
+        <input #code [appFieldControl]="codeField" type="text" autocomplete="one-time-code" maxlength="40" />
+      </app-form-field>
       <button type="submit" class="primary-button" [disabled]="busy()">{{ busy() ? 'Signing in…' : 'Sign in' }}</button>
     </form>
   }

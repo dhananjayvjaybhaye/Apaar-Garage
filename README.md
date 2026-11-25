@@ -49,6 +49,8 @@ Open `/admin/login` after creating the account. Production requires authenticato
 
 In production, the API refuses to start until the seller legal name and address, customer care phone and email, grievance officer name, phone and email, and invoice prefix are configured. Hide or archive published demo listings before launch. See the [change guide](docs/CHANGE-GUIDE.md#complete-seller-details-and-policies-before-launch) for maintenance steps.
 
+Use `/admin` for operational counts, collected sales, and audit activity. Use `/admin/products` to create, update, publish, or hide listings. For uploads in production, configure `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET`. Development falls back to `server/uploads`.
+
 ## Environment variables
 
 `server/.env.example` contains development defaults and placeholders. Monetary environment settings are in rupees unless the field name ends with `Paise`.

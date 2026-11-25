@@ -10,7 +10,7 @@
         [src]="image"
         [attr.srcset]="imageSet(image)"
         [sizes]="imageSizes()"
-        [alt]="(item.placeholder ? 'Sample illustration of ' : 'Product photo of ') + item.name"
+        [alt]="item.imageAlts?.[0] || (item.placeholder ? 'Sample illustration of ' : 'Product photo of ') + item.name"
         [loading]="priority() ? 'eager' : 'lazy'"
         [attr.fetchpriority]="priority() ? 'high' : null"
         decoding="async"

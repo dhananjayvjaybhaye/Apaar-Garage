@@ -25,7 +25,7 @@ describe('Storefront metadata', () => {
   it('uses a raster share image and the actual listing image in the product schema', () => {
     const info = pageMetadata('/product/midnight-coupe?from=home', site, model);
     expect(info.title).toBe('Midnight Coupe | Apaar Garage');
-    expect(info.image).toBe(site + '/images/share-garage.jpg');
+    expect(info.image).toBe(site + '/logo/apaar_garage_rc_racing_logo.png');
     expect(info.graph).toContainEqual(
       expect.objectContaining({
         '@type': 'Product',
@@ -38,6 +38,17 @@ describe('Storefront metadata', () => {
       }),
     );
     expect(pageMetadata('/product/another', site, model).indexable).toBe(false);
+  });
+
+  it('uses custom product metadata for sharing and keeps the listing name in structured data', () => {
+    const info = pageMetadata('/product/midnight-coupe', site, {
+      ...model,
+      seoTitle: 'Collect the Midnight Coupe',
+      seoDescription: 'Explore the graphite display model.',
+    });
+    expect(info.title).toBe('Collect the Midnight Coupe | Apaar Garage');
+    expect(info.description).toBe('Explore the graphite display model.');
+    expect(info.graph[1]).toMatchObject({ name: model.name, description: model.description });
   });
 
   it('omits private identifiers from share URLs and escapes markup in structured data', () => {

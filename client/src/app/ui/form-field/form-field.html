@@ -1,0 +1,22 @@
+<label class="shared-field-label" [attr.for]="controlId()">
+  {{ label() }}
+  @if (required()) {
+    <span class="shared-field-required" aria-hidden="true">*</span>
+  }
+</label>
+<div class="shared-field-input" [class.with-unit]="unit()">
+  <ng-content />
+  @if (unit(); as value) {
+    <span class="shared-field-unit" [id]="controlId() + '-unit'">{{ value }}</span>
+  }
+</div>
+<div class="shared-field-messages">
+  @if (hint(); as message) {
+    <small [id]="controlId() + '-hint'" [class.visually-hidden]="error()">{{ message }}</small>
+  }
+  @if (error(); as message) {
+    <small class="shared-field-error" [id]="controlId() + '-error'"
+      ><span aria-hidden="true">⚠</span> {{ message }}</small
+    >
+  }
+</div>

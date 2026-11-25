@@ -87,14 +87,9 @@
 }
 .intro-copy h2 {
   margin: 0;
-  font: 750 clamp(2.3rem, 10vw, 6.3rem)/1 var(--display, system-ui);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  text-shadow: 0 0.25rem 1.3rem #000;
-}
-.intro-copy em {
-  color: #ffc78f;
-  font-style: normal;
+  width: min(78vw, 58dvh, 26rem);
+  --brand-logo-width: 100%;
+  filter: drop-shadow(0 0.25rem 1.3rem #000);
 }
 .intro-copy .primary-button {
   min-width: 12rem;

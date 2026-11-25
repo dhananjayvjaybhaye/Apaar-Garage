@@ -1,0 +1,14 @@
+.dashboard-cards, .dashboard-grid { display: grid; gap: .7rem; margin-bottom: .8rem; }
+.dashboard-cards { grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr)); }
+.dashboard-cards h2 { font-size: .9rem; }
+.dashboard-cards strong { display: block; font-size: 1.45rem; font-variant-numeric: tabular-nums; }
+.dashboard-cards a { display: inline-flex; align-items: center; min-height: 2.75rem; }
+.dashboard-grid { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+.sales-chart { height: 9rem; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; grid-template-rows: minmax(0, 1fr); align-items: end; gap: .18rem; border-bottom: 1px solid var(--control-line); }
+.sales-bar { background: var(--amber); min-height: 2px; }
+.zero-sales { background: var(--control-line); }
+.chart-range { display: flex; justify-content: space-between; gap: .5rem; color: var(--muted); margin-block: .4rem; }
+.dashboard-skeleton { height: 12rem; }
+pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+summary { cursor: pointer; min-height: 2.75rem; }
+@media (max-width: 66rem) { .dashboard-grid { grid-template-columns: 1fr; } }

@@ -1,0 +1,87 @@
+<fieldset class="admin-box product-fieldset form-grid-container">
+  <legend>{{ group().title }}</legend>
+  @for (issue of groupIssues(); track issue.field) {
+    <p class="shared-field-error" [id]="'product-group-' + issue.field" data-group-error>
+      <span aria-hidden="true">⚠</span> {{ issue.message }}
+      <a [attr.href]="'#' + errorTarget(issue.field, draft())" (click)="focusLink($event)"
+        >Go to field</a
+      >
+    </p>
+  }
+  <div class="form-grid">
+    @for (field of group().fields; track field.key) {
+      @if (field.key !== 'stock' || !editing()) {
+        @let value = draft()[field.key] ?? '';
+        @let numeric = field.kind === 'money' || field.kind === 'number';
+        <app-form-field
+          #cell
+          [class.prefilled-field]="prefilled().has(field.key)"
+          [class.form-field-wide]="field.kind === 'textarea' && !field.inline"
+          [controlId]="fieldId(field.key)"
+          [label]="field.label"
+          [required]="required(field)"
+          [hint]="field.hint"
+          [unit]="field.unit"
+          [error]="issueFor(individualIssues(), field.key)"
+          [groupErrorId]="groupErrorId(field.key)"
+        >
+          @if (field.kind === 'select' || field.kind === 'boolean') {
+            <select
+              #select
+              [appFieldControl]="cell"
+              [required]="required(field)"
+              (blur)="blurred.emit(field.key)"
+              (change)="choose(field.key, select.value)"
+            >
+              @if (field.kind !== 'boolean' && !required(field)) {
+                <option value="" [selected]="!value">Unspecified</option>
+              }
+              @if (field.key === 'skillLevel') {
+                <option value="" [selected]="!value">Choose a skill level</option>
+              }
+              @for (
+                item of field.kind === 'boolean'
+                  ? boolOptions
+                  : field.key === 'category'
+                    ? categories()
+                    : (field.options ?? []);
+                track item.value
+              ) {
+                <option [value]="item.value" [selected]="value === item.value">
+                  {{ item.label }}
+                </option>
+              }
+            </select>
+          } @else if (field.kind === 'textarea') {
+            <textarea
+              #area
+              [appFieldControl]="cell"
+              rows="3"
+              [value]="value"
+              [required]="required(field)"
+              (blur)="blurred.emit(field.key)"
+              (input)="choose(field.key, area.value)"
+            ></textarea>
+          } @else {
+            <input
+              #control
+              [appFieldControl]="cell"
+              [type]="numeric ? 'number' : (field.type ?? 'text')"
+              [attr.min]="numeric ? 0 : null"
+              [attr.step]="field.kind === 'money' ? 'any' : field.kind === 'number' ? '1' : null"
+              [attr.inputmode]="
+                field.kind === 'money' ? 'decimal' : field.kind === 'number' ? 'numeric' : null
+              "
+              [attr.autocomplete]="field.autocomplete ?? null"
+              [readonly]="editing() && field.key === 'slug'"
+              [required]="required(field)"
+              [value]="value"
+              (blur)="blurred.emit(field.key)"
+              (input)="choose(field.key, control.value)"
+            />
+          }
+        </app-form-field>
+      }
+    }
+  </div>
+</fieldset>

@@ -1,9 +1,12 @@
-.admin-screen { padding-block: 2rem 4rem; }
+.admin-screen { padding-block: 2rem 4rem; font-size: .95rem; }
+h1, h2 { font-family: var(--body, Inter, system-ui, sans-serif); text-transform: none; letter-spacing: normal; }
+h1 { font-size: 1.65rem; }
+h2 { font-size: 1.1rem; }
 .admin-login { max-width: 33rem; }
 .admin-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; align-items: start; }
 nav { display: flex; gap: .5rem; flex-wrap: wrap; }
 form { display: grid; gap: .6rem; margin-block: 1rem; }
-input { min-height: 2.75rem; padding: .55rem; background: var(--background); color: var(--text); border: 1px solid var(--control-line); border-radius: .5rem; }
+input:not(.shared-field-control) { min-height: 2.75rem; padding: .55rem; background: var(--background); color: var(--text); border: 1px solid var(--control-line); border-radius: .5rem; }
 form button { justify-self: start; }
 .admin-panel, .admin-warning { margin-block: 1rem; padding: 1rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
 .admin-warning { border-color: var(--amber); }

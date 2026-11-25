@@ -3,7 +3,10 @@ import { StockMovement } from '../models/stock-movement.js';
 import { HttpError } from '../utils/http-error.js';
 import { publicProductFilter } from '../utils/product-compliance.js';
 
-export async function applyStockMovements(lines, { reason, order, actor, session }) {
+export async function applyStockMovements(
+  lines,
+  { reason, order, actor, session, adjustmentReason },
+) {
   if (!session?.inTransaction()) throw new Error('Stock mutations require a transaction.');
   for (const { product, delta } of lines) {
     if (!delta) continue;
@@ -28,7 +31,9 @@ export async function applyStockMovements(lines, { reason, order, actor, session
         { session },
       );
     }
-    await StockMovement.create([{ product, delta, reason, order, actor }], { session });
+    await StockMovement.create([{ product, delta, reason, order, actor, adjustmentReason }], {
+      session,
+    });
   }
 }
 

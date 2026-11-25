@@ -59,35 +59,9 @@ h2 {
   border: 1px solid var(--line);
   border-radius: var(--radius-large);
 }
-.fields {
-  display: grid;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-.fields .field,
-.country {
-  display: grid;
-  gap: 0.25rem;
-  min-width: 0;
-  margin: 0;
-  font-size: 0.875rem;
-}
-.fields input {
-  width: 100%;
-  min-height: 2.75rem;
-  padding: 0.5rem 0.65rem;
-  background: var(--background);
-  color: var(--text);
-  border: 1px solid var(--control-line);
-  border-radius: var(--radius);
-}
-.fields [aria-invalid='true'] {
-  border-color: var(--error);
-}
-small,
-.country span {
-  color: var(--muted);
-}
+.fields { margin-bottom: 1rem; }
+.country { display: grid; gap: .25rem; margin: 0; font-size: .875rem; }
+.country span { color: var(--muted); }
 address {
   display: grid;
   gap: 0.2rem;
@@ -106,14 +80,6 @@ address {
 .summary {
   align-self: start;
 }
-@media (min-width: 37rem) {
-  .fields {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .wide {
-    grid-column: 1 / -1;
-  }
-}
 @media (min-width: 52rem) {
   .checkout-grid {
     grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
@@ -130,20 +96,7 @@ address {
   border: 0;
   min-width: 0;
 }
-.saved-address {
-  display: grid;
-  gap: 0.35rem;
-  margin-bottom: 1rem;
-}
-.saved-address select {
-  width: 100%;
-  min-height: 2.75rem;
-  border: 1px solid var(--control-line);
-  border-radius: 0.55rem;
-  padding: 0.5rem;
-  background: var(--panel, #15171c);
-  color: var(--text);
-}
+.saved-address { margin-bottom: 1rem; }
 .save-address {
   display: flex;
   align-items: center;
@@ -161,24 +114,4 @@ address {
   }
 }
 
-.order-email {
-  display: grid;
-  gap: 0.35rem;
-  margin-block: 0 1rem;
-}
-.order-email input {
-  width: 100%;
-  min-width: 0;
-  min-height: 2.75rem;
-  padding: 0.5rem 0.65rem;
-  border: 1px solid var(--control-line);
-  border-radius: var(--radius);
-  color: var(--text);
-  background: var(--background);
-}
-.order-email {
-  margin-block: 1rem 0;
-}
-.order-email small.error-text {
-  color: var(--error);
-}
+.order-email { margin-block-start: 1rem; }

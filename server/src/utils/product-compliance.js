@@ -8,21 +8,23 @@ export const validRupeeAmount = (value) =>
 export const validGstRate = (value) =>
   value >= 0 && value <= 100 && Number(value.toFixed(2)) === value;
 
+export const publicationFields = [
+  'mrp',
+  'gstRatePercent',
+  'hsnCode',
+  'sku',
+  'countryOfOrigin',
+  'netQuantity',
+  'ageGradeMin',
+];
+
 export function publicationIssues(product) {
   const issues = [];
   const add = (field, message) => issues.push({ field, message });
   if (product.mrp != null && product.mrp < product.price)
     add('mrp', 'MRP must be at least the selling price.');
   if (product.status !== 'published') return issues;
-  for (const field of [
-    'mrp',
-    'gstRatePercent',
-    'hsnCode',
-    'sku',
-    'countryOfOrigin',
-    'netQuantity',
-    'ageGradeMin',
-  ]) {
+  for (const field of publicationFields) {
     if (product[field] == null || product[field] === '') add(field, 'Required to publish.');
   }
   if (

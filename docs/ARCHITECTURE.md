@@ -34,6 +34,12 @@ Admin sign-in uses a separate HTTP-only cookie and a MongoDB session with indepe
 
 Production startup uses the same store-settings service as the API. Before opening the listener, it checks seller identity, customer care and grievance contacts, the invoice prefix, and published placeholder inventory. Development remains available for maintenance.
 
+## Admin dashboard and products
+
+The admin shell keeps a separate session and collapses its navigation on smaller screens. The dashboard reads workflow counts and collected order totals for the last 30 calendar dates in IST. Top sellers use item quantities in the same collected orders. Audit responses resolve actor and account target names without changing the stored audit history.
+
+Product search and filters run on the API with pagination. The editor checks draft and publication requirements with the same server validation used on save. Draft-only and publication feedback are rendered through shared form fields. The Angular router owns admin page titles, while storefront routes keep their SEO titles. Bulk publishing validates the full selection before committing any change. Stock adjustments still use the stock-movement transaction. Product uploads are authenticated and CSRF-protected. Images are converted to bounded WebP files with Sharp. GLB uploads are validated against the binary glTF format and checked for embedded resources. Cloudinary handles configured deployments, and the local upload directory is served only in development or tests.
+
 ## Business rules and settings
 
 A validated StoreSettings document supplies seller details and checkout policy, with a short per-process read cache. Settings changes invalidate the local cache. Checkout serializes risk checks for a normalized mobile number and address using private lookup keys. Flagged orders require an explicit customer confirmation before packing. OTP and mobile notifications have interfaces ready for a provider.

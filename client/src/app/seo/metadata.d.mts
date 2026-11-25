@@ -5,6 +5,8 @@ export type SeoProduct = Pick<
   | 'name'
   | 'brand'
   | 'description'
+  | 'seoTitle'
+  | 'seoDescription'
   | 'category'
   | 'price'
   | 'stock'

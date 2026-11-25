@@ -10,6 +10,7 @@ const schema = new mongoose.Schema({
   },
   reason: { type: String, enum: stockReasons, required: true },
   order: String,
+  adjustmentReason: String,
   actor: mongoose.Schema.Types.ObjectId,
   at: { type: Date, default: Date.now, required: true },
 });

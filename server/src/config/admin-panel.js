@@ -1,0 +1,13 @@
+export const dashboardDays = 30;
+export const topSellerLimit = 5;
+export const ticketDueSoonHours = 48;
+export const indiaTimeZone = 'Asia/Kolkata';
+export const indiaOffsetMinutes = 330;
+export const defaultLowStock = 5;
+export const adminProductPageSize = 20;
+export const adminBulkLimit = 50;
+export const imageMaxBytes = 5 * 1024 ** 2;
+export const modelMaxBytes = 10 * 1024 ** 2;
+export const imageLongEdge = 1600;
+export const imageMaxPixels = 32_000_000;
+export const webpQuality = 82;

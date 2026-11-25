@@ -1,0 +1,137 @@
+<main>
+  <header class="admin-header">
+    <h1>Products</h1>
+    <div class="admin-tools">
+      <a class="secondary-button" routerLink="/admin/product-import">Import and export</a>
+      <a class="primary-button" [routerLink]="['/admin/products/new']">Create product</a>
+    </div>
+  </header>
+
+  @if (duplicateSource(); as source) {
+    <section class="admin-box selection-tools" aria-labelledby="duplicate-title">
+      <h2 id="duplicate-title">Duplicate {{ source.name }}</h2>
+      <p>The copy uses a new slug and SKU, opens with zero stock and stays a draft.</p>
+      <div class="admin-tools">
+        <label><input #copyImages type="checkbox" checked /> Copy product images</label>
+        <button type="button" class="primary-button" [disabled]="busy()" (click)="duplicate(source.slug, copyImages.checked)">Duplicate product</button>
+        <button type="button" class="secondary-button" [disabled]="busy()" (click)="duplicateSource.set(null)">Cancel</button>
+      </div>
+    </section>
+  }
+  <form class="admin-box form-grid-container" (submit)="apply($event)">
+    <div class="form-grid">
+      <app-form-field #searchField controlId="admin-filter-search" label="Search">
+        <input [appFieldControl]="searchField" type="search" #search [value]="filters().q"
+          (input)="editFilter('q', search.value)" maxlength="120" placeholder="Name, SKU, brand or barcode" />
+      </app-form-field>
+      <app-form-field #typeField controlId="admin-filter-type" label="Type">
+        <select #type [appFieldControl]="typeField" (change)="editFilter('productType', type.value)">
+          <option value="" [selected]="!filters().productType">All types</option>
+          @for (item of types; track item.value) {
+            <option [value]="item.value" [selected]="filters().productType === item.value">{{ item.label }}</option>
+          }
+        </select>
+      </app-form-field>
+      <app-form-field #categoryField controlId="admin-filter-category" label="Category">
+        <select #category [appFieldControl]="categoryField" (change)="editFilter('category', category.value)">
+          <option value="" [selected]="!filters().category">All categories</option>
+          @for (item of categories(); track item.value) {
+            <option [value]="item.value" [selected]="filters().category === item.value">{{ item.label }}</option>
+          }
+        </select>
+      </app-form-field>
+      <app-form-field #statusField controlId="admin-filter-status" label="Status">
+        <select #status [appFieldControl]="statusField" (change)="editFilter('status', status.value)">
+          <option value="" [selected]="!filters().status">All statuses</option>
+          @for (item of statuses; track item) {
+            <option [value]="item" [selected]="filters().status === item">{{ item | titlecase }}</option>
+          }
+        </select>
+      </app-form-field>
+      <app-form-field #stockField controlId="admin-filter-stock" label="Stock">
+        <select #stock [appFieldControl]="stockField" (change)="editFilter('stock', stock.value)">
+          <option value="" [selected]="!filters().stock">All stock levels</option>
+          @for (item of stockOptions; track item.value) {
+            <option [value]="item.value" [selected]="filters().stock === item.value">{{ item.label }}</option>
+          }
+        </select>
+      </app-form-field>
+      <app-form-field #complianceField controlId="admin-filter-compliance" label="Compliance">
+        <select #compliance [appFieldControl]="complianceField" (change)="editFilter('compliance', compliance.value)">
+          <option value="" [selected]="!filters().compliance">All listings</option>
+          @for (item of complianceOptions; track item.value) {
+            <option [value]="item.value" [selected]="filters().compliance === item.value">{{ item.label }}</option>
+          }
+        </select>
+      </app-form-field>
+      <app-form-field #sortField controlId="admin-filter-sort" label="Sort">
+        <select #sort [appFieldControl]="sortField" (change)="editFilter('sort', sort.value)">
+          
+          @for (item of styles; track item.value) {
+            <option [value]="item.value" [selected]="filters().sort === item.value">{{ item.label }}</option>
+          }
+        </select>
+      </app-form-field>
+    </div>
+    <button class="secondary-button" type="submit">Apply filters</button>
+  </form>
+
+  @if (error()) {
+    <p class="error-text" role="alert">{{ error() }}</p>
+    @if (issues().length) {
+      <ul>
+        @for (issue of issues(); track issue.slug + ':' + issue.field) {
+          <li>{{ issue.slug }} · {{ label(issue.field) }} · {{ issue.message }}</li>
+        }
+      </ul>
+    }
+  }
+  @if (listing.isLoading()) {
+    <p role="status">Loading products…</p><div class="skeleton product-skeleton" aria-hidden="true"></div>
+  } @else if (listing.error()) {
+    <p class="error-text" role="alert">Could not load the products. Check the filters or try again.</p>
+    <button type="button" class="secondary-button" (click)="listing.reload()">Retry</button>
+  } @else if (listing.hasValue()) {
+    @let result = listing.value();
+    <div class="admin-tools selection-tools">
+      <span aria-live="polite">{{ selected().size }} selected · {{ result.total }} products</span>
+      <button class="secondary-button" type="button" [disabled]="!selected().size || busy()" (click)="bulk('published')">Publish selected</button>
+      <button class="secondary-button" type="button" [disabled]="!selected().size || busy()" (click)="bulk('hidden')">Hide selected</button>
+    </div>
+    @if (!result.items.length) {
+      <p>No products match these filters.</p>
+    } @else {
+      <div class="admin-table-wrap" tabindex="0" role="region" aria-label="Product inventory">
+        <table class="admin-table product-table">
+          <thead><tr>
+            <th scope="col"><input #selectAll type="checkbox" aria-label="Select all products on this page" [checked]="selected().size === result.items.length" [indeterminate]="selected().size > 0 && selected().size < result.items.length" (change)="all(selectAll.checked, result)" /></th>
+            <th scope="col">Product</th><th scope="col">Type</th><th scope="col">Status</th><th scope="col">Price</th><th scope="col">Stock</th><th scope="col">Compliance</th><th scope="col">Actions</th>
+          </tr></thead>
+          <tbody>@for (item of result.items; track item.slug) {
+            <tr>
+              <td><input #selectedRow type="checkbox" [checked]="selected().has(item.slug)" [attr.aria-label]="'Select ' + item.name" (change)="toggle(item.slug, selectedRow.checked)" /></td>
+              <td>
+                <div class="product-cell">
+                  @if (item.image) { <img [src]="item.image" alt="" width="36" height="36" loading="lazy" /> }
+                  <div><a [routerLink]="['/admin/products', item.slug]">{{ item.name }}</a><small>{{ item.sku ?? 'No SKU' }} · {{ item.brand }}</small></div>
+                </div>
+              </td>
+              <td>{{ item.productType === 'rc' ? 'RC' : 'Diecast' }}<small>{{ item.category }}</small></td>
+              <td>{{ item.status | titlecase }}@if (item.placeholder) { <small>Placeholder</small> }</td>
+              <td>{{ item.price | currency: 'INR' }}</td><td>{{ item.stock }}</td>
+              <td [class.error-text]="item.issues.length">{{ item.issues.length ? item.issues.length + ' to review' : 'Complete' }}</td>
+              <td><button class="secondary-button" type="button" [disabled]="busy()" [attr.aria-label]="'Duplicate ' + item.name" (click)="duplicateSource.set(item)">Duplicate</button></td>
+            </tr>
+          }</tbody>
+        </table>
+      </div>
+    }
+    @if (result.pages > 1) {
+      <nav aria-label="Product pages" class="admin-tools selection-tools">
+        <button class="secondary-button" type="button" [disabled]="result.page <= 1" (click)="setPage(result.page - 1)">Previous</button>
+        <span>Page {{ result.page }} of {{ result.pages }}</span>
+        <button class="secondary-button" type="button" [disabled]="result.page >= result.pages" (click)="setPage(result.page + 1)">Next</button>
+      </nav>
+    }
+  }
+</main>

@@ -50,7 +50,7 @@ const calmRoutes = new Set([
   ],
   template: `
     @defer (when decorationsReady()) {
-      <app-ambient-background [calm]="calmBackground()" />
+      @if (!adminArea()) { <app-ambient-background [calm]="calmBackground()" /> }
     }
     <a class="primary-button skip-link" href="#page-content" (click)="skip($event, content)"
       >Skip to content</a
@@ -85,8 +85,10 @@ const calmRoutes = new Set([
       }
     }
     @if (!adminArea()) { <app-preview-modal /> }
-    @if (engine(); as status) {
-      <app-engine-gauge class="engine-dock" [status]="status" [compact]="true" />
+    @if (!adminArea()) {
+      @if (engine(); as status) {
+        <app-engine-gauge class="engine-dock" [status]="status" [compact]="true" />
+      }
     }
   `,
   styles:

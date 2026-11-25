@@ -1,9 +1,10 @@
 // Maps request failures to the public API error response.
 export class HttpError extends Error {
-  constructor(status, message, details) {
+  constructor(status, message, details, code) {
     super(message);
     this.status = status;
     this.details = details;
+    this.code = code;
   }
 }
 
@@ -35,9 +36,11 @@ export function errorHandler(error, req, res, _next) {
   }
 
   if (error instanceof HttpError) {
-    return res
-      .status(error.status)
-      .json({ message: error.message, ...(error.details && { details: error.details }) });
+    return res.status(error.status).json({
+      message: error.message,
+      ...(error.details && { details: error.details }),
+      ...(error.code && { code: error.code }),
+    });
   }
   if (error.type === 'entity.parse.failed') {
     return res.status(400).json({ message: 'Request body is not valid JSON.' });

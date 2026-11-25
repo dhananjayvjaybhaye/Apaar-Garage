@@ -55,6 +55,16 @@ From `server`, run `npm.cmd run remove-admin` on Windows or `npm run remove-admi
 
 For direct admin API requests, sign in using `POST /auth/admin/login`, keep the admin cookie, and send the returned token as `X-Admin-CSRF` on writes. A non-renewing session check is available at `GET /auth/admin/session`. The dashboard shows the latest audit entries, including account lockouts and changes to settings, products, orders, and refunds.
 
+## Manage products in the admin panel
+
+1. Sign in at `/admin/login`, open **Products**, and choose **Create product**.
+2. Fill the listing details, compliance declarations, and RC specifications where applicable. The **Missing before publishing** checklist updates as you edit and uses the same compliance rules as the API. Use **Save draft** with the required fields marked by an asterisk. Select **Publish** after filling in the additional compliance fields. A failed save focuses the error summary. Each link moves focus to the relevant field. Add optional tags one per line. The SEO title and description override storefront page and share metadata when provided. If your session expires, sign in again as the same admin in the same tab to recover the draft. Refreshing the page discards the in-memory draft.
+3. Upload JPG, PNG, or WebP photos up to 5 MB each. Add meaningful alt text, then use **Set primary**, **Up**, or **Down** for the order used by the storefront. Upload a self-contained GLB up to 10 MB and use **Preview model** to check it. Models over 5 MB show a size warning.
+4. Save the product. On an existing listing, use **Stock adjustment** to enter a signed whole-unit change and a reason. Use **Duplicate** in the table to create a draft with zero stock and a new product URL. Assign it a new SKU and barcode before publication as applicable.
+5. Select rows to publish or hide them together. If a listing fails the publication check, the bulk publish leaves the selection unchanged and shows the issues.
+
+Set all three Cloudinary variables in `server/.env` for production uploads. Development can use the ignored `server/uploads` folder without Cloudinary. Move development assets to production storage and update their URLs before deploying listings that use them.
+
 ## Complete seller details and policies before launch
 
 Use `GET /admin/settings`, edit the JSON, and save it with `PUT /admin/settings`. If the production check blocks startup, use the development API on the host’s loopback interface to fix the settings and hide or archive published placeholders. In PowerShell, run `$env:NODE_ENV = 'development'` in the server terminal before `npm.cmd start`. Keep that maintenance process private. Restart with `NODE_ENV=production` once the check passes. Review the result on `/seller-information`, in the footer, and at `/api/store-info`.
@@ -83,6 +93,16 @@ Use `GET /admin/coupons` and `PUT /admin/coupons`. The PUT body includes `code` 
 - Customers submit tickets and check status from the support page or via `POST /support/status` with `ticketNumber` and `email`. Staff can list or update tickets from `/admin/support`. Acknowledge within 48 hours and resolve within one month. New tickets use the earlier of one calendar month and 30 days for their resolution deadline.
 - Newsletter sign-up records consent for the text shown at signup. An authorized sender can request a token from `POST /admin/newsletter/unsubscribe-token` with `email`. Configure the sender to POST to `/api/newsletter/unsubscribe/:token` for one-click unsubscribe. A human-readable email link can open `/newsletter/unsubscribe#<token>` on the storefront. Sign-up tokens and the sender’s list stay private.
 - Signed-in customers can download their linked data and close their account from `/account/privacy`. Closing requires the current password and completion of open orders or returns. Tickets and newsletter records are linked when submitted while signed in using the account email. For older or guest records, use the support channel where ownership can be checked. MongoDB expires anonymized order records after the configured retention period.
+
+## Import products
+
+Follow the [product import guide](PRODUCT-IMPORT.md) for sheet preparation, image matching, draft confirmation, and optional document prefill.
+
+## Add a form field
+
+Use `FormField` with the `FieldControl` directive in `client/src/app/ui/form-field`. Give each native control a stable ID through its field, and keep validators and submission in the page. The field handles the label, optional hint and unit, inline error and ARIA links. Place the fields directly inside a `form-grid` with a `form-grid-container` ancestor. The grid chooses one, two or four columns from the space available. Use `form-grid-compact` to cap it at two.
+
+Run `npm run build` and then `npm run test:forms` from `client` after installing both workspaces' dependencies. The browser test uses a disposable MongoDB fixture and local Chrome. Set `CHROME_BIN` if Chrome is installed in a different location.
 
 ## Add a page
 

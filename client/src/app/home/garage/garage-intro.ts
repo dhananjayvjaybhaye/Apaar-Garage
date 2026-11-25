@@ -13,6 +13,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { Motion } from '../../motion/motion';
+import { BrandLogo } from '../../ui/brand-logo';
 import { GarageSound } from '../../ui/garage-sound';
 import { animateGarageDoor, garageIntro } from './garage-intro-motion';
 
@@ -20,6 +21,7 @@ const enteredKey = 'apaar-garage-entered';
 
 @Component({
   selector: 'app-garage-intro',
+  imports: [BrandLogo],
   templateUrl: './garage-intro.html',
   styleUrl: './garage-intro.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

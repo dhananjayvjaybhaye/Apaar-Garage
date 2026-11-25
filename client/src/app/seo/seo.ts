@@ -2,7 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import { effect, inject, Injectable, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Meta, Title } from '@angular/platform-browser';
-import { NavigationEnd, Router } from '@angular/router';
+import { NavigationEnd, Router, TitleStrategy } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { metadataTags, pageMetadata, structuredData, type SeoProduct } from './metadata.mjs';
 
@@ -11,6 +11,7 @@ export class Seo {
   private readonly document = inject(DOCUMENT);
   private readonly router = inject(Router);
   private readonly title = inject(Title);
+  private readonly routeTitle = inject(TitleStrategy);
   private readonly meta = inject(Meta);
   private readonly product = signal<SeoProduct | undefined>(undefined);
   private readonly location = this.document.location;
@@ -31,7 +32,15 @@ export class Seo {
       const address = this.address();
       const product = this.product();
       const info = pageMetadata(address, origin, product);
-      this.title.setTitle(info.title);
+      const admin = /^\/admin(?:\/|$)/.test(new URL(address, origin).pathname);
+      const title = admin ? this.routeTitle.buildTitle(this.router.routerState.snapshot) : undefined;
+      this.title.setTitle(title ?? info.title);
+      if (admin) {
+        this.meta.updateTag({ name: 'robots', content: 'noindex, nofollow' });
+        this.document.querySelector('#store-structured-data')?.remove();
+        this.document.querySelector('link[rel="canonical"]')?.remove();
+        return;
+      }
       for (const [kind, key, content] of metadataTags(info)) {
         this.meta.updateTag({ [kind]: key, content }, kind + '="' + key + '"');
       }

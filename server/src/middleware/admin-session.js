@@ -69,7 +69,12 @@ export function createAdminSessions(config, customers) {
     if (!sensitiveMethods.has(req.method)) {
       const header = req.get(adminCsrfHeader);
       if (!header || !timingSafeEqual(digest(header), digest(session.csrf)))
-        throw new HttpError(403, 'Admin request verification failed. Refresh and try again.');
+        throw new HttpError(
+          403,
+          'Admin request verification failed. Refresh and try again.',
+          undefined,
+          'ADMIN_CSRF_MISMATCH',
+        );
     }
 
     if (renew && session.scope === adminCookieScope) {

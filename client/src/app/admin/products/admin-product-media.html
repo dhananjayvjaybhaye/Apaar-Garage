@@ -1,0 +1,182 @@
+<fieldset class="admin-box media-fields product-fieldset form-grid-container">
+  <legend>Product media</legend>
+  @let altError = issues().find(issueAltGroup)?.message;
+  <div class="form-grid form-grid-compact">
+    <app-form-field
+      #imagesField
+      [class.prefilled-field]="prefilled().has('images')"
+      controlId="product-images"
+      label="Product images"
+      [required]="true"
+      hint="Add at least one image by file or URL. JPG, PNG or WebP, up to 5 MB each."
+      [error]="issueFor(issues(), 'images')"
+      class="dropzone"
+      [class.drag-over]="dragOver()"
+      (dragover)="drag($event, true)"
+      (dragleave)="drag($event, false)"
+      (drop)="drop($event)"
+    >
+      <input
+        #imageInput
+        [appFieldControl]="imagesField"
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        multiple
+        [disabled]="busy()"
+        (blur)="blurred.emit('images')"
+        (change)="selectFiles(imageInput, false)"
+      />
+    </app-form-field>
+    <app-form-field
+      #urlField
+      controlId="product-image-url"
+      label="Image URL"
+      hint="Use HTTPS or a path starting with /."
+    >
+      <input
+        #imageUrl
+        [appFieldControl]="urlField"
+        type="text"
+        inputmode="url"
+        [value]="pendingImageUrl()"
+        (input)="imageUrlChanged.emit(imageUrl.value)"
+      />
+    </app-form-field>
+  </div>
+  <button
+    type="button"
+    class="secondary-button media-action"
+    [disabled]="busy()"
+    (click)="append(imageUrl)"
+  >
+    Add URL
+  </button>
+  @if (images().length) {
+    <ol class="media-grid">
+      @for (image of images(); track $index; let i = $index) {
+        <li>
+          <img [src]="image.url" alt="" width="96" height="72" loading="lazy" />
+          @if (i === 0) {
+            <strong>Primary image</strong>
+          }
+          <app-form-field
+            #altField
+            [controlId]="'product-image-alt-' + i"
+            [label]="'Alt text for image ' + (i + 1)"
+            [error]="
+              issueFor(issues().filter(issueAlt), 'imageAlts.' + i) ??
+              (i === 0 ? altError : undefined)
+            "
+          >
+            <input
+              #alt
+              [appFieldControl]="altField"
+              type="text"
+              maxlength="220"
+              [disabled]="busy()"
+              [value]="image.alt"
+              (input)="changeAlt(i, alt.value)"
+            />
+          </app-form-field>
+          <div class="admin-tools">
+            <button
+              class="secondary-button"
+              type="button"
+              [disabled]="i === 0 || busy()"
+              [attr.aria-label]="'Move image ' + (i + 1) + ' up'"
+              (click)="move(i, i - 1)"
+            >
+              Up
+            </button>
+            <button
+              class="secondary-button"
+              type="button"
+              [disabled]="i === images().length - 1 || busy()"
+              [attr.aria-label]="'Move image ' + (i + 1) + ' down'"
+              (click)="move(i, i + 1)"
+            >
+              Down
+            </button>
+            @if (i > 0) {
+              <button
+                class="secondary-button"
+                type="button"
+                [disabled]="busy()"
+                (click)="move(i, 0)"
+              >
+                Set primary
+              </button>
+            }
+            <button
+              class="secondary-button"
+              type="button"
+              [disabled]="busy()"
+              [attr.aria-label]="'Remove image ' + (i + 1)"
+              (click)="remove(i)"
+            >
+              Remove
+            </button>
+          </div>
+        </li>
+      }
+    </ol>
+  }
+  <div class="form-grid form-grid-compact">
+    <app-form-field
+      #modelField
+      [class.prefilled-field]="prefilled().has('glbUrl')"
+      controlId="product-glbUrl"
+      label="GLB model URL"
+      [error]="issueFor(issues(), 'glbUrl')"
+    >
+      <input
+        #model
+        [appFieldControl]="modelField"
+        type="text"
+        inputmode="url"
+        [value]="modelUrl()"
+        (blur)="blurred.emit('glbUrl')"
+        (input)="setModel(model.value)"
+      />
+    </app-form-field>
+    <app-form-field
+      #fileField
+      controlId="product-model"
+      label="Upload a GLB model"
+      hint="Up to 10 MB."
+    >
+      <input
+        #modelInput
+        [appFieldControl]="fileField"
+        type="file"
+        accept=".glb,model/gltf-binary"
+        [disabled]="busy()"
+        (change)="selectFiles(modelInput, true)"
+      />
+    </app-form-field>
+  </div>
+  @if (largeModel()) {
+    <p role="status">This model exceeds 5 MB. Consider reducing its size before publishing.</p>
+  }
+  @if (modelUrl()) {
+    <button
+      class="secondary-button media-action"
+      type="button"
+      [attr.aria-expanded]="preview()"
+      (click)="preview.set(!preview())"
+    >
+      {{ preview() ? 'Close model preview' : 'Preview model' }}
+    </button>
+  }
+  @defer (when preview()) {
+    @if (preview() && modelUrl()) {
+      <app-car-viewer [modelUrl]="modelUrl()" label="Product model preview" />
+    }
+  }
+  @if (busy()) {
+    <p role="status">Uploading…</p>
+  }
+  @if (error()) {
+    <p class="error-text" role="alert">{{ error() }}</p>
+  }
+</fieldset>

@@ -37,7 +37,7 @@ export const returnStatuses = [
   'refunded',
   'replaced',
 ];
-export const stockReasons = ['sale', 'cancel', 'return', 'rto', 'adjustment', 'opening'];
+export const stockReasons = ['sale', 'cancel', 'return', 'rto', 'adjustment', 'opening', 'import'];
 export const certificationAge = 14; // Minimum age in years below which toys require BIS.
 export const defaultReturnDays = 7; // Used for new products and older order lines without a snapshot.
 export const maximumAgeGrade = 99; // Years.

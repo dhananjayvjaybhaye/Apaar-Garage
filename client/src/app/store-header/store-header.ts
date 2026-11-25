@@ -8,10 +8,11 @@ import { MiniCart } from '../cart/mini-cart';
 import { categoryLabels, rcCategories } from '../catalog/product';
 import { GarageSound } from '../ui/garage-sound';
 import { StoreHeaderSize } from './store-header-size';
+import { BrandLogo } from '../ui/brand-logo';
 
 @Component({
   selector: 'app-store-header',
-  imports: [Magnetic, RouterLink, RouterLinkActive, MiniCart, ShopSearch],
+  imports: [Magnetic, RouterLink, RouterLinkActive, MiniCart, ShopSearch, BrandLogo],
   templateUrl: './store-header.html',
   styleUrl: './store-header.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

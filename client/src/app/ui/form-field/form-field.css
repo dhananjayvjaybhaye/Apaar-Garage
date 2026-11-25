@@ -1,0 +1,109 @@
+/* The grid responds to the space available inside a form or sidebar. */
+.form-grid-container {
+  container-type: inline-size;
+  min-inline-size: 0;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 0.45rem 0.75rem;
+  min-inline-size: 0;
+}
+@container (min-width: 28rem) {
+  .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@container (min-width: 52rem) {
+  .form-grid:not(.form-grid-compact) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.form-field-wide {
+  grid-column: 1 / -1;
+}
+app-form-field {
+  display: grid;
+  grid-template-rows: minmax(2.7em, auto) auto minmax(1.35em, auto);
+  align-items: start;
+  gap: 0.45rem;
+  min-inline-size: 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+@supports (grid-template-rows: subgrid) {
+  .form-grid > app-form-field {
+    grid-row: span 3;
+    grid-template-rows: subgrid;
+    align-self: stretch;
+  }
+}
+.shared-field-label {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.shared-field-required {
+  color: var(--amber, #ffc586);
+}
+.shared-field-input {
+  position: relative;
+  min-inline-size: 0;
+}
+.shared-field-input .shared-field-control {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  height: 2.75rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--control-line, #767982);
+  border-radius: 0.5rem;
+  background: var(--background, #0b0d10);
+  color: var(--text, #f5f2ed);
+  font: inherit;
+  scroll-margin-block: 5rem;
+}
+.shared-field-input textarea.shared-field-control {
+  height: auto;
+  min-height: 5.25rem;
+  resize: vertical;
+}
+.shared-field-input .shared-field-control:focus-visible,
+.form-error-summary:focus-visible {
+  outline: 2px solid var(--amber, #ffc586);
+  outline-offset: 2px;
+}
+.shared-field-input [aria-invalid='true'] {
+  border-color: #ffa99e;
+}
+.shared-field-input input[type='number'] {
+  appearance: textfield;
+}
+.shared-field-input input[type='number']::-webkit-inner-spin-button,
+.shared-field-input input[type='number']::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+.shared-field-input.with-unit input {
+  padding-inline-end: 4.8rem;
+}
+.shared-field-unit {
+  position: absolute;
+  inset-inline-end: 0.65rem;
+  inset-block-start: 0.75rem;
+  color: var(--muted, #c2bcb5);
+  pointer-events: none;
+  font-size: 0.82rem;
+}
+.shared-field-messages {
+  min-block-size: 1.35em;
+  color: var(--muted, #c2bcb5);
+  overflow-wrap: anywhere;
+}
+.shared-field-messages small {
+  display: block;
+  font-size: 0.82rem;
+}
+.shared-field-error {
+  color: #ffa99e;
+}

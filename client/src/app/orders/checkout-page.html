@@ -23,10 +23,9 @@
       <section appReveal [gentleReveal]="true" class="panel">
         <h2>Shipping address</h2>
         @if (shipping.addresses.hasValue() && shipping.addresses.value().length) {
-          <label class="saved-address"
-            >Saved address
+          <app-form-field #savedField controlId="checkout-saved-address" label="Saved address" class="saved-address">
             <select
-              #saved
+              #saved [appFieldControl]="savedField"
               (change)="shipping.applyAddress(saved.value)"
               [disabled]="submit.placing()"
             >
@@ -37,7 +36,7 @@
                 </option>
               }
             </select>
-          </label>
+          </app-form-field>
         }
         <form
           #checkoutForm
@@ -46,29 +45,19 @@
           novalidate
         >
           <fieldset [disabled]="submit.placing()">
-            <div class="fields">
-              @for (field of fields; track field.key) {
-                @let warning = shipping.fieldError(field.key);
-                <div class="field" [class.wide]="field.wide">
-                  <label [attr.for]="'shipping-' + field.key">{{ field.label }}</label>
-                  <input
-                    [id]="'shipping-' + field.key"
-                    [formControlName]="field.key"
-                    [attr.autocomplete]="'shipping ' + field.autocomplete"
-                    [type]="field.key === 'phone' ? 'tel' : 'text'"
-                    [attr.inputmode]="field.mode ?? null"
-                    [attr.maxlength]="field.max"
-                    [attr.aria-required]="field.key !== 'addressLine2'"
-                    [attr.aria-invalid]="warning ? 'true' : null"
-                    [attr.aria-describedby]="warning || field.hint ? 'help-' + field.key : null"
-                  />
-                  @if (warning || field.hint) {
-                    <small [class.error-text]="warning" [id]="'help-' + field.key">{{
-                      warning || field.hint
-                    }}</small>
-                  }
-                </div>
-              }
+            <div class="form-grid-container fields">
+              <div class="form-grid form-grid-compact">
+                @for (field of fields; track field.key) {
+                  <app-form-field #shippingField [controlId]="'shipping-' + field.key" [label]="field.label"
+                    [class.form-field-wide]="field.wide" [required]="field.key !== 'addressLine2'"
+                    [hint]="field.hint" [error]="shipping.fieldError(field.key) || undefined">
+                    <input [appFieldControl]="shippingField" [formControlName]="field.key"
+                      [attr.autocomplete]="'shipping ' + field.autocomplete"
+                      [type]="field.key === 'phone' ? 'tel' : 'text'" [attr.inputmode]="field.mode ?? null"
+                      [attr.maxlength]="field.max" [attr.aria-required]="field.key !== 'addressLine2'" />
+                  </app-form-field>
+                }
+              </div>
               <p class="country"><span>Country</span><strong>India</strong></p>
             </div>
             @if (auth.user()) {
@@ -78,26 +67,17 @@
               >
             }
             @if (!auth.user() && delivery.quote()?.emailUpdates) {
-              <div class="order-email">
-                <label for="order-email">Email for order updates (optional)</label>
+              <app-form-field #emailField controlId="order-email" label="Email for order updates (optional)"
+                class="order-email" [error]="shipping.email.touched && shipping.email.invalid ? 'Enter a valid email address.' : undefined">
                 <input
-                  id="order-email"
+                  [appFieldControl]="emailField"
                   type="email"
                   autocomplete="email"
                   inputmode="email"
                   maxlength="254"
                   [formControl]="shipping.email"
-                  [attr.aria-invalid]="shipping.email.touched && shipping.email.invalid"
-                  [attr.aria-describedby]="
-                    shipping.email.touched && shipping.email.invalid ? 'order-email-error' : null
-                  "
                 />
-                @if (shipping.email.touched && shipping.email.invalid) {
-                  <small id="order-email-error" class="error-text"
-                    >Enter a valid email address.</small
-                  >
-                }
-              </div>
+              </app-form-field>
             }
           </fieldset>
           <div class="place">

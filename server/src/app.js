@@ -22,6 +22,10 @@ import { createShopper } from './middleware/shopper.js';
 import { deliveryHandler } from './controllers/delivery.js';
 import { identifyRequest, noStore, protectWrites, requestLimit } from './middleware/http.js';
 import { createShopAccountRouter } from './routes/shop-account.js';
+import { createAdminProductMediaRouter } from './routes/admin-product-media.js';
+import { createProductMedia } from './services/product-media.js';
+import { createAdminProductImportsRouter } from './routes/admin-product-imports.js';
+import { configuredProductExtractor } from './services/product-extraction.js';
 import { createAdminProductsRouter } from './routes/admin-products.js';
 import { createAdminSessions } from './middleware/admin-session.js';
 import { createAdminAuthRouter } from './routes/admin-auth.js';
@@ -32,11 +36,14 @@ export function createApp({
   orderEmailEnabled = false,
   options = readAppOptions(),
   settings = createSettingsService(settingsDefaults(options.payment)),
+  productMedia = options.productMedia,
+  productExtractor = configuredProductExtractor(),
 } = {}) {
   const app = express();
   const { production, origins, secret, businessSecret, payment: paymentOptions } = options;
   const session = createSession(secret, production);
   const admin = createAdminSessions(options.adminSecurity, session);
+  const media = createProductMedia(productMedia);
   if (options.adminSecurity.trustLoopbackProxy) app.set('trust proxy', 'loopback');
   app.use(['/admin', '/auth/admin'], noStore);
   const shopper = createShopper(session, secret, production);
@@ -76,6 +83,17 @@ export function createApp({
   app.use('/admin/blocked-contacts', createBlockedContactsRouter(admin.requireAdmin));
   app.get('/delivery', deliveryHandler(payment));
   app.use('/orders', createOrdersRouter(session.requireUser, shopper, payment));
+  if (media.localDirectory)
+    app.use('/uploads', express.static(media.localDirectory, { index: false, redirect: false }));
+  app.use('/admin/media', createAdminProductMediaRouter(admin.requireAdmin, media));
+  app.use(
+    '/admin/product-imports',
+    createAdminProductImportsRouter(admin.requireAdmin, {
+      media,
+      secret: businessSecret,
+      extractor: productExtractor,
+    }),
+  );
   app.use('/admin/products', createAdminProductsRouter(admin.requireAdmin));
   app.use('/admin/orders', createAdminOrdersRouter(admin.requireAdmin, payment));
   app.use('/admin', admin.requireAdmin);

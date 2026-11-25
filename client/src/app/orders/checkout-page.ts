@@ -1,3 +1,4 @@
+import { FormField, FieldControl } from '../ui/form-field/form-field';
 import { DOCUMENT } from '@angular/common';
 import { afterNextRender, ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -16,7 +17,7 @@ import { checkoutFields } from './checkout.config';
 
 @Component({
   selector: 'app-checkout-page',
-  imports: [Tilt, Magnetic, Reveal, ReactiveFormsModule, RouterLink, ShopState, CheckoutSummary],
+  imports: [FormField, FieldControl, Tilt, Magnetic, Reveal, ReactiveFormsModule, RouterLink, ShopState, CheckoutSummary],
   providers: [CheckoutAddress, CheckoutDelivery, CheckoutSubmit],
   templateUrl: './checkout-page.html',
   styleUrl: './checkout-page.css',

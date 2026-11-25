@@ -9,7 +9,8 @@
     "preview": "node scripts/preview.mjs",
     "seo:emit": "node scripts/seo-build.mjs",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "test:forms": "node --test scripts/admin-product-form.test.mjs"
   },
   "private": true,
   "packageManager": "npm@11.19.1",
@@ -32,6 +33,7 @@
     "@angular/cli": "^22.3.0",
     "@angular/compiler-cli": "^22.3.0",
     "@types/three": "^0.187.0",
+    "axe-core": "^4.14.1",
     "jsdom": "^31.0.0",
     "prettier": "^3.8.1",
     "typescript": "~6.0.2",

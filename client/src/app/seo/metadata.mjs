@@ -1,7 +1,7 @@
 // Shared by Angular navigation and the static SEO build.
 const store = 'Apaar Garage';
 const schema = 'https://schema.org';
-const shareImage = '/images/share-garage.jpg';
+const brandLogo = '/logo/apaar_garage_rc_racing_logo.png';
 
 export const publicPages = {
   '/seller-information': ['Seller information', 'Find seller details, customer care, and the grievance contact for Apaar Garage.'],
@@ -94,7 +94,7 @@ function imageUrl(source, origin) {
       /* Use the default image for invalid URLs. */
     }
   }
-  return new URL(shareImage, origin).href;
+  return new URL(brandLogo, origin).href;
 }
 
 function breadcrumbs(items, origin) {
@@ -121,7 +121,7 @@ export function pageMetadata(address, origin, product) {
   let type = 'website';
   let image = imageUrl(undefined, origin);
   if (path === '/') {
-    graph.push({ '@type': 'Organization', name: store, url: new URL('/', origin).href });
+    graph.push({ '@type': 'Organization', name: store, url: new URL('/', origin).href, logo: image });
   } else if (path === '/catalog') {
     const category = route.searchParams.get('category');
     const kind = route.searchParams.get('productType');
@@ -147,8 +147,8 @@ export function pageMetadata(address, origin, product) {
     title = 'Product details';
     description = 'See photos, specifications, and availability for this Apaar Garage model.';
     if (product && path === '/product/' + encodeURIComponent(product.slug)) {
-      title = product.name;
-      description = product.description;
+      title = product.seoTitle?.trim() || product.name;
+      description = product.seoDescription?.trim() || product.description;
       indexable = true;
       type = 'product';
       const productImage = imageUrl(product.images?.[0], origin);
@@ -163,11 +163,11 @@ export function pageMetadata(address, origin, product) {
       if (Object.hasOwn(seoCategories, product.category)) {
         trail.push([seoCategories[product.category], '/catalog?category=' + product.category]);
       }
-      graph.push(breadcrumbs([...trail, [title, path]], origin), {
+      graph.push(breadcrumbs([...trail, [product.name, path]], origin), {
         '@type': 'Product',
         name: product.name,
         image: productImage,
-        description,
+        description: product.description,
         brand: { '@type': 'Brand', name: product.brand },
         offers: {
           '@type': 'Offer',

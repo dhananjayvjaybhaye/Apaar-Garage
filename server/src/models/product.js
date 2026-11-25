@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { productMetadataLimits as metadata } from '../config/product-metadata.js';
 import { productBusinessFields } from './product-business-fields.js';
 import { publicationIssues, validRupeeAmount } from '../utils/product-compliance.js';
 import {
@@ -40,12 +41,20 @@ const productSchema = new mongoose.Schema({
     required: true,
     validate: (images) => images.length > 0 && images.every((image) => image.trim()),
   },
+  imageAlts: { type: [String], default: undefined },
   ratingCount: { type: Number, default: 0, min: 0 },
   ratingTotal: { type: Number, default: 0, min: 0 },
   sales: { type: Number, default: 0, min: 0 },
   dimensionsMm: { length: Number, width: Number, height: Number },
   glbUrl: { type: String, trim: true },
   description: { type: String, required: true, trim: true },
+  tags: {
+    type: [{ type: String, trim: true, maxlength: metadata.tagLength }],
+    default: undefined,
+    validate: (tags) => tags.length <= metadata.tagCount,
+  },
+  seoTitle: { type: String, trim: true, maxlength: metadata.titleLength },
+  seoDescription: { type: String, trim: true, maxlength: metadata.descriptionLength },
   featured: { type: Boolean, default: false },
   batteryType: { type: String, trim: true },
   batteryIncluded: Boolean,

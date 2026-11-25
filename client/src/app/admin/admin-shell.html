@@ -1,0 +1,32 @@
+<div class="admin-layout">
+  <div class="admin-mobile-bar">
+    <div class="admin-brand"><app-brand-logo /><span>Admin</span></div>
+    <button class="secondary-button" type="button" [attr.aria-expanded]="menuOpen()" aria-controls="admin-sidebar" (click)="menuOpen.set(!menuOpen())">Menu</button>
+  </div>
+  <aside id="admin-sidebar" class="admin-sidebar" [class.admin-menu-open]="menuOpen()">
+    <div class="admin-brand"><app-brand-logo /><span>Admin</span></div>
+    <nav aria-label="Admin sections">
+      @for (item of navigation; track item.path) {
+        <a [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: item.path === '/admin' }" ariaCurrentWhenActive="page" (click)="menuOpen.set(false)">{{ item.label }}</a>
+      }
+      <a routerLink="/">View store</a>
+    </nav>
+    <div class="admin-account">
+      <span>{{ sessions.session()?.name }}</span>
+      <button type="button" class="secondary-button" (click)="signOut()">Sign out</button>
+    </div>
+  </aside>
+  <div class="admin-workspace">
+    @if (warning()) {
+      <div class="admin-notice" role="status">
+        @if (absoluteSoon()) { <span>Your admin session is approaching its 12-hour limit.</span> }
+        @else {
+          <span>Your admin session will end soon.</span>
+          <button class="secondary-button" type="button" [disabled]="renewing()" (click)="staySignedIn()">Stay signed in</button>
+        }
+      </div>
+    }
+    @if (sessionError()) { <p class="error-text" role="alert">{{ sessionError() }}</p> }
+    <router-outlet />
+  </div>
+</div>

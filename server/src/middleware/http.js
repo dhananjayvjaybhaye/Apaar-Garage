@@ -41,7 +41,19 @@ export function protectWrites(origins) {
       // JSON writes require a CORS preflight when issued by another origin.
       const oneClick =
         req.method === 'POST' && /^\/newsletter\/unsubscribe\/[a-f0-9]{64}$/.test(req.path);
-      if (!oneClick && jsonWriteMethods.has(req.method) && !req.is('application/json')) {
+      const productUpload =
+        req.method === 'POST' && /^\/admin\/media\/(image|model)\/?$/.test(req.path);
+      const productImport =
+        req.method === 'POST' &&
+        /^\/admin\/product-imports\/(preview|apply|prefill|extract)\/?$/.test(req.path) &&
+        req.is('multipart/form-data');
+      if (
+        !productImport &&
+        !oneClick &&
+        !productUpload &&
+        jsonWriteMethods.has(req.method) &&
+        !req.is('application/json')
+      ) {
         throw new HttpError(415, 'Send an application/json request body.');
       }
     }

@@ -17,29 +17,11 @@
   padding-block: 0.65rem;
 }
 .wordmark {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.65rem;
-  width: fit-content;
-  color: var(--text);
-  text-decoration: none;
-  letter-spacing: 0.085em;
-  font: 700 clamp(1rem, 4.5vw, 1.45rem)/1 var(--display);
-}
-.wordmark strong {
-  color: var(--accent);
-}
-.garage-mark {
   display: flex;
-  gap: 0.17rem;
-  padding: 0.35rem 0.25rem;
-  transform: skewX(-17deg);
-}
-.garage-mark i {
-  width: 0.18rem;
-  height: 1.05rem;
-  border-radius: 0.3rem;
-  background: var(--racing-red);
+  align-items: center;
+  width: min(100%, clamp(7rem, 26vw, 8.75rem));
+  max-width: 100%;
+  --brand-logo-width: 100%;
 }
 .shop-nav {
   display: flex;
@@ -179,10 +161,8 @@
   .header-wishlist, .header-login { display:none; }
   .account-nav { min-width:0; }
   .masthead { gap:.45rem; }
-  .wordmark { letter-spacing:.04em; }
 }
 @media (width < 23rem) {
   .masthead { width:calc(100% - 1.1rem); }
-  .garage-mark { display:none; }
   .account-nav { gap:.3rem; }
 }

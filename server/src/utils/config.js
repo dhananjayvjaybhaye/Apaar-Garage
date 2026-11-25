@@ -1,6 +1,7 @@
 // Validates environment settings at the boundary that uses them.
 import { z } from 'zod';
 import { readAdminSecurity } from '../config/admin-security.js';
+import { readProductMedia } from '../config/product-media.js';
 import { readPaymentOptions } from './payment-options.js';
 
 const defaultPort = 3000;
@@ -47,6 +48,7 @@ export function readAppOptions(env = process.env) {
     origins,
     secret,
     production,
+    productMedia: readProductMedia(env),
     payment: readPaymentOptions(env),
   };
 }

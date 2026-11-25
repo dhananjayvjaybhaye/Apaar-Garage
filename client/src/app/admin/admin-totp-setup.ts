@@ -1,3 +1,4 @@
+import { FormField, FieldControl } from '../ui/form-field/form-field';
 import { ChangeDetectionStrategy, Component, inject, output, signal } from '@angular/core';
 import { apiMessage } from '../api-message';
 import { AdminSessionStore } from './admin-session-store';
@@ -5,6 +6,7 @@ import { adminAuthApi } from './admin.config';
 
 @Component({
   selector: 'app-admin-totp-setup',
+  imports: [FormField, FieldControl],
   styleUrl: './admin.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -38,10 +40,10 @@ import { adminAuthApi } from './admin.config';
           <code>{{ setup.secret }}</code>
         </details>
         <form (submit)="confirm($event, code.value)">
-          <label for="setup-code">Authenticator code</label>
+          <app-form-field #codeField controlId="setup-code" label="Authenticator code" [required]="true">
           <input
             #code
-            id="setup-code"
+            [appFieldControl]="codeField"
             type="text"
             inputmode="numeric"
             autocomplete="one-time-code"
@@ -49,6 +51,7 @@ import { adminAuthApi } from './admin.config';
             pattern="[0-9]{6}"
             maxlength="6"
           />
+          </app-form-field>
           <button type="submit" class="primary-button" [disabled]="busy()">
             Enable authenticator
           </button>

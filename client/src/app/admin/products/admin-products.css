@@ -1,0 +1,33 @@
+.selection-tools { margin-block: .7rem; }
+.product-table { min-width: 48rem; }
+.product-table small { display: block; color: var(--muted); }
+.product-cell { display: flex; align-items: center; gap: .45rem; min-width: 9rem; }
+.product-cell img { object-fit: cover; border-radius: .25rem; }
+.product-table input[type=checkbox] { width: 1.2rem; height: 1.2rem; }
+.product-skeleton { height: 10rem; }
+.product-editor { display: grid; grid-template-columns: minmax(0, 1fr) minmax(14rem, 18%); gap: .8rem; align-items: start; }
+.editor-form, .editor-fields, .editor-side, .media-fields { display: grid; gap: .7rem; }
+.editor-side, .editor-form, .editor-fields, .product-fieldset { min-width: 0; }
+.product-fieldset { margin: 0; }
+.editor-fields { margin: 0; padding: 0; border: 0; }
+.product-fieldset legend { padding-inline: .35rem; font-weight: 700; }
+.product-feedback { margin-block-end: .8rem; }
+.required-marker { color: var(--amber); }
+
+.checklist { margin: 0; padding-inline-start: 1.2rem; }
+.checklist li { margin-block: .35rem; }
+.publish-checklist summary { cursor: pointer; }
+.publish-checklist-body { block-size: 6rem; overflow: auto; margin-block-start: .35rem; }
+.form-error-summary { scroll-margin-block: 1rem; }
+.form-error-summary ul { display: flex; flex-wrap: wrap; gap: .25rem 1.5rem; margin-block-end: 0; }
+.form-error-summary a, [data-group-error] a { color: var(--amber); text-decoration: underline; }
+.product-action-bar { position: sticky; bottom: 0; z-index: 2; background: var(--panel); border: 1px solid var(--line); border-radius: .6rem; padding: .55rem; }
+.dropzone { border-radius: .45rem; }
+.dropzone.drag-over { outline: 1px dashed var(--amber); outline-offset: .2rem; }
+app-form-field.prefilled-field { box-shadow: -2px 0 var(--amber); padding-inline-start: .4rem; }
+.media-action { justify-self: start; }
+.media-fields app-car-viewer { display: block; min-height: 14rem; }
+.media-grid { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); gap: .6rem; padding: 0; margin: 0; }
+.media-grid li { display: grid; gap: .35rem; padding: .55rem; border: 1px solid var(--line); border-radius: .5rem; min-width: 0; }
+.media-grid img { object-fit: cover; }
+@media (max-width: 78rem) { .product-editor { grid-template-columns: minmax(0, 1fr); } }

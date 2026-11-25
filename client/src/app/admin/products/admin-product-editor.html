@@ -1,0 +1,234 @@
+<main>
+  <header class="admin-header">
+    <div>
+      <a routerLink="/admin/products">Products</a>
+      <h1>{{ editing() ? 'Edit product' : 'Create product' }}</h1>
+    </div>
+  </header>
+  @if (loading()) {
+    <p role="status">Loading product…</p>
+    <div class="skeleton product-skeleton" aria-hidden="true"></div>
+  } @else if (loadError()) {
+    <p class="error-text" role="alert">{{ loadError() }}</p>
+    <button class="secondary-button" type="button" (click)="retry()">Retry</button>
+  } @else if (created(); as product) {
+    <section
+      class="admin-box product-feedback"
+      id="product-save-success"
+      tabindex="-1"
+      role="status"
+    >
+      <h2>Product created</h2>
+      <p>{{ product['name'] }} was saved.</p>
+      <div class="admin-tools">
+        <a class="primary-button" [routerLink]="[productsPath, product.slug]"
+          >Open product in admin</a
+        >
+        @if (product.status === 'published') {
+          <a class="secondary-button" [routerLink]="['/product', product.slug]"
+            >View on storefront</a
+          >
+        }
+        <a class="secondary-button" [routerLink]="productsPath">Back to products</a>
+      </div>
+    </section>
+  } @else {
+    <div class="product-editor">
+      <form
+        class="editor-form"
+        novalidate
+        (submit)="save($event)"
+        [attr.aria-busy]="saving() || null"
+      >
+        @if (error() && (!validation.submitted() || errors().length || !validationError())) {
+          <section
+            class="admin-box form-error-summary"
+            id="product-save-error"
+            tabindex="-1"
+            role="alert"
+          >
+            <h2>
+              {{ errors().length ? 'Check the highlighted fields' : 'Product could not be saved' }}
+            </h2>
+            <p class="shared-field-error"><span aria-hidden="true">⚠</span> {{ error() }}</p>
+            @if (errors().length) {
+              <ul>
+                @for (issue of errors(); track issue.field) {
+                  <li>
+                    @if (errorTarget(issue.field, fields()); as target) {
+                      <a [attr.href]="'#' + target" (click)="focusLink($event)">{{
+                        label(issue.field)
+                      }}</a>
+                    } @else {
+                      {{ issue.message }}
+                    }
+                  </li>
+                }
+              </ul>
+            }
+          </section>
+        }
+        @if (saved()) {
+          <p class="admin-box" role="status">Product saved.</p>
+        }
+        <section class="admin-box" aria-labelledby="product-checks-title">
+          <h2 id="product-checks-title">Missing before publishing</h2>
+          <p>
+            <span class="required-marker">*</span> required to save. Fields marked “Required to
+            publish” can be left blank in drafts. Publishing also checks the manufacturer or
+            importer details and BIS for toys graded under 14.
+          </p>
+          <details class="publish-checklist" open>
+            <summary>Publishing checklist</summary>
+            <div
+              class="publish-checklist-body"
+              tabindex="0"
+              role="region"
+              aria-label="Publication requirements"
+            >
+              @if (checklist.error()) {
+                <p>Could not check the listing.</p>
+                <button class="secondary-button" (click)="checklist.reload()" type="button">
+                  Retry
+                </button>
+              } @else if (validation.checked().issues.length) {
+                <ul class="checklist">
+                  @for (issue of publishingIssues(); track issue.field) {
+                    <li>
+                      <strong>{{ label(issue.field) }}</strong>
+                      {{ hasGroupError(issue.field) ? 'See the fields below.' : issue.message }}
+                    </li>
+                  }
+                </ul>
+              } @else if (checklist.isLoading()) {
+                <p>Checking listing…</p>
+              } @else {
+                <p>Publication checks passed.</p>
+              }
+            </div>
+          </details>
+        </section>
+        <fieldset class="editor-fields" [disabled]="saving()">
+          @if (!editing()) {
+            <app-product-prefill (filled)="fillFromFile($event)" />
+            @if (prefilled().size) {
+              <p role="status">
+                Filled {{ prefilled().size }} fields. Review the highlighted fields and the
+                publishing checklist before saving.
+              </p>
+            }
+          }
+          @for (group of groups; track group.title) {
+            <app-admin-product-fields
+              [prefilled]="prefilled()"
+              [group]="group"
+              [draft]="fields()"
+              [editing]="editing()"
+              [issues]="errors()"
+              (blurred)="blur($event)"
+              (changed)="edit($event)"
+            />
+          }
+          <app-admin-product-media
+            [prefilled]="prefilled()"
+            [images]="images()"
+            [modelUrl]="glb()"
+            [pendingImageUrl]="imageUrl()"
+            [issues]="errors()"
+            (blurred)="blur($event)"
+            (imageUrlChanged)="updateImageUrl($event)"
+            (imagesChanged)="updateImages($event)"
+            (modelChanged)="updateModel($event)"
+            (uploadingChanged)="uploading.set($event)"
+          />
+          @if (fields()['productType'] === 'rc') {
+            <app-admin-product-fields
+              [prefilled]="prefilled()"
+              [group]="rcFields"
+              [draft]="fields()"
+              [editing]="editing()"
+              [issues]="errors()"
+              (blurred)="blur($event)"
+              (changed)="edit($event)"
+            />
+          }
+          <app-admin-product-fields
+            [prefilled]="prefilled()"
+            [group]="metadata"
+            [draft]="fields()"
+            [editing]="editing()"
+            [issues]="errors()"
+            (blurred)="blur($event)"
+            (changed)="edit($event)"
+          />
+        </fieldset>
+        <div class="admin-tools product-action-bar">
+          <button class="primary-button" type="submit" [disabled]="saving() || uploading()">
+            {{
+              status() === 'draft'
+                ? 'Save draft'
+                : status() === 'published'
+                  ? 'Publish'
+                  : 'Save changes'
+            }}
+          </button>
+          @if (status() !== 'draft') {
+            <button
+              class="secondary-button"
+              type="button"
+              [disabled]="saving() || uploading()"
+              (click)="saveAs('draft')"
+            >
+              Save draft
+            </button>
+          }
+          @if (status() !== 'published') {
+            <button
+              class="secondary-button"
+              type="button"
+              [disabled]="saving() || uploading()"
+              (click)="saveAs('published')"
+            >
+              Publish
+            </button>
+          }
+          <button
+            class="secondary-button"
+            type="button"
+            [disabled]="saving()"
+            (click)="navigation.cancel()"
+          >
+            Cancel
+          </button>
+          @if (saving()) {
+            <span role="status">Saving product…</span>
+          }
+        </div>
+      </form>
+
+      <aside class="editor-side" aria-label="Inventory and margin">
+        @if (slug(); as productSlug) {
+          <app-admin-product-stock
+            [slug]="productSlug"
+            [stock]="fields()['stock']"
+            (changed)="updateStock($event)"
+          />
+        }
+        <section class="admin-box">
+          <h2>Profit margin preview</h2>
+          @if (profit(); as value) {
+            <p>
+              <strong>{{ value.amount | currency: 'INR' }}</strong> per unit
+            </p>
+            @if (value.percent !== null) {
+              <p>Margin {{ value.percent | number: '1.0-1' }}%</p>
+            }
+            <p class="muted">Selling price minus cost, before fees and taxes.</p>
+          } @else {
+            <p>Enter the selling price and cost price to see the margin.</p>
+          }
+        </section>
+      </aside>
+    </div>
+  }
+</main>

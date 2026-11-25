@@ -1,3 +1,4 @@
+import { FormField, FieldControl } from './form-field/form-field';
 import { Magnetic } from '../motion/magnetic';
 import { Reveal } from '../reveal';
 import { Tilt } from '../motion/tilt';
@@ -16,7 +17,7 @@ import { TicketStatus } from './ticket-status';
 
 @Component({
   selector: 'app-help-page',
-  imports: [Magnetic, Reveal, Tilt, FaqList, ReactiveFormsModule, TicketStatus, RouterLink, DatePipe],
+  imports: [FormField, FieldControl, Magnetic, Reveal, Tilt, FaqList, ReactiveFormsModule, TicketStatus, RouterLink, DatePipe],
   templateUrl: './help-page.html',
   styleUrl: './help-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -39,6 +40,11 @@ export class HelpPage {
   protected readonly sending = signal(false);
   protected readonly receipt = signal<{ ticketNumber: string; acknowledgeBy: string } | null>(null);
   protected readonly error = signal('');
+
+  protected fieldError(key: keyof typeof this.form.controls, message: string) {
+    const control = this.form.controls[key];
+    return control.touched && control.invalid ? message : undefined;
+  }
 
   protected async submit(element: HTMLFormElement) {
     if (this.sending()) return;

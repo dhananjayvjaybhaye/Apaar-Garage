@@ -27,6 +27,7 @@ export async function startStore(t, environment = {}, appOptions = {}) {
   Object.assign(process.env, {
     NODE_ENV: 'test',
     ADMIN_REQUIRE_2FA: 'false',
+    PRODUCT_AI_PREFILL: 'false',
     ADMIN_TRUST_LOOPBACK_PROXY: 'false',
     JWT_SECRET: randomBytes(32).toString('hex'),
     CORS_ORIGINS: 'http://localhost:4200',
@@ -81,13 +82,17 @@ export function shopper(origin) {
   let csrfToken;
   return async (
     path,
-    { method = 'GET', body, status = 200, headers: extra = {}, sendCsrf = true } = {},
+    { method = 'GET', body, raw, status = 200, headers: extra = {}, sendCsrf = true } = {},
   ) => {
     const headers = { ...extra };
     if (csrfToken && sendCsrf && method !== 'GET') headers['X-Admin-CSRF'] = csrfToken;
     if (body !== undefined) headers['Content-Type'] = 'application/json';
     if (cookies.size) headers.Cookie = [...cookies.values()].join('; ');
-    const response = await fetch(origin + path, { method, body: JSON.stringify(body), headers });
+    const response = await fetch(origin + path, {
+      method,
+      body: raw ?? JSON.stringify(body),
+      headers,
+    });
     for (const cookie of response.headers.getSetCookie()) {
       const pair = cookie.split(';', 1)[0];
       cookies.set(pair.split('=', 1)[0], pair);

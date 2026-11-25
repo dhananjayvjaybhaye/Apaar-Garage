@@ -13,36 +13,37 @@
     <h2 id="contact-title">Contact us</h2>
     <p>Send a question about a product or order. For an existing order, include the order number.</p>
     <form #supportForm [formGroup]="form" (ngSubmit)="submit(supportForm)" novalidate>
-      <label for="support-name">Name</label>
-      <input id="support-name" autocomplete="name" formControlName="name" maxlength="100" required />
-      @if (form.controls.name.touched && form.controls.name.invalid) { <p class="error-text">Enter your name.</p> }
-      <label for="support-phone">Mobile number</label>
-      <input id="support-phone" type="tel" inputmode="numeric" autocomplete="tel-national" formControlName="phone" required />
-      @if (form.controls.phone.touched && form.controls.phone.invalid) { <p class="error-text">Enter a valid 10-digit Indian mobile number.</p> }
-      <label for="support-category">Topic</label>
-      <select id="support-category" formControlName="category">
+      <div class="form-grid-container">
+        <div class="form-grid form-grid-compact">
+          <app-form-field #nameField controlId="support-name" label="Name" [required]="true" [error]="fieldError('name', 'Enter your name.')">
+      <input [appFieldControl]="nameField" autocomplete="name" formControlName="name" maxlength="100" required />
+          </app-form-field>
+          <app-form-field #phoneField controlId="support-phone" label="Mobile number" [required]="true"
+            [error]="fieldError('phone', 'Enter a valid 10-digit Indian mobile number.')">
+            <input [appFieldControl]="phoneField" type="tel" inputmode="numeric" autocomplete="tel-national" formControlName="phone" required />
+          </app-form-field>
+          <app-form-field #topicField controlId="support-category" label="Topic" [required]="true">
+            <select [appFieldControl]="topicField" formControlName="category" required>
         <option value="order">Order</option><option value="delivery">Delivery</option>
         <option value="return">Return</option><option value="product">Product</option>
         <option value="payment">Payment</option><option value="privacy">Privacy</option>
         <option value="grievance">Grievance</option>
-      </select>
-      <label for="support-order">Order number (optional)</label>
-      <input id="support-order" formControlName="orderNumber" maxlength="17" />
-      @if (form.controls.orderNumber.touched && form.controls.orderNumber.invalid) { <p class="error-text">Enter the order number from your confirmation.</p> }
-      <label for="support-email">Email</label>
-      <input id="support-email" type="email" autocomplete="email" inputmode="email" formControlName="email" maxlength="254" required
-        [attr.aria-invalid]="form.controls.email.touched && form.controls.email.invalid"
-        [attr.aria-describedby]="form.controls.email.touched && form.controls.email.invalid ? 'support-email-error' : null" />
-      @if (form.controls.email.touched && form.controls.email.invalid) {
-        <p class="error-text" id="support-email-error">Enter a valid email address.</p>
-      }
-      <label for="support-message">Message</label>
-      <textarea id="support-message" formControlName="message" rows="5" maxlength="2000" required
-        [attr.aria-invalid]="form.controls.message.touched && form.controls.message.invalid"
-        [attr.aria-describedby]="form.controls.message.touched && form.controls.message.invalid ? 'support-message-error' : null"></textarea>
-      @if (form.controls.message.touched && form.controls.message.invalid) {
-        <p class="error-text" id="support-message-error">Enter a message up to 2,000 characters.</p>
-      }
+            </select>
+          </app-form-field>
+          <app-form-field #orderField controlId="support-order" label="Order number (optional)"
+            [error]="fieldError('orderNumber', 'Enter the order number from your confirmation.')">
+            <input [appFieldControl]="orderField" formControlName="orderNumber" maxlength="17" />
+          </app-form-field>
+          <app-form-field #emailField controlId="support-email" label="Email" [required]="true"
+            [error]="fieldError('email', 'Enter a valid email address.')">
+            <input [appFieldControl]="emailField" type="email" autocomplete="email" inputmode="email" formControlName="email" maxlength="254" required />
+          </app-form-field>
+          <app-form-field #messageField controlId="support-message" label="Message" [required]="true" class="form-field-wide"
+            [error]="fieldError('message', 'Enter a message up to 2,000 characters.')">
+            <textarea [appFieldControl]="messageField" formControlName="message" rows="5" maxlength="2000" required></textarea>
+          </app-form-field>
+        </div>
+      </div>
       <div role="status">
         @if (receipt(); as ticket) {
           <p>Ticket received. Your ticket number is <strong>{{ ticket.ticketNumber }}</strong>.</p>

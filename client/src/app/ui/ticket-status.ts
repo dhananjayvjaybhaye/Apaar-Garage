@@ -1,3 +1,4 @@
+import { FormField, FieldControl } from './form-field/form-field';
 import { DatePipe, TitleCasePipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
@@ -15,22 +16,21 @@ interface Ticket {
 
 @Component({
   selector: 'app-ticket-status',
-  imports: [DatePipe, TitleCasePipe],
+  imports: [FormField, FieldControl, DatePipe, TitleCasePipe],
   template: `
     <section id="track-complaint" aria-labelledby="ticket-title" class="contact">
       <h2 id="ticket-title">Track a complaint</h2>
       <form (submit)="lookup($event, number.value, email.value)">
-        <label for="ticket-number">Ticket number</label>
-        <input #number id="ticket-number" [value]="ticketNumber()" required autocomplete="off" maxlength="20" />
-        <label for="ticket-email">Email used to open the ticket</label>
-        <input
-          #email
-          id="ticket-email"
-          type="email"
-          autocomplete="email"
-          required
-          maxlength="254"
-        />
+        <div class="form-grid-container">
+          <div class="form-grid form-grid-compact">
+            <app-form-field #ticketField controlId="ticket-number" label="Ticket number" [required]="true">
+              <input #number [appFieldControl]="ticketField" [value]="ticketNumber()" required autocomplete="off" maxlength="20" />
+            </app-form-field>
+            <app-form-field #emailField controlId="ticket-email" label="Email used to open the ticket" [required]="true">
+              <input #email [appFieldControl]="emailField" type="email" autocomplete="email" required maxlength="254" />
+            </app-form-field>
+          </div>
+        </div>
         <button class="secondary-button" type="submit" [disabled]="pending()">Check status</button>
       </form>
       @if (result(); as ticket) {

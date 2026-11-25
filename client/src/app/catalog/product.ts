@@ -47,8 +47,12 @@ interface BaseProduct {
   shippingNote?: string;
   stock: number;
   images: string[];
+  imageAlts?: string[];
   glbUrl?: string;
   description: string;
+  tags?: string[];
+  seoTitle?: string;
+  seoDescription?: string;
   featured: boolean;
   dimensionsMm?: { length?: number; width?: number; height?: number };
   addedAt?: string;

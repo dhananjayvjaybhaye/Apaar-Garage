@@ -1,13 +1,15 @@
+import { FormField, FieldControl } from '../ui/form-field/form-field';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { apiMessage } from '../api-message';
+import { BrandLogo } from '../ui/brand-logo';
 import { AdminSessionStore } from './admin-session-store';
 import { AdminTotpSetup } from './admin-totp-setup';
-import { adminDashboardPath } from './admin.config';
+import { adminDashboardPath, adminProductEditorReturn } from './admin.config';
 
 @Component({
   selector: 'app-admin-login',
-  imports: [RouterLink, AdminTotpSetup],
+  imports: [FormField, FieldControl, RouterLink, AdminTotpSetup, BrandLogo],
   templateUrl: './admin-login.html',
   styleUrl: './admin.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -19,7 +21,8 @@ export class AdminLogin {
   protected readonly enrolling = signal(false);
   protected readonly busy = signal(false);
   protected readonly error = signal('');
-  protected readonly expired = inject(ActivatedRoute).snapshot.queryParamMap.get('expired') === '1';
+  private readonly query = inject(ActivatedRoute).snapshot.queryParamMap;
+  protected readonly expired = this.query.get('expired') === '1';
 
   constructor() {
     void this.restore();
@@ -56,7 +59,10 @@ export class AdminLogin {
   }
 
   protected openDashboard() {
-    void this.router.navigateByUrl(adminDashboardPath, { replaceUrl: true });
+    void this.router.navigateByUrl(
+      adminProductEditorReturn(this.query.get('returnTo')) ?? adminDashboardPath,
+      { replaceUrl: true },
+    );
   }
 
   protected async cancelSetup() {

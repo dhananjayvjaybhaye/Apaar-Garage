@@ -46,7 +46,7 @@
           [sizes]="imageSizes()"
           fetchpriority="high"
           decoding="async"
-          [alt]="(item.placeholder ? 'Sample illustration of ' : 'Product photo of ') + item.name + (item.images.length > 1 ? ', view ' + (imageIndex() + 1) : '')"
+          [alt]="item.imageAlts?.[imageIndex()] || (item.placeholder ? 'Sample illustration of ' : 'Product photo of ') + item.name + (item.images.length > 1 ? ', view ' + (imageIndex() + 1) : '')"
         />
         <button
           type="button"
@@ -72,7 +72,7 @@
         </div>
         @if (photoDialog.open) {
           <div class="zoom-scroll">
-            <img [class.zoomed]="zoomed()" [src]="image" [alt]="item.name" />
+            <img [class.zoomed]="zoomed()" [src]="image" [alt]="item.imageAlts?.[imageIndex()] || item.name" />
           </div>
         }
       </dialog>

@@ -1,16 +1,12 @@
 import { Router } from 'express';
-import { auditPageSize } from '../config/admin-security.js';
-import { AuditLog } from '../models/admin-security.js';
+import { listAdminAudit } from '../services/admin-audit-list.js';
+import { adminDashboard } from '../services/admin-dashboard.js';
 
 export function createAdminOverviewRouter(requireAdmin) {
   const router = Router();
-  router.get('/audit', requireAdmin, async (_req, res) => {
-    const items = await AuditLog.find()
-      .select('-__v')
-      .sort({ at: -1, _id: -1 })
-      .limit(auditPageSize)
-      .lean();
-    res.json({ items });
-  });
+  router.get('/dashboard', requireAdmin, async (_req, res) => res.json(await adminDashboard()));
+  router.get('/audit', requireAdmin, async (_req, res) =>
+    res.json({ items: await listAdminAudit() }),
+  );
   return router;
 }

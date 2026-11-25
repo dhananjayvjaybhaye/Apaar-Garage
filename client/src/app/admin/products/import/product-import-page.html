@@ -1,0 +1,163 @@
+<main>
+  <header class="admin-header">
+    <div>
+      <a routerLink="/admin/products">Products</a>
+      <h1>Import and export products</h1>
+    </div>
+    <a class="secondary-button" routerLink="/admin/product-import/history">Import history</a>
+  </header>
+  <section class="admin-box import-section" aria-labelledby="product-sheet-heading">
+    <h2 id="product-sheet-heading">Template and export</h2>
+    <div class="admin-tools">
+      <app-form-field #formatField controlId="product-sheet-format" label="File format">
+        <select #format [appFieldControl]="formatField">
+          <option value="csv">CSV</option>
+          <option value="xlsx">XLSX</option>
+        </select>
+      </app-form-field>
+      <label class="cost-option"
+        ><input #cost type="checkbox" /> Include cost price in export</label
+      >
+    </div>
+    <div class="admin-tools">
+      <button
+        class="secondary-button"
+        type="button"
+        [disabled]="!!busy()"
+        (click)="download('template', format.value, false)"
+      >
+        Download template
+      </button>
+      <button
+        class="secondary-button"
+        type="button"
+        [disabled]="!!busy()"
+        (click)="download('export', format.value, cost.checked)"
+      >
+        Export products
+      </button>
+    </div>
+  </section>
+
+  <form class="admin-box import-section form-grid-container" novalidate (submit)="preview($event)">
+    <h2>Upload products</h2>
+    <p>
+      Import up to 500 rows in a 5 MB spreadsheet. Remove the two examples before importing your
+      catalog. Changed listings are saved as drafts.
+    </p>
+    <fieldset [disabled]="!!busy()">
+      <legend class="visually-hidden">Import files and mode</legend>
+      <div class="form-grid form-grid-compact">
+        <app-form-field
+          #sheetField
+          controlId="product-import-sheet"
+          label="Product spreadsheet"
+          [required]="true"
+          hint="CSV or one-sheet XLSX, up to 5 MB."
+        >
+          <input
+            #sheetInput
+            [appFieldControl]="sheetField"
+            type="file"
+            accept=".csv,.xlsx"
+            required
+            (change)="file('sheet', sheetInput)"
+          />
+        </app-form-field>
+        <app-form-field
+          #imagesField
+          controlId="product-import-zip"
+          label="Image ZIP (optional)"
+          hint="JPG, PNG or WebP in a ZIP up to 20 MB. Use an SKU, slug or imageFiles column to match rows."
+        >
+          <input
+            #zipInput
+            [appFieldControl]="imagesField"
+            type="file"
+            accept=".zip"
+            (change)="file('images', zipInput)"
+          />
+        </app-form-field>
+        <app-form-field #modeField controlId="product-import-mode" label="Import mode">
+          <select #modeInput [appFieldControl]="modeField" (change)="selectMode(modeInput.value)">
+            <option value="create">Create only</option>
+            <option value="upsert">Create and update by SKU</option>
+          </select>
+        </app-form-field>
+      </div>
+      <button class="primary-button" type="submit">Preview import</button>
+    </fieldset>
+  </form>
+  @if (busy()) {
+    <p role="status">{{ busy() }}</p>
+  }
+  @if (error()) {
+    <p role="alert" class="shared-field-error">{{ error() }}</p>
+  }
+  @if (result(); as preview) {
+    <section class="admin-box import-section" aria-labelledby="import-preview-title">
+      <h2 id="import-preview-title">{{ preview.proof ? 'Import preview' : 'Import result' }}</h2>
+      <p role="status">
+        {{ preview.counts.create }} {{ preview.proof ? 'to create' : 'created' }} ·
+        {{ preview.counts.update }} {{ preview.proof ? 'to update' : 'updated' }} ·
+        {{ preview.counts.unchanged }} unchanged · {{ preview.counts.error }} with errors
+      </p>
+      <div class="admin-table-wrap" tabindex="0" role="region" aria-label="Import rows">
+        <table class="admin-table import-table">
+          <thead>
+            <tr>
+              <th scope="col">Row</th>
+              <th scope="col">SKU / Product</th>
+              <th scope="col">Status</th>
+              <th scope="col">Field errors</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of preview.rows; track row.number) {
+              <tr>
+                <td>{{ row.number }}</td>
+                <td>
+                  {{ row.sku }}
+                  @if (row.name) {
+                    <small>{{ row.name }}</small>
+                  }
+                </td>
+                <td>{{ row.status }}</td>
+                <td>
+                  @if (row.errors.length) {
+                    <ul>
+                      @for (issue of row.errors; track $index) {
+                        <li>
+                          <strong>{{ issue.field }}</strong> · {{ issue.message }}
+                        </li>
+                      }
+                    </ul>
+                  } @else {
+                    <span>—</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="admin-tools">
+        @if (preview.proof) {
+          <button
+            class="primary-button"
+            type="button"
+            [disabled]="!!busy() || !(preview.counts.create + preview.counts.update)"
+            (click)="confirm()"
+          >
+            Confirm draft import
+          </button>
+        }
+        @if (preview.counts.error && preview.failedCsv) {
+          <button class="secondary-button" type="button" (click)="failedRows(preview.failedCsv)">
+            Download failed rows
+          </button>
+        }
+      </div>
+    </section>
+  }
+</main>

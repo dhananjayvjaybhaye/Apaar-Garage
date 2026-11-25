@@ -1,55 +1,78 @@
-<main class="container admin-screen">
-  <header class="admin-heading">
-    <div><h1>Admin dashboard</h1><p>{{ sessions.session()?.name }}</p></div>
-    <nav aria-label="Admin actions">
-      <a class="secondary-button" routerLink="/">View store</a>
-      <button type="button" class="secondary-button" (click)="signOut()">Sign out</button>
-    </nav>
+<main>
+  <header class="admin-header">
+    <h1>Dashboard</h1>
+    <div class="admin-tools">
+      @if (!setup() && !sessions.session()?.twoFactorEnabled) {
+        <button type="button" class="secondary-button" (click)="setup.set(true)">Set up two-factor authentication</button>
+      }
+      <button type="button" class="secondary-button" [disabled]="loading()" (click)="refresh()">Refresh</button>
+    </div>
   </header>
-  @if (warning()) {
-    <div class="admin-warning" role="status">
-      @if (absoluteSoon()) {
-        <p>Your admin session is approaching its 12-hour limit. Sign in again when it ends.</p>
-      } @else {
-        <p>Your admin session will end soon. Stay signed in if you’re still working.</p>
-        <button class="secondary-button" type="button" [disabled]="renewing()" (click)="staySignedIn()">Stay signed in</button>
+  @if (setup()) {
+    <app-admin-totp-setup (completed)="setup.set(false); refresh()" />
+  }
+  @if (loading()) {
+    <p role="status">Loading dashboard…</p>
+    <div class="skeleton dashboard-skeleton" aria-hidden="true"></div>
+  } @else if (error()) {
+    <p role="alert" class="error-text">{{ error() }}</p>
+    <button type="button" class="secondary-button" (click)="refresh()">Retry</button>
+  } @else if (metrics(); as data) {
+    <div class="dashboard-cards">
+      @for (card of cards; track card.key) {
+        <article class="admin-box">
+          <h2>{{ card.label }}</h2><strong>{{ data.counts[card.key] }}</strong>
+          @if (card.key === 'lowStock' || card.key === 'soldOut') {
+            <a routerLink="/admin/products" [queryParams]="{ stock: card.key === 'lowStock' ? 'low' : 'out', status: 'published' }">View products</a>
+          }
+        </article>
       }
     </div>
-  }
-  @if (sessionError()) { <p class="error-text" role="alert">{{ sessionError() }}</p> }
-  @if (setup()) {
-    <app-admin-totp-setup (completed)="setup.set(false); refreshAudit()" />
-  } @else if (!sessions.session()?.twoFactorEnabled) {
-    <button type="button" class="secondary-button" (click)="setup.set(true)">Set up two-factor authentication</button>
-  }
-  <section class="admin-panel" aria-labelledby="audit-heading">
-    <h2 id="audit-heading">Latest audit activity</h2>
-    @if (loading()) {
-      <p role="status">Loading audit activity…</p>
-      <div class="skeleton" aria-hidden="true"></div>
-    } @else if (error()) {
-      <p role="alert" class="error-text">{{ error() }}</p>
-      <button class="secondary-button" type="button" (click)="refreshAudit()">Retry</button>
-    } @else if (!entries().length) {
-      <p>No audit activity yet.</p>
-    } @else {
-      <ol class="audit-list">
-        @for (item of entries(); track item._id) {
-          <li>
-            <strong>{{ item.action }}</strong>
-            <time [attr.datetime]="item.at">{{ item.at | date: 'medium' }}</time>
-            <p>Actor {{ item.who ?? 'Terminal, guest or unverified' }} · Target {{ item.target ?? 'Unspecified' }}</p>
-            @if (item.ip) { <p>IP {{ item.ip }}</p> }
-            @if (item.before || item.after) {
-              <details>
-                <summary>Change summary</summary>
-                @if (item.before) { <p>Before</p><pre>{{ item.before | json }}</pre> }
-                @if (item.after) { <p>After</p><pre>{{ item.after | json }}</pre> }
-              </details>
-            }
-          </li>
+    <div class="dashboard-grid">
+      <section class="admin-box" aria-labelledby="sales-title">
+        <h2 id="sales-title">30-day sales</h2>
+        <p class="muted">Collected order totals by order date in IST, before refunds.</p>
+        <div class="sales-chart" aria-hidden="true">
+          @for (day of data.sales; track day.date) {
+            <div class="sales-bar" [class.zero-sales]="day.totalPaise === 0" [style.height.%]="100 * day.totalPaise / maxSales()" [title]="day.date + ' · ' + (day.totalPaise / paise | currency: 'INR')"></div>
+          }
+        </div>
+        <div class="chart-range"><span>{{ data.sales[0].date | date: 'MMM d' : 'UTC' }}</span><span>{{ data.sales[data.sales.length - 1].date | date: 'MMM d' : 'UTC' }}</span></div>
+        <details><summary>View daily sales data</summary>
+          <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th scope="col">Date</th><th scope="col">Collected</th></tr></thead>
+          <tbody>@for (day of data.sales; track day.date) { <tr><td>{{ day.date }}</td><td>{{ day.totalPaise / paise | currency: 'INR' }}</td></tr> }</tbody></table></div>
+        </details>
+      </section>
+      <section class="admin-box" aria-labelledby="sellers-title">
+        <h2 id="sellers-title">Top sellers</h2>
+        @if (!data.topSellers.length) { <p>No collected sales in this period.</p> }
+        @else {
+          <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th scope="col">Product</th><th scope="col">Units</th></tr></thead>
+          <tbody>@for (item of data.topSellers; track item.slug) { <tr><td>{{ item.name }}</td><td>{{ item.quantity }}</td></tr> }</tbody></table></div>
         }
-      </ol>
-    }
-  </section>
+      </section>
+    </div>
+    <section class="admin-box" aria-labelledby="audit-title">
+      <h2 id="audit-title">Latest audit activity</h2>
+      @if (!entries().length) { <p>No audit activity yet.</p> }
+      @else {
+        <div class="admin-table-wrap" tabindex="0" role="region" aria-label="Audit activity">
+          <table class="admin-table"><thead><tr><th scope="col">Time</th><th scope="col">Action</th><th scope="col">Actor</th><th scope="col">Target</th><th scope="col">Summary</th></tr></thead>
+            <tbody>@for (item of entries(); track item._id) {
+              <tr><td><time [attr.datetime]="item.at">{{ item.at | date: 'medium' }}</time></td>
+                <td>{{ label(item.action) }}</td><td>{{ item.actorLabel }}</td><td>{{ item.targetLabel ?? '—' }}</td>
+                <td>@if (item.before || item.after || item.ip) {
+                  <details><summary>Details</summary>
+                    @if (item.ip) { <p>IP {{ item.ip }}</p> }
+                    @if (item.before) { <p>Before</p><pre>{{ item.before | json }}</pre> }
+                    @if (item.after) { <p>After</p><pre>{{ item.after | json }}</pre> }
+                  </details>
+                } @else { — }</td>
+              </tr>
+            }</tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
 </main>

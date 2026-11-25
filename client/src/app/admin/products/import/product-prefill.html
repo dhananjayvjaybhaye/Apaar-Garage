@@ -1,0 +1,104 @@
+<section class="admin-box import-section">
+  <button
+    class="secondary-button media-action"
+    type="button"
+    [attr.aria-expanded]="open()"
+    (click)="toggle()"
+  >
+    Prefill from file
+  </button>
+  @if (open()) {
+    <div class="form-grid-container">
+      <div class="form-grid form-grid-compact">
+        <app-form-field
+          #sheetField
+          controlId="product-prefill-file"
+          label="Product file"
+          hint="One product row in CSV or XLSX, or one JSON object. Maximum 5 MB."
+        >
+          <input
+            #input
+            [appFieldControl]="sheetField"
+            type="file"
+            accept=".csv,.xlsx,.json"
+            [disabled]="busy()"
+            (change)="load(input)"
+          />
+        </app-form-field>
+        @if (extraction()) {
+          <app-form-field
+            #documentField
+            controlId="product-extract-file"
+            label="Read from PDF or image"
+            hint="The uploaded file is sent to the configured extraction service."
+          >
+            <input
+              #documentInput
+              [appFieldControl]="documentField"
+              type="file"
+              accept=".pdf,.png,.jpg,.jpeg,.webp"
+              [disabled]="busy()"
+              (change)="load(documentInput, true)"
+            />
+          </app-form-field>
+        }
+      </div>
+    </div>
+    @if (busy()) {
+      <p role="status">Reading product information…</p>
+    }
+    @if (error()) {
+      <p class="shared-field-error" role="alert">{{ error() }}</p>
+    }
+    @if (suggestions().length) {
+      <fieldset>
+        <legend>Review extracted suggestions</legend>
+        <p>
+          Check each value against the actual label. Select the fields to use, including BIS licence
+          or HSN code if you have verified them.
+        </p>
+        @for (suggestion of suggestions(); track $index) {
+          <label class="cost-option">
+            <input
+              #checkbox
+              type="checkbox"
+              (change)="choose(suggestion.field, checkbox.checked)"
+            />
+            {{ label(suggestion.field) }} · {{ valueText(suggestion.value) }} ·
+            {{ confidence(suggestion.confidence) }} confidence
+          </label>
+        }
+        <button
+          class="secondary-button"
+          type="button"
+          [disabled]="busy() || !selected().size"
+          (click)="reviewSuggestions()"
+        >
+          Review selected fields
+        </button>
+      </fieldset>
+    }
+    @if (result(); as data) {
+      @if (data.issues.length) {
+        <p><strong>Review before saving</strong></p>
+        <ul>
+          @for (issue of data.issues; track $index) {
+            <li>{{ label(issue.field) }} · {{ issue.message }}</li>
+          }
+        </ul>
+      }
+      @if (data.publishing.length) {
+        <p><strong>Still needed to publish</strong></p>
+        <ul>
+          @for (issue of data.publishing; track $index) {
+            <li>{{ label(issue.field) }} · {{ issue.message }}</li>
+          }
+        </ul>
+      }
+      <button class="primary-button media-action" type="button" (click)="apply(data.values)">
+        Fill form for review
+      </button>
+      <p>The product is saved when you submit the form.</p>
+    }
+  }
+</section>
