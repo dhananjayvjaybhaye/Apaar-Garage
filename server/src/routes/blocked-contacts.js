@@ -6,6 +6,9 @@ import { noStore } from '../middleware/http.js';
 import { pincode } from '../services/delivery.js';
 import { HttpError, validate } from '../utils/http-error.js';
 import { indianPhone } from '../utils/indian-phone.js';
+import { adminAudit, recordAudit } from '../services/audit.js';
+import { adminPage, directoryPage } from '../services/admin-directory.js';
+import { transaction } from '../services/transaction.js';
 
 const input = z
   .strictObject({
@@ -15,17 +18,27 @@ const input = z
   })
   .refine(({ phone, pincode }) => Boolean(phone || pincode), 'Provide a phone number or pincode.');
 const id = z.string().regex(/^[0-9a-f]{24}$/i);
+const removal = z.strictObject({ reason: z.string().trim().min(1).max(250) });
 
 export function createBlockedContactsRouter(requireUser) {
   const router = Router();
   router.use(noStore, requireUser, requireAdministrator);
-  router.get('/', async (_req, res) => {
-    res.json({ items: await BlockedContact.find().sort({ createdAt: -1 }).limit(100).lean() });
+  router.get('/', async (req, res) => {
+    const page = validate(adminPage, req.query.page);
+    res.json(await directoryPage(BlockedContact, {}, 'phone pincode reason createdAt',
+      { createdAt: -1, _id: -1 }, page, 100));
   });
   router.post('/', async (req, res) => {
     const value = validate(input, req.body);
     try {
-      res.status(201).json(await BlockedContact.create(value));
+      const contact = await transaction(async (session) => {
+        const [created] = await BlockedContact.create([value], { session });
+        await recordAudit('contact.blocked', {
+          ...adminAudit(req, res), target: String(created._id), after: { reason: value.reason },
+        }, session);
+        return created;
+      });
+      res.status(201).json(contact);
     } catch (error) {
       if (error.code === 11000)
         throw new HttpError(409, 'These contact details are already blocked.');
@@ -33,7 +46,16 @@ export function createBlockedContactsRouter(requireUser) {
     }
   });
   router.delete('/:id', async (req, res) => {
-    await BlockedContact.deleteOne({ _id: validate(id, req.params.id) });
+    const contactId = validate(id, req.params.id);
+    // Older API clients omitted the body. The admin form always supplies a reason.
+    const reason = req.body === undefined ? 'Removed through legacy API' : validate(removal, req.body).reason;
+    await transaction(async (session) => {
+      const contact = await BlockedContact.findByIdAndDelete(contactId, { session }).lean();
+      if (!contact) return;
+      await recordAudit('contact.unblocked', {
+        ...adminAudit(req, res), target: contactId, after: { reason },
+      }, session);
+    });
     res.sendStatus(204);
   });
   return router;

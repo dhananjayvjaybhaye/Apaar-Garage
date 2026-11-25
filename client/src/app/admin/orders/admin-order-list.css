@@ -1,0 +1,15 @@
+fieldset { border: 0; padding: 0; margin: .5rem 0 1rem; }
+fieldset label { display: inline-flex; align-items: center; gap: .35rem; min-height: 2.75rem; }
+legend { color: var(--muted); }
+.admin-table-wrap { max-height: none; }
+.badge { display: inline-block; border: 1px solid var(--control-line); border-radius: 1rem; padding: .15rem .45rem; margin: .1rem .2rem .1rem 0; white-space: nowrap; }
+.badge[data-status=delivered] { color: #b5e9c2; }
+.badge[data-status=cancelled], .badge[data-status=undelivered] { color: var(--error); }
+.badge-warning { border-color: var(--amber); color: var(--amber); }
+.order-cards { display: none; }
+.pagination { margin-block-start: 1rem; align-items: center; }
+@media (max-width: 68rem) {
+  .admin-table-wrap { display: none; }
+  .order-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: .6rem; list-style: none; padding: 0; }
+  .order-cards p { margin-block: .4rem; }
+}

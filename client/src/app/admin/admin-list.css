@@ -1,0 +1,17 @@
+.admin-page-navigation { align-items: center; margin-block: .75rem; }
+.admin-list { margin-block: 1rem; }
+.admin-list td { overflow-wrap: anywhere; }
+.admin-badge { display: inline-block; border: 1px solid var(--control-line); border-radius: 1rem; padding: .14rem .5rem; }
+.admin-badge.overdue { color: var(--error); border-color: currentColor; }
+.admin-panel-stack { display: grid; gap: .75rem; }
+.admin-panel-stack fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.admin-paragraph { white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 68rem) {
+  .admin-list { border: 0; max-height: none; overflow: visible; }
+  .admin-list .admin-table, .admin-list tbody { display: block; }
+  .admin-list thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .admin-list tbody { display: grid; gap: .65rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); }
+  .admin-list tbody tr { display: block; background: var(--panel); border: 1px solid var(--line); border-radius: .65rem; padding: .4rem .55rem; }
+  .admin-list tbody td { display: grid; grid-template-columns: minmax(5.5rem, 37%) minmax(0, 1fr); align-items: start; gap: .45rem; padding: .35rem; border: 0; }
+  .admin-list td::before { content: attr(data-label); color: var(--muted); }
+}

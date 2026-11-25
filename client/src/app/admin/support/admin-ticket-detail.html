@@ -1,0 +1,58 @@
+<main class="admin-panel-stack">
+  <header class="admin-header">
+    <h1>Ticket details</h1>
+    <a class="secondary-button" routerLink="/admin/support">Back to support</a>
+  </header>
+  @if (action.error()) { <p class="error-text" role="alert">{{ action.error() }}</p> }
+  @if (action.notice()) { <p role="status">{{ action.notice() }}</p> }
+  @if (resource.hasValue()) {
+    @let ticket = resource.value();
+    <section class="admin-box">
+      <h2>{{ ticket.ticketNumber }}</h2>
+      <p><span class="admin-badge">{{ label(ticket.status) }}</span>
+        @if (ticket.category) { · {{ label(ticket.category) }} }</p>
+      <p>{{ ticket.name }} · {{ ticket.email }} @if (ticket.phone) { · {{ ticket.phone }} }</p>
+      @if (ticket.orderNumber) { <p><a [routerLink]="['/admin/orders', ticket.orderNumber]">{{ ticket.orderNumber }}</a></p> }
+      <div class="admin-tools">
+        <div><h3>Acknowledgement (48 hours)</h3>
+          <app-admin-deadline [due]="ticket.acknowledgeBy" [completed]="ticket.acknowledgedAt" [now]="now()" />
+          @if (ticket.acknowledgedAt) { <p>Acknowledged {{ ticket.acknowledgedAt | date: 'medium' : '+0530' }} IST</p> }
+        </div>
+        <div><h3>Resolution (within 30 days)</h3>
+          <app-admin-deadline [due]="ticket.dueAt" [completed]="ticket.resolvedAt" [now]="now()" />
+          @if (ticket.resolvedAt) { <p>Resolved {{ ticket.resolvedAt | date: 'medium' : '+0530' }} IST</p> }
+        </div>
+      </div>
+      @if (ticket.actions.nextStatus; as status) {
+        <p><button class="primary-button" type="button" [disabled]="action.busy() || resource.isLoading()"
+          (click)="update({ status })">{{ transitions[status] }}</button></p>
+      }
+    </section>
+    <section class="admin-box">
+      <h2>Conversation</h2>
+      <article>
+        <h3>Customer · {{ ticket.createdAt | date: 'medium' : '+0530' }} IST</h3>
+        <p class="admin-paragraph">{{ ticket.message }}</p>
+      </article>
+      @for (entry of ticket.replies; track $index) {
+        <article>
+          <h3>{{ label(entry.from) }} · {{ entry.at | date: 'medium' : '+0530' }} IST</h3>
+          <p class="admin-paragraph">{{ entry.message }}</p>
+        </article>
+      }
+      @if (ticket.actions.canReply) {
+        <form (submit)="reply($event, message)">
+          <app-form-field #field controlId="support-reply" label="Reply to customer" [required]="true">
+            <textarea #message [appFieldControl]="field" required maxlength="2000"
+              [disabled]="action.busy() || resource.isLoading()"></textarea>
+          </app-form-field>
+          <button class="primary-button" type="submit" [disabled]="action.busy() || resource.isLoading()">Add reply</button>
+        </form>
+      }
+    </section>
+  } @else if (resource.isLoading()) { <p role="status">Loading ticket…</p> }
+  @else {
+    <p class="error-text" role="alert">{{ error() }}</p>
+    <button type="button" class="secondary-button" (click)="resource.reload()">Retry</button>
+  }
+</main>

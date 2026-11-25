@@ -95,15 +95,15 @@ interface Invoice {
         } @else {
           <app-shop-state
             title="Invoice unavailable"
-            message="Open this page from the account or browser used for checkout after dispatch."
+            [message]="adminInvoice ? 'Invoices become available after dispatch.' : 'Open this page from the account or browser used for checkout after dispatch.'"
             [retryable]="true"
             (retry)="invoice.reload()"
           />
         }
       }
       @if (number(); as orderNumber) {
-        <a class="secondary-button no-print" [routerLink]="['/track-order', orderNumber]"
-          >Back to tracking</a
+        <a class="secondary-button no-print" [routerLink]="[adminInvoice ? '/admin/orders' : '/track-order', orderNumber]"
+          >{{ adminInvoice ? 'Back to order' : 'Back to tracking' }}</a
         >
       }
     </main>
@@ -121,11 +121,14 @@ export class OrderInvoice {
   }
 
   protected readonly paisePerRupee = 100;
+  private readonly route = inject(ActivatedRoute);
+  protected readonly adminInvoice = this.route.snapshot.data['adminInvoice'] === true;
   protected readonly number = toSignal(
-    inject(ActivatedRoute).paramMap.pipe(map((params) => params.get('orderNumber'))),
+    this.route.paramMap.pipe(map((params) => params.get('orderNumber'))),
   );
   protected readonly invoice = httpResource<Invoice>(() => {
     const number = this.number();
-    return number ? '/api/orders/' + encodeURIComponent(number) + '/invoice' : undefined;
+    const base = this.adminInvoice ? '/api/admin/orders/' : '/api/orders/';
+    return number ? base + encodeURIComponent(number) + '/invoice' : undefined;
   });
 }

@@ -9,6 +9,7 @@ import { holdCodLocks, prepareCodLocks, privateKey } from './cod-risk.js';
 import { cancelOrder } from './order-service.js';
 import { restockOrderItems } from './stock.js';
 import { transaction } from './transaction.js';
+import { needsCustomerConfirmation } from './order-confirmation.js';
 
 async function statusFields(status, input, order, options, at, year, session) {
   switch (status) {
@@ -79,14 +80,7 @@ async function transitionOrder(orderNumber, input, options, audit) {
     if (!orderTransitions[order.status]?.includes(status)) {
       throw new HttpError(409, 'That order status transition is not allowed.');
     }
-    const aboveLimit =
-      options.risk.confirmationAbovePaise !== null &&
-      order.totalPaise > options.risk.confirmationAbovePaise;
-    if (
-      status === 'packed' &&
-      (order.needsConfirmation || order.risk?.flags?.length || aboveLimit) &&
-      order.customerConfirmation?.status !== 'confirmed'
-    ) {
+    if (status === 'packed' && needsCustomerConfirmation(order, options.risk)) {
       throw new HttpError(409, 'Confirm the order with the customer before packing.');
     }
     if (failedDeliveryKeys) await holdCodLocks(failedDeliveryKeys, session);

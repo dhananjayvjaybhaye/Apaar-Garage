@@ -1,0 +1,98 @@
+<main class="admin-panel-stack">
+  <header class="admin-header">
+    <h1>Coupons</h1>
+    <button type="button" class="primary-button" [disabled]="action.busy()" (click)="edit('new')">Create coupon</button>
+  </header>
+  @if (action.error()) { <p role="alert" class="error-text">{{ action.error() }}</p> }
+  @if (action.notice()) { <p role="status">{{ action.notice() }}</p> }
+  @if (editing(); as current) {
+    @let coupon = current === 'new' ? undefined : current;
+    <form #form class="admin-box form-grid-container" (submit)="save($event, form)">
+      <h2>{{ coupon ? 'Edit ' + coupon._id : 'New coupon' }}</h2>
+      <fieldset [disabled]="action.busy()">
+        <div class="form-grid">
+          <app-form-field #code controlId="coupon-code" label="Coupon code" [required]="true">
+            <input name="code" [appFieldControl]="code" [value]="coupon?._id ?? ''" [readOnly]="!!coupon"
+              pattern="[A-Za-z0-9_\-]{2,24}" maxlength="24" required />
+          </app-form-field>
+          <app-form-field #kind controlId="coupon-kind" label="Discount type" [required]="true">
+            <select #kindValue [appFieldControl]="kind" [value]="discount()" required
+              (change)="discount.set(kindValue.value === 'fixed' ? 'fixed' : 'percent')">
+              <option value="percent">Percentage</option><option value="fixed">Fixed amount</option>
+            </select>
+          </app-form-field>
+          @if (discount() === 'percent') {
+            <app-form-field #percent controlId="coupon-percent" label="Percentage" unit="%" [required]="true">
+              <input name="percent" [appFieldControl]="percent" type="number" min="1" max="100" step="1"
+                [value]="coupon?.percent ?? ''" required />
+            </app-form-field>
+          } @else {
+            <app-form-field #amount controlId="coupon-amount" label="Discount amount" unit="₹" [required]="true">
+              <input name="amount" [appFieldControl]="amount" inputmode="decimal" [attr.pattern]="moneyPattern"
+                [value]="money(coupon?.amountPaise)" maxlength="17" required />
+            </app-form-field>
+          }
+          <app-form-field #minimum controlId="coupon-minimum" label="Minimum order value" unit="₹" [required]="true">
+            <input name="minimum" [appFieldControl]="minimum" inputmode="decimal" [attr.pattern]="moneyPattern"
+              [value]="money(coupon?.minimumPaise ?? 0)" maxlength="17" required />
+          </app-form-field>
+          <app-form-field #total controlId="coupon-total-limit" label="Total usage limit" hint="Blank means unlimited">
+            <input name="totalLimit" [appFieldControl]="total" type="number" min="1" step="1"
+              [value]="coupon?.totalLimit ?? ''" />
+          </app-form-field>
+          <app-form-field #customer controlId="coupon-customer-limit" label="Per-customer usage limit" hint="Blank means unlimited">
+            <input name="perCustomerLimit" [appFieldControl]="customer" type="number" min="1" step="1"
+              [value]="coupon?.perCustomerLimit ?? ''" />
+          </app-form-field>
+          <app-form-field #start controlId="coupon-start" label="Starts at (IST)">
+            <input name="startsAt" [appFieldControl]="start" type="datetime-local" step="any" [value]="timeInIndia(coupon?.startsAt)" />
+          </app-form-field>
+          <app-form-field #end controlId="coupon-end" label="Ends at (IST)">
+            <input name="endsAt" [appFieldControl]="end" type="datetime-local" step="any" [value]="timeInIndia(coupon?.endsAt)" />
+          </app-form-field>
+        </div>
+        <p><label><input name="active" type="checkbox" [checked]="coupon?.active ?? true" /> Active</label></p>
+        <div class="admin-tools">
+          <button class="primary-button" type="submit">Save coupon</button>
+          <button class="secondary-button" type="button" (click)="editing.set(null)">Cancel</button>
+        </div>
+      </fieldset>
+    </form>
+  }
+  <section>
+    <app-form-field #searchField controlId="coupon-search" label="Filter by code">
+      <input #searchInput [appFieldControl]="searchField" type="search" maxlength="24" (input)="search.set(searchInput.value)" />
+    </app-form-field>
+    @if (resource.isLoading()) { <p role="status">Loading coupons…</p> }
+    @else if (resource.hasValue()) {
+      @if (items().length) {
+        <div class="admin-table-wrap admin-list"><table class="admin-table" role="table">
+          <thead><tr><th scope="col">Code</th><th scope="col">Discount</th><th scope="col">Status</th>
+            <th scope="col">Usage</th><th scope="col">Per customer</th><th scope="col">Schedule (IST)</th><th scope="col">Action</th></tr></thead>
+          <tbody>
+            @for (coupon of items(); track coupon._id) {
+              <tr>
+                <td data-label="Code">{{ coupon._id }}</td>
+                <td data-label="Discount">{{ coupon.amountPaise != null
+                  ? (coupon.amountPaise / 100 | currency: 'INR') : coupon.percent + '%' }}</td>
+                <td data-label="Status"><span class="admin-badge">{{ coupon.active ? 'Active' : 'Inactive' }}</span></td>
+                <td data-label="Usage">{{ coupon.redeemedCount }} / {{ coupon.totalLimit ?? 'Unlimited' }}</td>
+                <td data-label="Per customer">{{ coupon.perCustomerLimit ?? 'Unlimited' }}</td>
+                <td data-label="Schedule"><div>
+                  @if (coupon.startsAt) { <div>Starts {{ coupon.startsAt | date: 'medium' : '+0530' }}</div> }
+                  @if (coupon.endsAt) { <div>Ends {{ coupon.endsAt | date: 'medium' : '+0530' }}</div> }
+                  @if (!coupon.startsAt && !coupon.endsAt) { <span>Any time</span> }
+                </div></td>
+                <td data-label="Action"><button type="button" class="secondary-button" [disabled]="action.busy()"
+                  [attr.aria-label]="'Edit ' + coupon._id" (click)="edit(coupon)">Edit</button></td>
+              </tr>
+            }
+          </tbody>
+        </table></div>
+      } @else { <p role="status">No matching coupons.</p> }
+    } @else {
+      <p role="alert" class="error-text">{{ error() }}</p>
+      <button type="button" class="secondary-button" (click)="resource.reload()">Retry</button>
+    }
+  </section>
+</main>

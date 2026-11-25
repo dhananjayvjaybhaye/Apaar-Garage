@@ -100,6 +100,8 @@ const schema = new mongoose.Schema(
 );
 
 schema.index({ user: 1, createdAt: -1, _id: -1 });
+schema.index({ createdAt: -1, _id: -1 });
+schema.index({ totalPaise: -1, _id: -1 });
 schema.index({ 'risk.phoneKey': 1, createdAt: -1 }, { sparse: true });
 schema.index({ 'risk.addressKey': 1, createdAt: -1 }, { sparse: true });
 schema.index({ 'address.phone': 1, createdAt: -1 }, { sparse: true });

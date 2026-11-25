@@ -45,6 +45,8 @@ npm.cmd run create-admin
 
 Enter the administrator email and the new password twice. If the email is already registered, the command promotes the account and requires a fresh sign-in. On macOS or Linux, use `npm run create-admin`.
 
+Use `npm run create-admin -- --owner` to grant owner access to an existing administrator, including accounts created before owner access was introduced. Use `--staff` to grant admin access with read-only settings. The command also rotates the account password and ends existing admin sessions. New administrators receive owner access when the flag is omitted. Existing administrators keep their assigned access, and legacy accounts without an assignment are treated as staff.
+
 Open `/admin/login` after creating the account. Production requires authenticator enrollment. Save your one-time recovery codes. Use `npm.cmd run remove-admin` from `server` to revoke administrator access.
 
 In production, the API refuses to start until the seller legal name and address, customer care phone and email, grievance officer name, phone and email, and invoice prefix are configured. Hide or archive published demo listings before launch. See the [change guide](docs/CHANGE-GUIDE.md#complete-seller-details-and-policies-before-launch) for maintenance steps.
@@ -76,7 +78,7 @@ Use `/admin` for operational counts, collected sales, and audit activity. Use `/
 | `GST_REGISTERED`, `SELLER_GSTIN` | Defaults to false and issues a bill of supply without tax lines. If true, enter the seller name, address, state and GSTIN. |
 | `ORDER_EMAIL_ENABLED`, `ORDER_EMAIL_FROM` | Enable order email and set your verified sender address. |
 
-The first settings read saves the defaults into MongoDB. After that, use the admin settings API to change store details and checkout rules. The storefront’s public details are available at `/api/store-info`. Before launch, complete seller and grievance contacts, policy terms and real product disclosures using the [change guide](docs/CHANGE-GUIDE.md#complete-seller-details-and-policies-before-launch).
+The first settings read saves the defaults into MongoDB. After that, owners can change store details and checkout rules under **Admin → Settings**. The storefront’s public details are available at `/api/store-info`. Before launch, complete seller and grievance contacts, policy terms and real product disclosures using the [change guide](docs/CHANGE-GUIDE.md#complete-seller-details-and-policies-before-launch).
 | `ORDER_SMTP_HOST`, `ORDER_SMTP_PORT`, `ORDER_SMTP_USER`, `ORDER_SMTP_PASSWORD` | SMTP connection and credentials. Email defaults to off. |
 
 ## Checks

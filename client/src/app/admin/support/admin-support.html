@@ -1,0 +1,49 @@
+<main>
+  <header class="admin-header"><h1>Support</h1></header>
+  <app-admin-filter label="Search ticket, customer or order number" (applied)="list.apply($event)">
+    <app-form-field #statusField controlId="support-status" label="Ticket status">
+      <select [appFieldControl]="statusField" name="status">
+        <option value="">All statuses</option>
+        @for (status of statuses; track status) { <option [value]="status">{{ label(status) }}</option> }
+      </select>
+    </app-form-field>
+    <app-form-field #deadlineField controlId="support-deadline" label="Deadline">
+      <select [appFieldControl]="deadlineField" name="deadline">
+        <option value="">Any deadline</option>
+        <option value="acknowledge">Overdue acknowledgement</option>
+        <option value="resolve">Overdue resolution</option>
+      </select>
+    </app-form-field>
+  </app-admin-filter>
+  @if (list.resource.isLoading()) { <p role="status">Loading tickets…</p> }
+  @else if (list.resource.hasValue()) {
+    @let data = list.resource.value();
+    @if (data.items.length) {
+      <div class="admin-table-wrap admin-list"><table class="admin-table" role="table">
+        <thead><tr><th scope="col">Ticket</th><th scope="col">Customer</th><th scope="col">Status</th>
+          <th scope="col">Acknowledge by</th><th scope="col">Resolve by</th></tr></thead>
+        <tbody>
+          @for (ticket of data.items; track ticket._id) {
+            <tr>
+              <td data-label="Ticket">
+                <div>
+                  @if (ticket.ticketNumber) { <a [routerLink]="[ticket.ticketNumber]">{{ ticket.ticketNumber }}</a> }
+                  @else { <span>Legacy ticket</span> }
+                  @if (ticket.category) { <div class="muted">{{ label(ticket.category) }}</div> }
+                </div>
+              </td>
+              <td data-label="Customer"><div>{{ ticket.name }}<div class="muted">{{ ticket.email }}</div></div></td>
+              <td data-label="Status"><span class="admin-badge">{{ label(ticket.status) }}</span></td>
+              <td data-label="Acknowledge by"><app-admin-deadline [due]="ticket.acknowledgeBy" [completed]="ticket.acknowledgedAt" [now]="now()" /></td>
+              <td data-label="Resolve by"><app-admin-deadline [due]="ticket.dueAt" [completed]="ticket.resolvedAt" [now]="now()" /></td>
+            </tr>
+          }
+        </tbody>
+      </table></div>
+    }
+    <app-admin-pager [data]="data" label="matching tickets" (changed)="list.page.set($event)" />
+  } @else {
+    <p class="error-text" role="alert">{{ list.error() }}</p>
+    <button type="button" class="secondary-button" (click)="list.resource.reload()">Retry</button>
+  }
+</main>

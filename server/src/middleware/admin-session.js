@@ -21,6 +21,7 @@ export function describeAdmin(user, session) {
   return {
     name: user.name,
     email: user.email,
+    canEditSettings: user.adminAccess === 'owner',
     csrfToken: session.csrf,
     setupRequired: session.scope === setupCookieScope,
     twoFactorEnabled: Boolean(user.adminTotp?.encrypted),
@@ -55,7 +56,7 @@ export function createAdminSessions(config, customers) {
     let session = await AdminSession.findOne(filter).select('-pendingTotp').lean();
     if (!session) throw expired();
     const user = await User.findOne({ _id: session.user, role: 'admin' })
-      .select('name email role +adminTotp +sessionVersion')
+      .select('name email role adminAccess +adminTotp +sessionVersion')
       .lean();
     if (!user || (user.sessionVersion ?? 0) !== session.sessionVersion) throw expired();
     if (

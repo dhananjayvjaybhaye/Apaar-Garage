@@ -14,6 +14,13 @@ const transitions = {
   received: ['refunded', 'replaced'],
 };
 
+export function returnActions(request, order, refundLimit) {
+  if (order?.status !== 'delivered') return [];
+  return (transitions[request.status] ?? []).filter(
+    (status) => status !== 'refunded' || (order.paymentStatus === 'collected' && refundLimit > 0),
+  );
+}
+
 async function lockDeliveredOrder(filter, session) {
   // A write to the parent serializes reservations and return updates for this order.
   const order = await Order.findOneAndUpdate(
@@ -81,11 +88,7 @@ function receivingFields(request, conditions, at) {
   return { items, receivedAt: at };
 }
 
-async function resolutionFields(order, request, input, at, session) {
-  if (input.status === 'replaced') return { resolution: 'replacement', resolvedAt: at };
-  if (order.paymentStatus !== 'collected') {
-    throw new HttpError(409, 'Record the customer payment before refunding.');
-  }
+export async function availableRefund(order, request, session = null) {
   const paid = await ReturnRequest.find({
     orderNumber: order.number,
     status: 'refunded',
@@ -94,7 +97,15 @@ async function resolutionFields(order, request, input, at, session) {
     .session(session)
     .lean();
   const refunded = paid.reduce((sum, result) => sum + result.refundAmountPaise, 0);
-  if (input.refundAmountPaise > Math.min(request.maximumRefundPaise, order.totalPaise - refunded)) {
+  return Math.max(0, Math.min(request.maximumRefundPaise ?? 0, order.totalPaise - refunded));
+}
+
+async function resolutionFields(order, request, input, at, session) {
+  if (input.status === 'replaced') return { resolution: 'replacement', resolvedAt: at };
+  if (order.paymentStatus !== 'collected') {
+    throw new HttpError(409, 'Record the customer payment before refunding.');
+  }
+  if (input.refundAmountPaise > await availableRefund(order, request, session)) {
     throw new HttpError(409, 'The refund exceeds the amount paid for the returned items.');
   }
   return { resolution: 'refund', refundAmountPaise: input.refundAmountPaise, resolvedAt: at };

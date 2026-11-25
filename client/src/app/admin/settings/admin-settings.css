@@ -1,0 +1,5 @@
+.readiness { margin-bottom: .75rem; }
+.readiness :is(p, ul) { margin: .4rem 0; }
+.settings-fields { display: grid; gap: .75rem; border: 0; margin: 0; padding: 0; min-width: 0; }
+.settings-fields > button { justify-self: start; }
+.gst-toggle { display: inline-flex; align-items: center; gap: .35rem; min-height: 2.75rem; }

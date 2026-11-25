@@ -1,0 +1,72 @@
+<main>
+  <header class="admin-header"><h1>Settings</h1></header>
+  <section class="admin-box readiness" aria-labelledby="readiness-title">
+    <h2 id="readiness-title">Launch readiness</h2>
+    @if (readiness(); as blockers) {
+      @if (blockers.length) {
+        <ul>@for (blocker of blockers; track blocker) { <li>{{ blocker }}</li> }</ul>
+      } @else { <p role="status">All launch checks passed.</p> }
+    } @else if (readinessError()) {
+      <p class="error-text" role="alert">{{ readinessError() }}</p>
+      <button type="button" class="secondary-button" (click)="loadReadiness()">Retry readiness check</button>
+    } @else { <p role="status">Checking launch readiness…</p> }
+  </section>
+  @if (!canEdit()) { <p class="admin-notice">Only store owners can edit settings.</p> }
+  @if (loading()) {
+    <p role="status">Loading store settings…</p>
+  } @else if (loadError()) {
+    <p class="error-text" role="alert">{{ loadError() }}</p>
+    <button type="button" class="secondary-button" (click)="load()">Retry loading settings</button>
+  } @else if (settings(); as current) {
+    <form #form (submit)="save($event, form)">
+      <fieldset class="settings-fields" [disabled]="!canEdit() || saving()">
+        <legend class="visually-hidden">Store settings</legend>
+        @for (group of groups; track group.label) {
+          <section class="admin-box form-grid-container">
+            <h2>{{ group.label }}</h2>
+            @if (group.key === 'seller') {
+              <label class="gst-toggle"><input #gst type="checkbox" name="gstRegistered"
+                [checked]="registered()" (change)="registered.set(gst.checked)" /> GST registered</label>
+            }
+            @if (group.key && issues()[group.key]; as issue) { <p class="error-text">{{ issue }}</p> }
+            <div class="form-grid">
+              @for (field of group.fields; track field.key) {
+                @let path = fieldName(group.key, field.key);
+                @let required = !!field.required || (registered() && group.key === 'seller' &&
+                  (field.key === 'legalName' || field.key === 'gstin' || field.key === 'address'));
+                <app-form-field #control [controlId]="'setting-' + path" [label]="field.label"
+                  [class.form-field-wide]="field.type === 'textarea'" [required]="required"
+                  [hint]="field.hint" [unit]="field.type === 'money' ? '₹' : undefined" [error]="issues()[path]">
+                  @switch (field.type) {
+                    @case ('textarea') {
+                      <textarea [appFieldControl]="control" [name]="path" [value]="display(current, group.key, field)"
+                        [required]="required" [attr.maxlength]="field.maxLength"></textarea>
+                    }
+                    @case ('choice') {
+                      <select [appFieldControl]="control" [name]="path" [value]="display(current, group.key, field)" required>
+                        <option value="flag">Flag</option><option value="block">Block</option>
+                      </select>
+                    }
+                    @default {
+                      <input [appFieldControl]="control" [name]="path" [value]="display(current, group.key, field)"
+                        [type]="field.type === 'integer' ? 'number' : field.type === 'email' || field.type === 'tel' ? field.type : 'text'"
+                        [attr.inputmode]="field.type === 'money' ? 'decimal' : null"
+                        [attr.maxlength]="field.maxLength ?? (field.type === 'integer' ? null : 500)"
+                        [attr.pattern]="field.pattern ?? null" [attr.min]="field.min ?? null"
+                        [attr.max]="field.max ?? null" [attr.step]="field.type === 'integer' ? 1 : null"
+                        [required]="required" />
+                    }
+                  }
+                </app-form-field>
+              }
+            </div>
+          </section>
+        }
+        <app-admin-delivery-rules [(rules)]="rules" [issues]="issues()" />
+        @if (canEdit()) { <button type="submit" class="primary-button">{{ saving() ? 'Saving…' : 'Save settings' }}</button> }
+      </fieldset>
+      @if (saved()) { <p role="status">Settings saved.</p> }
+      @if (saveError()) { <p class="error-text" role="alert">{{ saveError() }}</p> }
+    </form>
+  }
+</main>

@@ -12,6 +12,7 @@ export interface AdminSession {
   serverTime: string;
   setupRequired: boolean;
   twoFactorEnabled: boolean;
+  canEditSettings?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })

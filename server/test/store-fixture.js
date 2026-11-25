@@ -82,7 +82,7 @@ export function shopper(origin) {
   let csrfToken;
   return async (
     path,
-    { method = 'GET', body, raw, status = 200, headers: extra = {}, sendCsrf = true } = {},
+    { method = 'GET', body, raw, status = 200, headers: extra = {}, sendCsrf = true, asText = false } = {},
   ) => {
     const headers = { ...extra };
     if (csrfToken && sendCsrf && method !== 'GET') headers['X-Admin-CSRF'] = csrfToken;
@@ -97,7 +97,7 @@ export function shopper(origin) {
       const pair = cookie.split(';', 1)[0];
       cookies.set(pair.split('=', 1)[0], pair);
     }
-    const value = response.status === 204 ? undefined : await response.json();
+    const value = response.status === 204 ? undefined : await (asText ? response.text() : response.json());
     if (value?.csrfToken) csrfToken = value.csrfToken;
     const expected = Array.isArray(status) ? status : [status];
     assert.ok(

@@ -6,18 +6,21 @@ import { accountEmail, administratorPassword } from '../utils/auth-input.js';
 import { recordAudit } from './audit.js';
 import { transaction } from './transaction.js';
 
-export async function createOrPromoteAdministrator(emailInput, passwordInput) {
+export async function createOrPromoteAdministrator(emailInput, passwordInput, access) {
+  if (access !== undefined && !['owner', 'staff'].includes(access))
+    throw new Error('Choose owner or staff access.');
   const email = accountEmail.parse(emailInput);
   const passwordHash = await bcrypt.hash(administratorPassword.parse(passwordInput), bcryptRounds);
-  const update = {
-    $set: { role: 'admin', passwordHash },
-    $setOnInsert: { name: defaultAdministratorName },
-    $inc: { sessionVersion: 1 },
-  };
-
   const write = () =>
     transaction(async (session) => {
-      const previous = await User.findOne({ email }).select('role').session(session).lean();
+      const previous = await User.findOne({ email }).select('role adminAccess').session(session).lean();
+      const adminAccess =
+        access ?? (previous?.role === 'admin' ? previous.adminAccess ?? 'staff' : 'owner');
+      const update = {
+        $set: { role: 'admin', passwordHash, adminAccess },
+        $setOnInsert: { name: defaultAdministratorName },
+        $inc: { sessionVersion: 1 },
+      };
       const user = await User.findOneAndUpdate({ email }, update, {
         upsert: true,
         runValidators: true,
@@ -37,8 +40,8 @@ export async function createOrPromoteAdministrator(emailInput, passwordInput) {
         action,
         {
           target: String(user._id),
-          before: { role: previous?.role ?? null },
-          after: { role: 'admin', source: 'terminal' },
+          before: { role: previous?.role ?? null, adminAccess: previous?.adminAccess },
+          after: { role: 'admin', adminAccess, source: 'terminal' },
         },
         session,
       );
@@ -57,7 +60,7 @@ export function removeAdministrator(emailInput) {
   return transaction(async (session) => {
     const user = await User.findOneAndUpdate(
       { email, role: 'admin' },
-      { $set: { role: 'customer' }, $unset: { adminTotp: 1 } },
+      { $set: { role: 'customer' }, $unset: { adminTotp: 1, adminAccess: 1 } },
       { session },
     )
       .select('_id')

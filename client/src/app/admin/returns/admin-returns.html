@@ -1,0 +1,36 @@
+<main>
+  <header class="admin-header"><h1>Returns</h1></header>
+  <app-admin-filter label="Search by order number" (applied)="list.apply($event)">
+    <app-form-field #field controlId="return-status" label="Return status">
+      <select [appFieldControl]="field" name="status">
+        <option value="">All statuses</option>
+        @for (status of statuses; track status) { <option [value]="status">{{ label(status) }}</option> }
+      </select>
+    </app-form-field>
+  </app-admin-filter>
+  @if (list.resource.isLoading()) { <p role="status">Loading returns…</p> }
+  @else if (list.resource.hasValue()) {
+    @let data = list.resource.value();
+    @if (data.items.length) {
+      <div class="admin-table-wrap admin-list"><table class="admin-table" role="table">
+        <thead><tr><th scope="col">Order</th><th scope="col">Requested (IST)</th><th scope="col">Reason</th>
+          <th scope="col">Status</th><th scope="col">Refund limit</th></tr></thead>
+        <tbody>
+          @for (entry of data.items; track entry._id) {
+            <tr>
+              <td data-label="Order"><a [routerLink]="[entry._id]">{{ entry.orderNumber }}</a></td>
+              <td data-label="Requested">{{ entry.createdAt | date: 'mediumDate' : '+0530' }}</td>
+              <td data-label="Reason">{{ label(entry.reason) }}</td>
+              <td data-label="Status"><span class="admin-badge">{{ label(entry.status) }}</span></td>
+              <td data-label="Refund limit">{{ (entry.maximumRefundPaise ?? 0) / 100 | currency: 'INR' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table></div>
+    }
+    <app-admin-pager [data]="data" label="matching returns" (changed)="list.page.set($event)" />
+  } @else {
+    <p class="error-text" role="alert">{{ list.error() }}</p>
+    <button type="button" class="secondary-button" (click)="list.resource.reload()">Retry</button>
+  }
+</main>

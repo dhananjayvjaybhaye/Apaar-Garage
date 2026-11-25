@@ -1,0 +1,61 @@
+<main class="admin-panel-stack">
+  <header class="admin-header"><h1>Blocked contacts</h1></header>
+  @if (action.error()) { <p class="error-text" role="alert">{{ action.error() }}</p> }
+  @if (action.notice()) { <p role="status">{{ action.notice() }}</p> }
+  <form #form class="admin-box form-grid-container" (submit)="add($event, form)">
+    <h2>Add COD block</h2>
+    <p class="muted">Enter a phone or pincode to block COD. If you enter both, the rule matches that combination.</p>
+    <fieldset [disabled]="action.busy()">
+      <div class="form-grid">
+        <app-form-field #phone controlId="block-phone" label="Phone number">
+          <input name="phone" [appFieldControl]="phone" type="tel" maxlength="32" />
+        </app-form-field>
+        <app-form-field #pin controlId="block-pincode" label="Pincode">
+          <input name="pincode" [appFieldControl]="pin" inputmode="numeric" pattern="[1-9][0-9]{5}" maxlength="6" />
+        </app-form-field>
+        <app-form-field #reason controlId="block-reason" label="Reason for blocking" [required]="true">
+          <input name="reason" [appFieldControl]="reason" required maxlength="250" />
+        </app-form-field>
+      </div>
+      <button type="submit" class="primary-button">Block contact</button>
+    </fieldset>
+  </form>
+  @if (removing(); as contact) {
+    <form class="admin-box" (submit)="remove($event, removal.value)">
+      <h2>Remove block</h2>
+      <p>{{ contact.phone }} {{ contact.pincode }}</p>
+      <app-form-field #reason controlId="unblock-reason" label="Reason for removal" [required]="true">
+        <input #removal [appFieldControl]="reason" required maxlength="250" [disabled]="action.busy()" />
+      </app-form-field>
+      <div class="admin-tools">
+        <button type="submit" class="primary-button" [disabled]="action.busy()">Confirm removal</button>
+        <button type="button" class="secondary-button" [disabled]="action.busy()" (click)="removing.set(null)">Cancel</button>
+      </div>
+    </form>
+  }
+  @if (list.resource.isLoading()) { <p role="status">Loading blocked contacts…</p> }
+  @else if (list.resource.hasValue()) {
+    @let data = list.resource.value();
+    @if (data.items.length) {
+      <div class="admin-table-wrap admin-list"><table class="admin-table" role="table">
+        <thead><tr><th scope="col">Phone</th><th scope="col">Pincode</th><th scope="col">Reason</th>
+          <th scope="col">Added (IST)</th><th scope="col">Action</th></tr></thead>
+        <tbody>
+          @for (contact of data.items; track contact._id) {
+            <tr>
+              <td data-label="Phone">{{ contact.phone || '—' }}</td><td data-label="Pincode">{{ contact.pincode || '—' }}</td>
+              <td data-label="Reason">{{ contact.reason }}</td>
+              <td data-label="Added">{{ contact.createdAt | date: 'mediumDate' : '+0530' }}</td>
+              <td data-label="Action"><button class="secondary-button" type="button" [disabled]="action.busy()"
+                (click)="removing.set(contact)" [attr.aria-label]="'Remove block for ' + (contact.phone || contact.pincode)">Remove</button></td>
+            </tr>
+          }
+        </tbody>
+      </table></div>
+    }
+    <app-admin-pager [data]="data" label="blocked contacts" (changed)="list.page.set($event)" />
+  } @else {
+    <p role="alert" class="error-text">{{ list.error() }}</p>
+    <button type="button" class="secondary-button" (click)="list.resource.reload()">Retry</button>
+  }
+</main>

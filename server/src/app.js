@@ -30,6 +30,7 @@ import { createAdminProductsRouter } from './routes/admin-products.js';
 import { createAdminSessions } from './middleware/admin-session.js';
 import { createAdminAuthRouter } from './routes/admin-auth.js';
 import { createAdminOverviewRouter } from './routes/admin-overview.js';
+import { createAdminFulfillmentRouter } from './routes/admin-fulfillment.js';
 import { createSession } from './middleware/session.js';
 
 export function createApp({
@@ -65,7 +66,12 @@ export function createApp({
   app.use(cors({ origin: origins, credentials: true }));
   app.use(requestLimit({ limit: 300, message: 'Too many requests. Try again later.' }));
   app.use(protectWrites(origins));
-  app.use(express.json({ limit: '16kb' }));
+  const parseJson = express.json({ limit: '16kb' });
+  app.use((req, res, next) => {
+    // Settings can include 500 delivery rules and have a dedicated parser after owner verification.
+    if (req.method === 'PUT' && /^\/admin\/settings\/?$/i.test(req.path)) return next();
+    parseJson(req, res, next);
+  });
   app.use(cookieParser());
   app.use('/products', createReviewsRouter(shopper), productsRouter);
   app.use('/newsletter', createNewsletterRouter(session, businessSecret));
@@ -96,6 +102,7 @@ export function createApp({
   );
   app.use('/admin/products', createAdminProductsRouter(admin.requireAdmin));
   app.use('/admin/orders', createAdminOrdersRouter(admin.requireAdmin, payment));
+  app.use('/admin', createAdminFulfillmentRouter(admin.requireAdmin));
   app.use('/admin', admin.requireAdmin);
   app.use(() => {
     throw new HttpError(404, 'Route not found.');

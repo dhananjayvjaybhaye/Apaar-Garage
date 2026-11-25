@@ -83,12 +83,17 @@ export function createCouponInitializer(defaults) {
   };
 }
 
-export function saveCoupon(rule) {
+export function saveCoupon(rule, session = null) {
   return Coupon.findOneAndUpdate(
     { _id: rule.code },
     { $set: couponValues(rule) },
-    { upsert: true, returnDocument: 'after' },
+    { upsert: true, returnDocument: 'after', session },
   ).lean();
+}
+
+export async function createCoupon(rule, session) {
+  const [coupon] = await Coupon.create([{ _id: rule.code, ...couponValues(rule) }], { session });
+  return coupon.toObject();
 }
 
 function percentage(subtotal, percent) {

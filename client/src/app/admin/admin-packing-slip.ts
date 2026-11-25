@@ -1,40 +1,29 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { httpResource } from '@angular/common/http';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { map } from 'rxjs';
 import { apiMessage } from '../api-message';
 import { BrandLogo } from '../ui/brand-logo';
-import { AdminSessionStore } from './admin-session-store';
+import { orderApi, type OrderAddress } from './orders/admin-order-types';
 
 interface PackingSlip {
   orderNumber: string;
   createdAt: string;
-  address: {
-    fullName: string;
-    addressLine1: string;
-    addressLine2?: string;
-    city: string;
-    state: string;
-    pincode: string;
-  };
+  address: OrderAddress;
   items: { sku?: string; name: string; quantity: number }[];
 }
 
 @Component({
-  imports: [BrandLogo, DatePipe],
+  imports: [BrandLogo, DatePipe, RouterLink],
   template: `
-    <section class="no-print">
-      <h1>Orders</h1>
-      <form class="admin-tools" (submit)="load($event, orderNumber.value)">
-        <label for="packing-order-number">Order number</label>
-        <input id="packing-order-number" #orderNumber type="text" maxlength="80" required />
-        <button type="submit" class="primary-button" [disabled]="loading()">Load packing slip</button>
-      </form>
-      @if (loading()) { <p role="status">Loading packing slip…</p> }
-      @if (error()) { <p role="alert" class="error-text">{{ error() }}</p> }
-    </section>
-    @if (slip(); as order) {
+    <a class="secondary-button no-print" [routerLink]="['/admin/orders', number()]">Back to order</a>
+    @if (slip.hasValue()) {
+      @let order = slip.value();
       <article class="print-document">
         <app-brand-logo />
-        <h2>Packing slip</h2>
+        <h1>Packing slip</h1>
         <p>{{ order.orderNumber }} · {{ order.createdAt | date: 'mediumDate' : '+0530' }}</p>
         <h3>Ship to</h3>
         <address>
@@ -53,37 +42,31 @@ interface PackingSlip {
         </table>
         <button class="secondary-button no-print" type="button" (click)="print()">Print packing slip</button>
       </article>
+    } @else if (slip.isLoading()) {
+      <p role="status">Loading packing slip…</p>
+    } @else {
+      <p role="alert" class="error-text">{{ loadError() }}</p>
+      <button type="button" class="secondary-button" (click)="slip.reload()">Retry</button>
     }
   `,
   styles: `
-    form, article, table { margin-block: 1rem; }
+    article, table { margin-block: 1rem; }
     address { font-style: normal; }
     @media print { th { position: static !important; background: white !important; } }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminPackingSlip {
-  private readonly sessions = inject(AdminSessionStore);
-  protected readonly slip = signal<PackingSlip | null>(null);
-  protected readonly loading = signal(false);
-  protected readonly error = signal('');
+  protected readonly number = toSignal(inject(ActivatedRoute).paramMap.pipe(
+    map((params) => params.get('orderNumber')),
+  ));
+  protected readonly slip = httpResource<PackingSlip>(() => {
+    const number = this.number();
+    return number ? orderApi + '/' + encodeURIComponent(number) + '/packing-slip' : undefined;
+  });
 
-  protected async load(event: Event, value: string) {
-    event.preventDefault();
-    const number = value.trim();
-    if (!number || this.loading()) return;
-    this.loading.set(true);
-    this.slip.set(null);
-    this.error.set('');
-    try {
-      this.slip.set(await this.sessions.request<PackingSlip>(
-        'GET', '/api/admin/orders/' + encodeURIComponent(number) + '/packing-slip',
-      ));
-    } catch (error) {
-      this.error.set(apiMessage(error, 'Could not load the packing slip.'));
-    } finally {
-      this.loading.set(false);
-    }
+  protected loadError() {
+    return apiMessage(this.slip.error(), 'Could not load the packing slip.');
   }
 
   protected print() {

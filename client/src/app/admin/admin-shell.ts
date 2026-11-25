@@ -28,7 +28,7 @@ import {
   selector: 'app-admin-shell',
   imports: [RouterLink, RouterLinkActive, RouterOutlet, BrandLogo],
   templateUrl: './admin-shell.html',
-  styleUrl: './admin-shell.css',
+  styleUrls: ['./admin-shell.css', './admin-list.css'],
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

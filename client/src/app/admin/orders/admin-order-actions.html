@@ -1,0 +1,132 @@
+@let current = order();
+@let allowed = current.actions.statuses;
+<section class="admin-box">
+  <h2>Customer confirmation</h2>
+  <p>{{ label(current.customerConfirmation?.status ?? 'pending') }}
+    @if (current.customerConfirmation?.at; as at) { · {{ at | date: 'medium' : '+0530' }} IST }
+  </p>
+  @if (current.status === 'placed' || current.status === 'confirmed') {
+    <div class="admin-tools">
+      @for (status of confirmationOptions; track status) {
+        <button class="secondary-button" type="button"
+          [disabled]="busy() || status === current.customerConfirmation?.status"
+          (click)="send('confirmation', { status })">{{ label(status) }}</button>
+      }
+    </div>
+  }
+</section>
+
+@if (allowed.length || current.actions.collectCod || current.actions.confirmationBlocked) {
+  <section class="admin-box">
+    <h2>Fulfillment</h2>
+    @if (current.actions.confirmationBlocked) {
+      <p class="error-text" role="status">Confirm the order with the customer before packing.</p>
+    }
+    <div class="admin-tools">
+      @if (allowed.includes('confirmed')) {
+        <button type="button" class="primary-button" [disabled]="busy()" (click)="send('status', { status: 'confirmed' })">Confirm order</button>
+      }
+      @if (allowed.includes('packed')) {
+        <button type="button" class="primary-button" [disabled]="busy()" (click)="send('status', { status: 'packed' })">Pack</button>
+      }
+      @if (allowed.includes('delivered')) {
+        <button type="button" class="primary-button" [disabled]="busy()" (click)="send('status', { status: 'delivered' })">Mark delivered</button>
+      }
+      @if (current.actions.collectCod) {
+        <button type="button" class="primary-button" [disabled]="busy()" (click)="send('payment', { paymentStatus: 'collected' })">Mark COD collected</button>
+      }
+    </div>
+    @if (allowed.includes('shipped')) {
+      <form class="form-grid-container" (submit)="ship($event, courier.value, awb.value, tracking.value)">
+        <fieldset [disabled]="busy()">
+          <legend>Shipment</legend>
+          <div class="form-grid">
+            <app-form-field #courierField controlId="order-courier" label="Courier">
+              <input #courier [appFieldControl]="courierField" maxlength="100" />
+            </app-form-field>
+            <app-form-field #awbField controlId="order-awb" label="Tracking number">
+              <input #awb [appFieldControl]="awbField" maxlength="100" />
+            </app-form-field>
+            <app-form-field #trackingField controlId="order-tracking-url" label="Tracking URL" hint="HTTPS or HTTP">
+              <input #tracking [appFieldControl]="trackingField" type="url" pattern="https?://.+" maxlength="1000" />
+            </app-form-field>
+          </div>
+          <button type="submit" class="primary-button">Mark shipped</button>
+        </fieldset>
+      </form>
+    }
+    @if (allowed.includes('undelivered')) {
+      <form class="form-grid-container" (submit)="submit($event, { path: 'status', body: {
+        status: 'undelivered', reasonCode: failure.value, note: failureNote.value.trim() || undefined
+      } })">
+        <fieldset [disabled]="busy()">
+          <legend>Mark undelivered</legend>
+          <div class="form-grid form-grid-compact">
+            <app-form-field #failureField controlId="order-failure" label="Delivery failure reason" [required]="true">
+              <select #failure [appFieldControl]="failureField" required>
+                <option value="">Choose a reason</option>
+                @for (reason of deliveryFailures; track reason) { <option [value]="reason">{{ label(reason) }}</option> }
+              </select>
+            </app-form-field>
+            <app-form-field #failureNoteField controlId="order-failure-note" label="Delivery note">
+              <input #failureNote [appFieldControl]="failureNoteField" maxlength="500" />
+            </app-form-field>
+          </div>
+          <button type="submit" class="secondary-button">Mark undelivered</button>
+        </fieldset>
+      </form>
+    }
+    @if (allowed.includes('returned_to_seller')) {
+      <form (submit)="submit($event, { path: 'status', body: { status: 'returned_to_seller', condition: condition.value } })">
+        <fieldset [disabled]="busy()">
+          <legend>Parcel returned to seller</legend>
+          <app-form-field #conditionField controlId="order-return-condition" label="Stock condition" [required]="true">
+            <select #condition [appFieldControl]="conditionField" required>
+              <option value="">Choose a condition</option>
+              <option value="resalable">Resalable</option><option value="damaged">Damaged</option>
+            </select>
+          </app-form-field>
+          <button type="submit" class="primary-button">Mark returned to seller</button>
+        </fieldset>
+      </form>
+    }
+    @if (allowed.includes('cancelled')) {
+      <form class="form-grid-container" (submit)="submit($event, { path: 'status', body: {
+        status: 'cancelled', reasonCode: cancel.value, note: cancelNote.value.trim() || undefined
+      } })">
+        <fieldset [disabled]="busy()">
+          <legend>Cancellation</legend>
+          <div class="form-grid form-grid-compact">
+            <app-form-field #cancelField controlId="order-cancel-reason" label="Cancellation reason" [required]="true">
+              <select #cancel [appFieldControl]="cancelField" required>
+                <option value="">Choose a reason</option>
+                @for (reason of cancellationReasons; track reason[0]) { <option [value]="reason[0]">{{ reason[1] }}</option> }
+              </select>
+            </app-form-field>
+            <app-form-field #cancelNoteField controlId="order-cancel-note" label="Cancellation note">
+              <input #cancelNote [appFieldControl]="cancelNoteField" maxlength="500" />
+            </app-form-field>
+          </div>
+          <button type="submit" class="secondary-button">Cancel order</button>
+        </fieldset>
+      </form>
+    }
+  </section>
+}
+
+<section class="admin-box">
+  <h2>Internal notes</h2>
+  @if (current.adminNotes?.length) {
+    <ul>
+      @for (entry of current.adminNotes; track $index) {
+        <li>{{ entry.note }} <span class="muted">· {{ entry.at | date: 'medium' : '+0530' }} IST</span></li>
+      }
+    </ul>
+  } @else { <p>No notes yet.</p> }
+  <form (submit)="addNote($event, note)">
+    <app-form-field #noteField controlId="order-note" label="New internal note" [required]="true">
+      <textarea #note [appFieldControl]="noteField" required maxlength="500" [disabled]="busy()"></textarea>
+    </app-form-field>
+    <button type="submit" class="secondary-button" [disabled]="busy()">Add note</button>
+  </form>
+</section>

@@ -1,0 +1,80 @@
+<main class="admin-panel-stack">
+  <header class="admin-header">
+    <h1>Return details</h1><a class="secondary-button" routerLink="/admin/returns">Back to returns</a>
+  </header>
+  @if (action.error()) { <p class="error-text" role="alert">{{ action.error() }}</p> }
+  @if (action.notice()) { <p role="status">{{ action.notice() }}</p> }
+  @if (resource.hasValue()) {
+    @let entry = resource.value();
+    <section class="admin-box">
+      <h2><a [routerLink]="['/admin/orders', entry.orderNumber]">{{ entry.orderNumber }}</a></h2>
+      <p><span class="admin-badge">{{ label(entry.status) }}</span> · {{ label(entry.reason) }} ·
+        {{ entry.createdAt | date: 'medium' : '+0530' }} IST</p>
+      <ul>
+        @for (item of entry.items; track item.slug) {
+          <li>{{ item.name || item.slug }} × {{ item.quantity }}
+            @if (item.condition) { · {{ label(item.condition) }} }</li>
+        }
+      </ul>
+      <p>Refund limit {{ (entry.maximumRefundPaise ?? 0) / 100 | currency: 'INR' }}</p>
+      @if (entry.status === 'received' && entry.paymentCollected) {
+        <p>Available to refund {{ entry.refundLimitPaise / 100 | currency: 'INR' }}</p>
+      }
+      @if (entry.refundAmountPaise) { <p>Refund recorded {{ entry.refundAmountPaise / 100 | currency: 'INR' }}</p> }
+      @if (entry.receivedAt) { <p>Received {{ entry.receivedAt | date: 'medium' : '+0530' }} IST</p> }
+      @if (entry.resolvedAt) { <p>Resolved {{ entry.resolvedAt | date: 'medium' : '+0530' }} IST</p> }
+      @if (entry.status === 'received' && !entry.paymentCollected) {
+        <p class="admin-notice">Record payment on the order before refunding.</p>
+      }
+    </section>
+    @if (entry.notes?.length) {
+      <section class="admin-box"><h2>Notes</h2>
+        @for (note of entry.notes; track $index) {
+          <p><strong>{{ note.internal ? 'Internal' : 'Customer' }}</strong> · {{ note.at | date: 'medium' : '+0530' }} IST</p>
+          <p class="admin-paragraph">{{ note.note }}</p>
+        }
+      </section>
+    }
+    @if (entry.actions.length) {
+      <form #form class="admin-box form-grid-container" (submit)="save($event, form, entry)">
+        <h2>Update return</h2>
+        <fieldset [disabled]="action.busy() || resource.isLoading()">
+          <div class="form-grid">
+            <app-form-field #actionField controlId="return-action" label="Action" [required]="true">
+              <select #choice required [appFieldControl]="actionField" (change)="choose(choice.value, entry)">
+                <option value="">Choose an action</option>
+                @for (next of entry.actions; track next) { <option [value]="next">{{ actionLabels[next] }}</option> }
+              </select>
+            </app-form-field>
+            @if (selected() === 'received') {
+              @for (item of entry.items; track item.slug) {
+                <app-form-field #condition [controlId]="'return-condition-' + item.slug"
+                  [label]="'Condition for ' + (item.name || item.slug)" [required]="true">
+                  <select [name]="'condition-' + item.slug" [appFieldControl]="condition" required>
+                    <option value="">Choose a condition</option>
+                    <option value="resalable">Resalable</option><option value="damaged">Damaged</option>
+                  </select>
+                </app-form-field>
+              }
+            }
+            @if (selected() === 'refunded') {
+              <app-form-field #amount controlId="return-amount" label="Refund amount" unit="₹" [required]="true"
+                hint="Record the amount already refunded to the customer.">
+                <input name="amount" [appFieldControl]="amount" inputmode="decimal" required
+                  [attr.pattern]="moneyPattern" maxlength="17" />
+              </app-form-field>
+            }
+            <app-form-field #note class="form-field-wide" controlId="return-note" label="Internal note">
+              <textarea name="note" [appFieldControl]="note" maxlength="500"></textarea>
+            </app-form-field>
+          </div>
+          <button class="primary-button" type="submit" [disabled]="!selected()">Save return</button>
+        </fieldset>
+      </form>
+    }
+  } @else if (resource.isLoading()) { <p role="status">Loading return…</p> }
+  @else {
+    <p class="error-text" role="alert">{{ error() }}</p>
+    <button type="button" class="secondary-button" (click)="resource.reload()">Retry</button>
+  }
+</main>

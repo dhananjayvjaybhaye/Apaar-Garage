@@ -14,6 +14,7 @@ import {
 } from '../utils/order-business-input.js';
 import { validate } from '../utils/http-error.js';
 import { publicOrder } from '../utils/order-response.js';
+import { orderActions } from '../services/order-confirmation.js';
 
 const noteInput = z.strictObject({ note });
 const orderNumber = (req) => validate(orderNumberPattern, req.params.orderNumber);
@@ -31,10 +32,18 @@ export const orderBusiness = {
     const request = await requestReturn(owned(req, res), input, res.locals.shopper.id, req.ip);
     res.status(201).json(publicReturn(request));
   },
-  async adminDetail(req, res) {
+  async adminDetail(req, res, settings) {
     const order = await findCustomerOrder({ number: orderNumber(req) });
+    const { risk } = await settings.read();
     res.json({
       ...publicOrder(order),
+      address: order.address,
+      items: order.items.map(({ slug, sku, name, quantity, unitPricePaise, discountPaise }) => ({
+        slug, sku, name, quantity, unitPricePaise, discountPaise,
+      })),
+      taxBreakup: order.taxBreakup,
+      invoiceType: order.invoiceType,
+      actions: orderActions(order, risk),
       adminNotes: order.adminNotes,
       customerConfirmation: order.customerConfirmation,
       shipment: order.shipment,
@@ -42,6 +51,9 @@ export const orderBusiness = {
       needsConfirmation: order.needsConfirmation ?? false,
       cancellation: order.cancellation,
     });
+  },
+  async adminInvoice(req, res) {
+    res.json(await customerInvoice({ number: orderNumber(req) }));
   },
   async packingSlip(req, res) {
     const order = await findCustomerOrder({ number: orderNumber(req) });

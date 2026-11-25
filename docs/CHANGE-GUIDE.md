@@ -38,10 +38,17 @@ Use an existing administrator account with the admin API. Create a product with 
 
 ## Dispatch and handle returns
 
+Open **Admin → Orders** to search by order number, name, phone, or pincode. Date filters use inclusive India Standard Time dates. CSV export includes every matching order in the selected sort order. The export contains customer contact data, and formula-like strings are escaped for spreadsheets.
+
+Open an order to review tax, risk flags, the status timeline, and internal notes. The server determines which fulfillment actions appear. Record customer confirmation before packing when required. The order detail links to its packing slip and, after dispatch, its invoice or bill of supply. Mark COD collected after delivery.
+
+- For direct list and export access, use `GET /admin/orders` and `GET /admin/orders/export` with the same filters. The list includes the page and total count. Export ignores the page parameter.
 - Send `PATCH /admin/orders/:orderNumber/status` with `status: "shipped"` and optional `shipment` fields `courier`, `awb` and `trackingUrl`. This creates the invoice or bill, available from order tracking or `GET /orders/:orderNumber/invoice`.
 - A failed delivery uses `status: "undelivered"` with `reasonCode` set to `refused`, `unreachable`, or `failed_attempts`. Once the parcel arrives back, send `status: "returned_to_seller"` and a `condition` of `resalable` or `damaged`.
 - Customers submit `POST /orders/:orderNumber/returns` with a reason such as `damaged` and `items: [{ "slug": "product-slug", "quantity": 1 }]`. Use the same endpoint with GET to see their requests. Staff review with `GET /admin/orders/:orderNumber/returns` and update with `PATCH /admin/orders/:orderNumber/returns/:id`. When receiving, include the condition for each item as `items: [{ "slug": "product-slug", "condition": "resalable" }]`. After recording COD collection, a refund can be recorded in paise with `refundAmountPaise`.
 - Use `POST /admin/orders/:orderNumber/notes` and `PATCH /admin/orders/:orderNumber/confirmation` for internal notes and customer confirmation. The customer return workflow is available through the API.
+
+Open **Admin → Returns** for the cross-order queue. Open a request to approve or reject it. When receiving, choose resalable or damaged for each line. Receiving restocks resalable lines once. A refund records the amount already paid back and requires collected payment. The return screen also records replacements.
 
 ## Create the first administrator
 
@@ -67,7 +74,7 @@ Set all three Cloudinary variables in `server/.env` for production uploads. Deve
 
 ## Complete seller details and policies before launch
 
-Use `GET /admin/settings`, edit the JSON, and save it with `PUT /admin/settings`. If the production check blocks startup, use the development API on the host’s loopback interface to fix the settings and hide or archive published placeholders. In PowerShell, run `$env:NODE_ENV = 'development'` in the server terminal before `npm.cmd start`. Keep that maintenance process private. Restart with `NODE_ENV=production` once the check passes. Review the result on `/seller-information`, in the footer, and at `/api/store-info`.
+Open **Admin → Settings** as a store owner and follow the launch readiness checklist. If the production check blocks startup, use the development API on the host’s loopback interface to fix the settings and hide or archive published placeholders. In PowerShell, run `$env:NODE_ENV = 'development'` in the server terminal before `npm.cmd start`. Keep that maintenance process private. Restart with `NODE_ENV=production` once the check passes. Review the result on `/seller-information`, in the footer, and at `/api/store-info`.
 
 - Set the seller’s legal name, trade name and full business address. Verify the seller state and the GST registration setting. Supply the GSTIN if registered.
 - Fill in the customer care phone, email and hours, plus the grievance officer’s name, designation, email, phone and address.
@@ -77,21 +84,26 @@ Use `GET /admin/settings`, edit the JSON, and save it with `PUT /admin/settings`
 
 ## Change store settings and COD rules
 
-Read the complete settings using an administrator session with `GET /admin/settings`. Update that JSON with `PUT /admin/settings`. Amounts in the settings API are integer paise. Keep currency values in rupees in the initial environment defaults. Changes take effect when saved on the current API instance. Other instances refresh within 30 seconds.
+Edit settings in rupees under **Admin → Settings**. Staff have read-only access. To grant an existing account owner access, run `npm run create-admin -- --owner` from `server` against the target database. Use `--staff` when provisioning staff accounts. These commands rotate the password and end existing admin sessions. Administrators created before owner access was introduced can read settings until an owner grant is assigned.
+
+For direct API access, use `GET /admin/settings` for the full settings record and `GET /admin/settings/readiness` for the launch blockers. Save with an owner session and `PUT /admin/settings`. The settings API uses integer paise and validates edited fields with the same rules used at startup. Each settings change creates an audit entry. Changes take effect when saved on the current API instance. Other instances refresh within 30 seconds.
 
 - By default, the store allows two open COD orders per normalized mobile number and three per normalized address over the last 24 hours. The first-order cap is ₹2,500 until there is a delivered COD order for that phone or account. A total over ₹4,000 needs customer confirmation. Both risk thresholds use the final payable amount.
-- The default repeated-failure rule flags three undelivered COD orders within 90 days. Set `risk.repeatedUndeliveredAction` to `block` to refuse subsequent COD orders. Use `/admin/blocked-contacts` to add or remove manual blocks by phone, pincode, or both. For flagged or high-value orders, record customer confirmation using `PATCH /admin/orders/:orderNumber/confirmation` before packing.
+- The default repeated-failure rule flags three undelivered COD orders within 90 days. Set `risk.repeatedUndeliveredAction` to `block` to refuse subsequent COD orders. Use **Admin → Blocked contacts** to add or remove manual blocks. A phone and pincode on the same rule match that combination. The admin form requires a reason for both actions and records it in the audit log. For flagged or high-value orders, record customer confirmation before packing.
 - Set `codFeePaise`, `codMinPaise`, `codMaxPaise`, `deliveryFeePaise`, and `freeDeliveryThresholdPaise` in settings. Checkout uses the **merchandise subtotal after discount** for free delivery, before shipping and COD fees. The cart’s estimate is based on the cart contents before checkout discounts.
 - Use `serviceablePincodeRules` for exceptions. The longest matching prefix wins. Set `serviceable: false` to turn off checkout for a prefix. A product-specific return window overrides the store default on new orders.
 
 ## Manage coupons
 
-Use `GET /admin/coupons` and `PUT /admin/coupons`. The PUT body includes `code` and either `percent` or `amountPaise`, with optional `minimumPaise`, `startsAt`, `endsAt`, `totalLimit` and `perCustomerLimit`. Set `active: false` to retire an offer while preserving redemption history. Coupon use is recorded when an order is placed. A coupon replaces the separate automatic discount on an eligible first signed-in order. Guest usage is checked with the shipping phone at checkout.
+Use **Admin → Coupons** to create, edit, activate, or retire a code. Schedules in the form use IST. Usage is recorded when an order is placed, and editing or retiring an offer preserves its redemption count. A coupon replaces the automatic first-order discount on an eligible signed-in order. Guest usage is checked with the shipping phone at checkout.
+
+Use `GET /admin/coupons` to list codes, `POST /admin/coupons` to create a unique code, and `PUT /admin/coupons` to save an edit. The body accepts `code` and either `percent` or `amountPaise`, with optional `active`, `minimumPaise`, `startsAt`, `endsAt`, `totalLimit`, and `perCustomerLimit`.
 
 ## Manage tickets, consent and account data
 
-- Customers submit tickets and check status from the support page or via `POST /support/status` with `ticketNumber` and `email`. Staff can list or update tickets from `/admin/support`. Acknowledge within 48 hours and resolve within one month. New tickets use the earlier of one calendar month and 30 days for their resolution deadline.
-- Newsletter sign-up records consent for the text shown at signup. An authorized sender can request a token from `POST /admin/newsletter/unsubscribe-token` with `email`. Configure the sender to POST to `/api/newsletter/unsubscribe/:token` for one-click unsubscribe. A human-readable email link can open `/newsletter/unsubscribe#<token>` on the storefront. Sign-up tokens and the sender’s list stay private.
+- **Admin → Support** shows ticket deadlines and lets staff filter overdue tickets, post replies visible in the customer thread, and advance ticket status. The first staff reply also acknowledges an open ticket. Acknowledgement is due within 48 hours. The resolution deadline is the earlier of one calendar month and 30 days. Customers check status with `POST /support/status` using their ticket number and email.
+- **Admin → Customers** shows registered accounts and their linked order counts and totals. Order value excludes cancellations. Collected totals are gross before refunds.
+- **Admin → Newsletter** lists active and unsubscribed records. Its CSV includes active subscriptions with recorded consent and respects the email search. An authorized sender can request a token from `POST /admin/newsletter/unsubscribe-token` with `email`. Configure the sender to POST to `/api/newsletter/unsubscribe/:token` for one-click unsubscribe. A human-readable email link can open `/newsletter/unsubscribe#<token>` on the storefront.
 - Signed-in customers can download their linked data and close their account from `/account/privacy`. Closing requires the current password and completion of open orders or returns. Tickets and newsletter records are linked when submitted while signed in using the account email. For older or guest records, use the support channel where ownership can be checked. MongoDB expires anonymized order records after the configured retention period.
 
 ## Import products

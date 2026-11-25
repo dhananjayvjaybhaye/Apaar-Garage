@@ -1,10 +1,7 @@
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
-import { once } from 'node:events';
-import { createServer } from 'node:net';
 import { test } from 'node:test';
 import axe from 'axe-core';
-import { makeAdmin, startStore } from '../../server/test/store-fixture.js';
+import { openAdminPreview } from './admin-preview.mjs';
 import { eventually, openFormBrowser } from './form-browser.mjs';
 
 const editorUrl = '/admin/products/new';
@@ -30,28 +27,6 @@ function chooseFile(run, id, filename, content) {
     input.files = transfer.files;
     input.dispatchEvent(new Event('change', { bubbles: true }));
   })()`);
-}
-
-async function preview(t) {
-  const listener = createServer().listen(0, '127.0.0.1');
-  await once(listener, 'listening');
-  const { port } = listener.address();
-  await new Promise((done) => listener.close(done));
-  const site = 'http://127.0.0.1:' + port;
-  const api = await startStore(t, { CORS_ORIGINS: site });
-  await makeAdmin(api);
-  const child = spawn(process.execPath, ['scripts/preview.mjs'], {
-    env: { ...process.env, PREVIEW_API: api, PREVIEW_PORT: String(port) },
-    stdio: 'inherit',
-    windowsHide: true,
-  });
-  t.after(() => child.kill());
-  await eventually('production preview', () =>
-    fetch(site)
-      .then((r) => r.ok)
-      .catch(() => false),
-  );
-  return site;
 }
 
 function measureLayout() {
@@ -105,7 +80,7 @@ test(
   'product form layout, accessibility, validation and admin titles',
   { timeout: 110_000 },
   async (t) => {
-    const site = await preview(t);
+    const { site } = await openAdminPreview(t);
     const browser = await openFormBrowser(t);
     const run = browser.evaluate;
     await browser.resize(1440, 900);

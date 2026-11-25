@@ -13,20 +13,17 @@ export const activityThrottleMs = 60_000;
 export const sessionClockMs = 1_000;
 export const paisePerRupee = 100;
 
-export const upcomingAdminSections = [
-  { segment: 'returns', label: 'Returns' },
-  { segment: 'support', label: 'Support' },
-  { segment: 'customers', label: 'Customers' },
-  { segment: 'coupons', label: 'Coupons' },
-  { segment: 'blocked-contacts', label: 'Blocked contacts' },
-  { segment: 'newsletter', label: 'Newsletter' },
-  { segment: 'settings', label: 'Settings' },
-];
 export const adminNavigation = [
   { path: '/admin', label: 'Dashboard' },
   { path: '/admin/products', label: 'Products' },
   { path: '/admin/orders', label: 'Orders' },
-  ...upcomingAdminSections.map(({ segment, label }) => ({ path: '/admin/' + segment, label })),
+  { path: '/admin/returns', label: 'Returns' },
+  { path: '/admin/support', label: 'Support' },
+  { path: '/admin/customers', label: 'Customers' },
+  { path: '/admin/coupons', label: 'Coupons' },
+  { path: '/admin/blocked-contacts', label: 'Blocked contacts' },
+  { path: '/admin/newsletter', label: 'Newsletter' },
+  { path: '/admin/settings', label: 'Settings' },
 ];
 export const dashboardCards = [
   { key: 'ordersToConfirm', label: 'Orders to confirm' },

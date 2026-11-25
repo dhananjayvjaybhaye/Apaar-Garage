@@ -4,6 +4,8 @@ import { complaintDueAt } from '../utils/complaint-deadline.js';
 import { SupportRequest } from '../models/support-request.js';
 import { writeForAccount } from './account-write.js';
 import { HttpError } from '../utils/http-error.js';
+import { recordAudit } from './audit.js';
+import { transaction } from './transaction.js';
 
 function number() {
   return 'AGT-' + randomBytes(8).toString('hex').toUpperCase();
@@ -54,11 +56,11 @@ export function publicTicket(ticket) {
   };
 }
 
-export async function findTicket(filter) {
+export async function findTicket(filter, session = null) {
   const ticket = await SupportRequest.findOne({
     ...filter,
     anonymizedAt: { $exists: false },
-  }).lean();
+  }).session(session).lean();
   if (!ticket) throw new HttpError(404, 'Check your ticket number and email and try again.');
   return ticket;
 }
@@ -70,8 +72,16 @@ const nextStatuses = {
   closed: [],
 };
 
-export async function updateTicket(ticketNumber, input) {
-  const ticket = await findTicket({ ticketNumber });
+export function supportActions(ticket) {
+  return { nextStatus: nextStatuses[ticket.status]?.[0], canReply: ticket.status !== 'closed' };
+}
+
+export function updateTicket(ticketNumber, input, audit) {
+  return transaction((session) => updateTicketRecord(ticketNumber, input, audit, session));
+}
+
+async function updateTicketRecord(ticketNumber, input, audit, session) {
+  const ticket = await findTicket({ ticketNumber }, session);
   const status = input.status ?? (ticket.status === 'open' ? 'acknowledged' : ticket.status);
   if (status !== ticket.status && !nextStatuses[ticket.status]?.includes(status))
     throw new HttpError(409, 'That ticket status change is not available.');
@@ -93,9 +103,15 @@ export async function updateTicket(ticketNumber, input) {
         $push: { replies: { from: 'support', message: input.reply, at: now } },
       }),
     },
-    { returnDocument: 'after', runValidators: true },
+    { returnDocument: 'after', runValidators: true, session },
   ).lean();
   if (!result) throw new HttpError(409, 'The ticket changed. Please refresh and try again.');
+  if (status !== ticket.status || input.reply)
+    await recordAudit('support.ticket_updated', {
+      ...audit, target: ticketNumber,
+      before: { status: ticket.status },
+      after: { status, replyAdded: Boolean(input.reply) },
+    }, session);
   return result;
 }
 

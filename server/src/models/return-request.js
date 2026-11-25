@@ -29,4 +29,5 @@ const schema = new mongoose.Schema(
 );
 
 schema.index({ orderNumber: 1, status: 1 });
+schema.index({ createdAt: -1, _id: -1 });
 export const ReturnRequest = mongoose.model('ReturnRequest', schema);

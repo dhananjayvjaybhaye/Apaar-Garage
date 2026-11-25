@@ -60,7 +60,7 @@ export function confirmEnrollment(user, current, code, key, ip) {
       },
       { session, returnDocument: 'after' },
     )
-      .select('name email +adminTotp')
+      .select('name email adminAccess +adminTotp')
       .lean();
     if (!updated) throw new HttpError(409, 'Account security changed. Sign in again.');
     const expiresAt =

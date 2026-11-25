@@ -1,0 +1,95 @@
+<main>
+  <header class="admin-header">
+    <h1>Orders</h1>
+    @if (!loading() && data(); as orders) {
+      @if (orders.total) { <a class="secondary-button" [href]="exportUrl()">Export matching orders (CSV)</a> }
+    }
+  </header>
+  <form #filters class="admin-box form-grid-container" (submit)="apply($event, filters)">
+    <div class="form-grid">
+      <app-form-field #search controlId="order-search" label="Search orders" hint="Order number, name, phone or pincode">
+        <input [appFieldControl]="search" type="search" name="q" maxlength="100" />
+      </app-form-field>
+      <app-form-field #state controlId="order-filter-status" label="Status">
+        <select [appFieldControl]="state" name="status">
+          <option value="">All statuses</option>
+          @for (status of statuses; track status) { <option [value]="status">{{ label(status) }}</option> }
+        </select>
+      </app-form-field>
+      <app-form-field #sort controlId="order-sort" label="Sort by">
+        <select [appFieldControl]="sort" name="sort">
+          <option value="newest">Newest first</option><option value="oldest">Oldest first</option>
+          <option value="highest">Highest total</option><option value="lowest">Lowest total</option>
+        </select>
+      </app-form-field>
+      <app-form-field #from controlId="order-from" label="From date (IST)">
+        <input [appFieldControl]="from" type="date" name="from" />
+      </app-form-field>
+      <app-form-field #to controlId="order-to" label="To date (IST)">
+        <input [appFieldControl]="to" type="date" name="to" />
+      </app-form-field>
+    </div>
+    <fieldset class="admin-tools">
+      <legend>Only show</legend>
+      <label><input type="checkbox" name="flagged" value="1" /> Risk flagged</label>
+      <label><input type="checkbox" name="needsConfirmation" value="1" /> Needs customer confirmation</label>
+      <label><input type="checkbox" name="codToCollect" value="1" /> COD to collect</label>
+    </fieldset>
+    <button class="primary-button" type="submit" [disabled]="loading()">Apply filters</button>
+  </form>
+
+  @if (loading()) {
+    <p role="status">Loading orders…</p>
+  } @else if (error()) {
+    <p class="error-text" role="alert">{{ error() }}</p>
+  } @else if (data(); as orders) {
+    <p role="status">{{ orders.total }} matching orders</p>
+    @if (orders.items.length) {
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead><tr>
+            <th scope="col">Order</th><th scope="col">Date (IST)</th><th scope="col">Customer</th>
+            <th scope="col">Status</th><th scope="col">Payment</th><th scope="col">Total</th>
+          </tr></thead>
+          <tbody>
+            @for (order of orders.items; track order.orderNumber) {
+              <tr>
+                <td><a [routerLink]="[order.orderNumber]">{{ order.orderNumber }}</a></td>
+                <td>{{ order.createdAt | date: 'mediumDate' : '+0530' }}</td>
+                <td>{{ order.customer || '—' }}<br /><span class="muted">{{ order.phone }} {{ order.pincode }}</span></td>
+                <td><ng-container *ngTemplateOutlet="badges; context: { $implicit: order }" /></td>
+                <td>{{ order.paymentMethod === 'cod' ? 'COD' : 'Online' }} · {{ label(order.paymentStatus) }}</td>
+                <td>{{ order.totalPaise / paise | currency: 'INR' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <ul class="order-cards">
+        @for (order of orders.items; track order.orderNumber) {
+          <li class="admin-box">
+            <h2><a [routerLink]="[order.orderNumber]">{{ order.orderNumber }}</a></h2>
+            <p>{{ order.createdAt | date: 'mediumDate' : '+0530' }} · {{ order.customer || '—' }}</p>
+            @if (order.phone || order.pincode) { <p>{{ order.phone }} {{ order.pincode }}</p> }
+            <ng-container *ngTemplateOutlet="badges; context: { $implicit: order }" />
+            <p>{{ order.paymentMethod === 'cod' ? 'COD' : 'Online' }} · {{ label(order.paymentStatus) }} ·
+              <strong>{{ order.totalPaise / paise | currency: 'INR' }}</strong></p>
+          </li>
+        }
+      </ul>
+    }
+    @if (orders.totalPages > 1 || orders.page > 1) {
+      <nav class="admin-tools pagination" aria-label="Order pages">
+        <button type="button" class="secondary-button" [disabled]="orders.page <= 1" (click)="load(orders.page - 1)">Previous</button>
+        <span>Page {{ orders.page }} of {{ orders.totalPages }}</span>
+        <button type="button" class="secondary-button" [disabled]="orders.page >= orders.totalPages" (click)="load(orders.page + 1)">Next</button>
+      </nav>
+    }
+  }
+</main>
+
+<ng-template #badges let-order>
+  <span class="badge" [attr.data-status]="order.status">{{ label(order.status) }}</span>
+  @if (order.flagged) { <span class="badge badge-warning">Risk flagged</span> }
+  @if (order.needsConfirmation) { <span class="badge badge-warning">Needs confirmation</span> }
+</ng-template>

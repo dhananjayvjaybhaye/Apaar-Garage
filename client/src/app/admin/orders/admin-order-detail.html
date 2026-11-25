@@ -1,0 +1,102 @@
+<main>
+  <header class="admin-header">
+    <h1>Order {{ number() }}</h1>
+    <a routerLink="/admin/orders" class="secondary-button">Back to orders</a>
+  </header>
+  @if (message(); as feedback) {
+    <p [class.error-text]="feedback.error" [attr.role]="feedback.error ? 'alert' : 'status'">{{ feedback.message }}</p>
+  }
+  @if (resource.hasValue()) {
+    @let order = resource.value();
+    <div class="admin-tools order-documents">
+      <a class="secondary-button" [routerLink]="['packing-slip']">Packing slip</a>
+      @if (order.invoiceNumber) {
+        <a class="secondary-button" [routerLink]="['invoice']">{{ order.invoiceType === 'tax_invoice' ? 'Tax invoice' : 'Bill of supply' }} · {{ order.invoiceNumber }}</a>
+      }
+    </div>
+    @if (order.risk.flags.length) {
+      <section class="admin-notice" role="status">
+        <strong>Risk-flagged order</strong>
+        @for (flag of order.risk.flags; track flag) { <span>{{ label(flag) }}</span> }
+      </section>
+    }
+    <div class="detail-grid">
+      <section class="admin-box">
+        <h2>Order summary</h2>
+        <dl>
+          <dt>Status</dt><dd>{{ label(order.status) }}</dd>
+          <dt>Payment</dt><dd>{{ order.paymentMethod === 'cod' ? 'COD' : 'Online' }} · {{ label(order.paymentStatus) }}</dd>
+          <dt>Merchandise</dt><dd>{{ order.subtotalPaise / paise | currency: 'INR' }}</dd>
+          <dt>Discount</dt><dd>{{ (order.discountPaise ?? 0) / paise | currency: 'INR' }}</dd>
+          <dt>Delivery</dt><dd>{{ order.shippingPaise / paise | currency: 'INR' }}</dd>
+          <dt>COD fee</dt><dd>{{ order.codFeePaise / paise | currency: 'INR' }}</dd>
+          <dt><strong>Total</strong></dt><dd><strong>{{ order.totalPaise / paise | currency: 'INR' }}</strong></dd>
+        </dl>
+      </section>
+      <section class="admin-box">
+        <h2>Shipping address</h2>
+        @if (order.address; as address) {
+          <address>
+            <strong>{{ address.fullName }}</strong><br />
+            @if (address.addressLine1) { {{ address.addressLine1 }}<br /> }
+            @if (address.addressLine2) { {{ address.addressLine2 }}<br /> }
+            {{ address.city }} {{ address.state }} {{ address.pincode }}
+            @if (address.phone) { <br /><a [href]="'tel:' + address.phone">{{ address.phone }}</a> }
+          </address>
+        } @else { <p>Address unavailable.</p> }
+        @if (order.shipment; as shipment) {
+          <h3>Shipment</h3>
+          @if (shipment.courier || shipment.awb) { <p>{{ shipment.courier }} {{ shipment.awb }}</p> }
+          @if (trackingLink(shipment.trackingUrl); as link) {
+            <p><a [href]="link" target="_blank" rel="noopener noreferrer">Track shipment</a></p>
+          }
+          @if (shipment.undeliveredReason) { <p>{{ label(shipment.undeliveredReason) }} {{ shipment.undeliveredNote }}</p> }
+          @if (shipment.returnCondition) { <p>Stock condition {{ label(shipment.returnCondition) }}</p> }
+        }
+      </section>
+      <section class="admin-box">
+        <h2>Items</h2>
+        <div class="admin-table-wrap"><table class="admin-table">
+          <thead><tr><th scope="col">Item</th><th scope="col">Qty</th><th scope="col">Unit price</th></tr></thead>
+          <tbody>
+            @for (item of order.items; track item.slug) {
+              <tr><td>{{ item.name }} @if (item.sku) { <br /><span class="muted">{{ item.sku }}</span> }</td>
+                <td>{{ item.quantity }}</td><td>{{ item.unitPricePaise / paise | currency: 'INR' }}</td></tr>
+            }
+          </tbody>
+        </table></div>
+      </section>
+      <section class="admin-box">
+        <h2>Status timeline</h2>
+        <ol>
+          @for (entry of order.statusHistory; track $index) {
+            <li>{{ label(entry.status) }} · <time [attr.datetime]="entry.at">{{ entry.at | date: 'medium' : '+0530' }} IST</time></li>
+          }
+        </ol>
+        @if (order.cancellation; as cancellation) {
+          <p>Reason {{ label(cancellation.reasonCode) }} {{ cancellation.note }}</p>
+        }
+      </section>
+      @if (order.taxBreakup?.length) {
+        <section class="admin-box">
+          <h2>Included taxes</h2>
+          <div class="admin-table-wrap"><table class="admin-table">
+            <thead><tr><th scope="col">GST rate</th><th scope="col">CGST</th><th scope="col">SGST</th><th scope="col">IGST</th></tr></thead>
+            <tbody>
+              @for (tax of order.taxBreakup; track tax.gstRatePercent) {
+                <tr><td>{{ tax.gstRatePercent }}%</td><td>{{ tax.cgstPaise / paise | currency: 'INR' }}</td>
+                  <td>{{ tax.sgstPaise / paise | currency: 'INR' }}</td><td>{{ tax.igstPaise / paise | currency: 'INR' }}</td></tr>
+              }
+            </tbody>
+          </table></div>
+        </section>
+      }
+    </div>
+    <app-admin-order-actions [order]="order" [busy]="busy() || resource.isLoading()" (command)="update($event)" />
+  } @else if (resource.isLoading()) {
+    <p role="status">Loading order…</p>
+  } @else {
+    <p class="error-text" role="alert">{{ loadError() }}</p>
+    <button type="button" class="secondary-button" (click)="resource.reload()">Retry</button>
+  }
+</main>

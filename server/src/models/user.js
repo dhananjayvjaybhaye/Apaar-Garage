@@ -12,6 +12,7 @@ const userSchema = new mongoose.Schema(
       maxlength: 254,
     },
     role: { type: String, enum: ['customer', 'admin'], default: 'customer' },
+    adminAccess: { type: String, enum: ['owner', 'staff'] },
     wishlist: { type: [String], default: [] },
     savedAddresses: [
       {
@@ -42,4 +43,5 @@ const userSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+userSchema.index({ role: 1, createdAt: -1, _id: -1 });
 export const User = mongoose.model('User', userSchema);

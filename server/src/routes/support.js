@@ -9,6 +9,7 @@ import {
   publicTicket,
   recordSupportRequest,
   replyToTicket,
+  supportActions,
   updateTicket,
 } from '../services/support-tickets.js';
 import {
@@ -19,6 +20,8 @@ import {
   updateSupportInput,
 } from '../utils/contact-input.js';
 import { validate } from '../utils/http-error.js';
+import { adminPage, adminSearch, directoryPage, literalSearch } from '../services/admin-directory.js';
+import { adminAudit } from '../services/audit.js';
 
 export function createSupportRouter(session) {
   const router = Router();
@@ -46,35 +49,39 @@ export function createSupportRouter(session) {
 const ticketPageSize = 50;
 const ticketListQuery = z.object({
   status: z.enum(ticketStatuses).optional(),
-  page: z.coerce.number().int().min(1).max(1000).default(1),
+  page: adminPage,
+  q: adminSearch,
+  deadline: z.enum(['acknowledge', 'resolve']).optional(),
 });
 
 export function createAdminSupportRouter(requireUser) {
   const router = Router();
   router.use(noStore, requireUser, requireAdministrator);
   router.get('/', async (req, res) => {
-    const { status, page } = validate(ticketListQuery, req.query);
-    const items = await SupportRequest.find({
+    const { status, page, q, deadline } = validate(ticketListQuery, req.query);
+    const term = q ? literalSearch(q) : undefined;
+    const now = new Date();
+    const filter = {
       anonymizedAt: { $exists: false },
       ...(status && { status }),
-    })
-      .select('ticketNumber category status acknowledgeBy dueAt email name createdAt')
-      .sort({ createdAt: -1, _id: -1 })
-      .skip((page - 1) * ticketPageSize)
-      .limit(ticketPageSize)
-      .lean();
-    res.json({ items, page });
+      ...(term && { $or: [{ ticketNumber: term }, { email: term }, { name: term }, { orderNumber: term }] }),
+      ...(deadline === 'acknowledge' && { acknowledgedAt: null, acknowledgeBy: { $lte: now } }),
+      ...(deadline === 'resolve' && { resolvedAt: null, dueAt: { $lte: now } }),
+    };
+    res.json(await directoryPage(SupportRequest, filter,
+      'ticketNumber category status acknowledgeBy acknowledgedAt dueAt resolvedAt email name createdAt',
+      { createdAt: -1, _id: -1 }, page, ticketPageSize));
   });
   router.get('/:ticketNumber', async (req, res) => {
-    res.json(
-      await findTicket({ ticketNumber: validate(ticketNumberInput, req.params.ticketNumber) }),
-    );
+    const ticket = await findTicket({ ticketNumber: validate(ticketNumberInput, req.params.ticketNumber) });
+    res.json({ ...ticket, actions: supportActions(ticket) });
   });
   router.patch('/:ticketNumber', async (req, res) => {
     res.json(
       await updateTicket(
         validate(ticketNumberInput, req.params.ticketNumber),
         validate(updateSupportInput, req.body),
+        adminAudit(req, res),
       ),
     );
   });
