@@ -50,6 +50,8 @@ export class AdminProductList {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly api = inject(AdminSessionStore);
+  protected readonly canWrite = () => this.api.can('products.write');
+  protected readonly canImport = () => this.api.can('products.import');
   private readonly toasts = inject(Toasts);
   protected readonly types = typeOptions;
   protected readonly statuses = productStatusOptions;

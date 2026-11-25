@@ -52,7 +52,7 @@
         }
       </section>
     </div>
-    <section class="admin-box" aria-labelledby="audit-title">
+    @if (canReadAudit()) { <section class="admin-box" aria-labelledby="audit-title">
       <h2 id="audit-title">Latest audit activity</h2>
       @if (!entries().length) { <p>No audit activity yet.</p> }
       @else {
@@ -73,6 +73,6 @@
           </table>
         </div>
       }
-    </section>
+    </section> }
   }
 </main>

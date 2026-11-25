@@ -84,6 +84,13 @@ export async function openFormBrowser(t) {
   return {
     evaluate,
     navigate: (url) => send('Page.navigate', { url }),
+    async pressKey(key) {
+      const keyCode = { Tab: 9, Enter: 13 }[key];
+      if (!keyCode) throw new Error('Unsupported browser test key: ' + key);
+      const input = { key, code: key, windowsVirtualKeyCode: keyCode, nativeVirtualKeyCode: keyCode };
+      await send('Input.dispatchKeyEvent', { type: 'keyDown', ...input });
+      await send('Input.dispatchKeyEvent', { type: 'keyUp', ...input });
+    },
     resize: (width, height) =>
       send('Emulation.setDeviceMetricsOverride', {
         width,

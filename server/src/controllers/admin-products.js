@@ -16,6 +16,7 @@ import {
 import { adminProductQuery, listAdminProducts } from '../services/admin-product-list.js';
 import { validate } from '../utils/http-error.js';
 import { productSlug } from '../utils/product-input.js';
+import { adminPermission, hasAdminPermission } from '../config/admin-permissions.js';
 
 const payload = z.record(z.string(), z.unknown());
 const patch = payload
@@ -44,7 +45,8 @@ const slug = (request) => validate(productSlug, request.params.slug);
 
 export const adminProducts = {
   async list(req, res) {
-    res.json(await listAdminProducts(validate(adminProductQuery, req.query)));
+    res.json(await listAdminProducts(validate(adminProductQuery, req.query),
+      hasAdminPermission(res.locals.user, adminPermission.productCost)));
   },
   async checklist(req, res) {
     const candidate = validate(payload, req.body);
@@ -55,7 +57,8 @@ export const adminProducts = {
     res.json(await bulkProductStatus(slugs, status, adminAudit(req, res)));
   },
   async detail(req, res) {
-    res.json((await adminProduct(slug(req))).toObject());
+    const includeCost = hasAdminPermission(res.locals.user, adminPermission.productCost);
+    res.json((await adminProduct(slug(req), null, includeCost)).toObject());
   },
   async create(req, res) {
     res.status(201).json((await createProduct(req.body, adminAudit(req, res))).toObject());

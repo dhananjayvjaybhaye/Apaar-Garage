@@ -2,13 +2,16 @@ import { Router } from 'express';
 import { pipeline } from 'node:stream/promises';
 import { z } from 'zod';
 import { noStore, requestLimit } from '../middleware/http.js';
-import { requireAdministrator } from '../middleware/administrator.js';
+import { requirePermission } from '../middleware/administrator.js';
+import { adminPermission as p } from '../config/admin-permissions.js';
 import { subscribeToNewsletter, getUnsubscribeToken, unsubscribe } from '../services/newsletter.js';
 import { contactEmail, newsletterInput, unsubscribeTokenInput } from '../utils/contact-input.js';
 import { validate } from '../utils/http-error.js';
 import { NewsletterSubscriber } from '../models/newsletter-subscriber.js';
 import { adminPage, adminSearch, directoryPage, literalSearch } from '../services/admin-directory.js';
 import { sheetStream } from '../utils/product-sheet.js';
+import { auditContactView, canViewFullContactLists, maskEmail } from '../services/admin-contact-access.js';
+import { privateKey } from '../services/cod-risk.js';
 
 const subscriberQuery = z.object({
   q: adminSearch,
@@ -58,23 +61,32 @@ export function createNewsletterRouter(session, secret) {
 
 export function createAdminNewsletterRouter(requireUser, secret) {
   const router = Router();
-  router.use(noStore, requireUser, requireAdministrator);
+  router.use(noStore, requireUser, requirePermission(p.newsletterRead));
   router.get('/', async (req, res) => {
     const { q, page, status } = validate(subscriberQuery, req.query);
+    const fullContact = canViewFullContactLists(res);
     const filter = {
-      ...(q && { _id: literalSearch(q) }),
+      ...(q && { _id: fullContact ? literalSearch(q) : q.toLowerCase() }),
       ...(status === 'subscribed' && activeConsent),
       ...(status === 'unsubscribed' && { unsubscribedAt: { $exists: true } }),
     };
-    res.json(await directoryPage(NewsletterSubscriber, filter, subscriberFields, subscriberSort, page));
+    const result = await directoryPage(NewsletterSubscriber, filter, subscriberFields, subscriberSort, page);
+    if (fullContact) await auditContactView(req, res, 'newsletter:list', ['email'], result.items.length);
+    result.items = result.items.map((item) => ({
+      ...item,
+      id: privateKey(secret, 'admin-subscriber-list', item._id),
+      _id: fullContact ? item._id : maskEmail(item._id),
+    }));
+    res.json(result);
   });
-  router.get('/export', async (req, res) => {
+  router.get('/export', requirePermission(p.newsletterExport), async (req, res) => {
     const q = validate(adminSearch, req.query.q);
     const filter = { ...activeConsent, ...(q && { _id: literalSearch(q) }) };
+    await auditContactView(req, res, 'newsletter:export', ['email']);
     res.attachment('newsletter-subscribers.csv').type('text/csv; charset=utf-8');
     await pipeline(sheetStream('csv', subscriberRecords(filter)), res);
   });
-  router.post('/unsubscribe-token', async (req, res) => {
+  router.post('/unsubscribe-token', requirePermission(p.newsletterManage), async (req, res) => {
     const token = await getUnsubscribeToken(validate(contactEmail, req.body?.email), secret);
     res.json({ token });
   });

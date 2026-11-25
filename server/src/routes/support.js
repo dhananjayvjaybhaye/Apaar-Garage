@@ -3,7 +3,9 @@ import { z } from 'zod';
 import { SupportRequest } from '../models/support-request.js';
 import { ticketStatuses } from '../config/store-policy.js';
 import { noStore, requestLimit } from '../middleware/http.js';
-import { requireAdministrator } from '../middleware/administrator.js';
+import { requirePermission } from '../middleware/administrator.js';
+import { adminPermission as p } from '../config/admin-permissions.js';
+import { auditContactView, canViewFullContactLists, maskEmail, ticketContactFields } from '../services/admin-contact-access.js';
 import {
   findTicket,
   publicTicket,
@@ -56,34 +58,42 @@ const ticketListQuery = z.object({
 
 export function createAdminSupportRouter(requireUser) {
   const router = Router();
-  router.use(noStore, requireUser, requireAdministrator);
+  router.use(noStore, requireUser, requirePermission(p.support));
   router.get('/', async (req, res) => {
     const { status, page, q, deadline } = validate(ticketListQuery, req.query);
     const term = q ? literalSearch(q) : undefined;
+    const fullContact = canViewFullContactLists(res);
+    const emailSearch = fullContact ? term : q?.toLowerCase();
     const now = new Date();
     const filter = {
       anonymizedAt: { $exists: false },
       ...(status && { status }),
-      ...(term && { $or: [{ ticketNumber: term }, { email: term }, { name: term }, { orderNumber: term }] }),
+      ...(term && { $or: [{ ticketNumber: term }, { email: emailSearch }, { name: term }, { orderNumber: term }] }),
       ...(deadline === 'acknowledge' && { acknowledgedAt: null, acknowledgeBy: { $lte: now } }),
       ...(deadline === 'resolve' && { resolvedAt: null, dueAt: { $lte: now } }),
     };
-    res.json(await directoryPage(SupportRequest, filter,
+    const result = await directoryPage(SupportRequest, filter,
       'ticketNumber category status acknowledgeBy acknowledgedAt dueAt resolvedAt email name createdAt',
-      { createdAt: -1, _id: -1 }, page, ticketPageSize));
+      { createdAt: -1, _id: -1 }, page, ticketPageSize);
+    if (fullContact) {
+      await auditContactView(req, res, 'support:list', ['email'], result.items.filter((item) => item.email).length);
+    } else {
+      for (const item of result.items) item.email = maskEmail(item.email);
+    }
+    res.json(result);
   });
   router.get('/:ticketNumber', async (req, res) => {
     const ticket = await findTicket({ ticketNumber: validate(ticketNumberInput, req.params.ticketNumber) });
+    await auditContactView(req, res, ticket.ticketNumber, ticketContactFields(ticket));
     res.json({ ...ticket, actions: supportActions(ticket) });
   });
   router.patch('/:ticketNumber', async (req, res) => {
-    res.json(
-      await updateTicket(
-        validate(ticketNumberInput, req.params.ticketNumber),
-        validate(updateSupportInput, req.body),
-        adminAudit(req, res),
-      ),
+    const ticket = await updateTicket(
+      validate(ticketNumberInput, req.params.ticketNumber),
+      validate(updateSupportInput, req.body),
+      adminAudit(req, res),
     );
+    res.json(ticket);
   });
   return router;
 }

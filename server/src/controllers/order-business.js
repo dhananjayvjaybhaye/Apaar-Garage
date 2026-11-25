@@ -15,6 +15,7 @@ import {
 import { validate } from '../utils/http-error.js';
 import { publicOrder } from '../utils/order-response.js';
 import { orderActions } from '../services/order-confirmation.js';
+import { auditContactView } from '../services/admin-contact-access.js';
 
 const noteInput = z.strictObject({ note });
 const orderNumber = (req) => validate(orderNumberPattern, req.params.orderNumber);
@@ -35,6 +36,11 @@ export const orderBusiness = {
   async adminDetail(req, res, settings) {
     const order = await findCustomerOrder({ number: orderNumber(req) });
     const { risk } = await settings.read();
+    const fields = [
+      ...(order.address?.phone ? ['phone'] : []),
+      ...(order.address?.addressLine1 ? ['shipping address'] : []),
+    ];
+    await auditContactView(req, res, order.number, fields);
     res.json({
       ...publicOrder(order),
       address: order.address,
@@ -58,6 +64,7 @@ export const orderBusiness = {
   async packingSlip(req, res) {
     const order = await findCustomerOrder({ number: orderNumber(req) });
     const { fullName, addressLine1, addressLine2, city, state, pincode } = order.address;
+    await auditContactView(req, res, order.number + '/packing-slip', addressLine1 ? ['shipping address'] : []);
     res.json({
       orderNumber: order.number,
       createdAt: order.createdAt,

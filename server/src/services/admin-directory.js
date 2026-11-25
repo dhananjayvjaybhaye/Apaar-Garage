@@ -22,15 +22,16 @@ export async function directoryPage(model, filter, projection, sort, page, size 
   return pageResult(items, page, total, size);
 }
 
-export async function customerDirectory({ q, page }) {
+function customerFilter(q) {
   const term = q ? literalSearch(q) : undefined;
-  const filter = { role: 'customer', ...(term && { $or: [{ name: term }, { email: term }] }) };
-  const [items, total] = await Promise.all([
-    User.aggregate([
+  return { role: 'customer', ...(term && { $or: [{ name: term }, { email: term }] }) };
+}
+
+function customerRecords(filter, page) {
+  return User.aggregate([
       { $match: filter },
       { $sort: { createdAt: -1, _id: -1 } },
-      { $skip: (page - 1) * adminPageSize },
-      { $limit: adminPageSize },
+      ...(page ? [{ $skip: (page - 1) * adminPageSize }, { $limit: adminPageSize }] : []),
       { $project: { name: 1, email: 1, createdAt: 1 } },
       { $lookup: {
         from: Order.collection.name,
@@ -50,8 +51,26 @@ export async function customerDirectory({ q, page }) {
         orderedPaise: { $ifNull: [{ $first: '$totals.orderedPaise' }, 0] },
         collectedPaise: { $ifNull: [{ $first: '$totals.collectedPaise' }, 0] },
       } },
-    ]),
+  ]);
+}
+
+export async function customerDirectory({ q, page }) {
+  const filter = customerFilter(q);
+  const [items, total] = await Promise.all([
+    customerRecords(filter, page),
     User.countDocuments(filter),
   ]);
   return pageResult(items, page, total);
+}
+
+export async function* customerExportRows(q) {
+  yield ['name', 'email', 'createdAt', 'orderCount', 'orderedPaise', 'collectedPaise'];
+  const cursor = customerRecords(customerFilter(q)).cursor();
+  try {
+    for await (const row of cursor) {
+      yield [row.name, row.email, row.createdAt?.toISOString(), row.orderCount, row.orderedPaise, row.collectedPaise];
+    }
+  } finally {
+    await cursor.close();
+  }
 }

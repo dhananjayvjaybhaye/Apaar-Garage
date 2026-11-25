@@ -5,6 +5,7 @@ import { Order } from '../models/order.js';
 import { validate } from '../utils/http-error.js';
 import { normalizeIndianPhone } from '../utils/indian-phone.js';
 import { confirmationQueue, orderActions } from './order-confirmation.js';
+import { maskPhone } from './admin-contact-access.js';
 
 const pageSize = 20;
 const orderFields = 'number createdAt address.fullName address.phone address.pincode status ' +
@@ -32,15 +33,18 @@ function dayStart(date) {
   return Date.parse(date + 'T00:00:00Z') - indiaOffsetMinutes * 60_000;
 }
 
-function findFilter(input, risk) {
+function findFilter(input, risk, fullContact) {
   const clauses = [];
   if (input.q) {
     const literal = RegExp.escape(input.q);
     const phone = normalizeIndianPhone(input.q);
+    const phoneFilter = fullContact && /^\d+$/.test(phone)
+      ? new RegExp(phone)
+      : /^[6-9]\d{9}$/.test(phone) ? phone : null;
     clauses.push({ $or: [
       { number: new RegExp('^' + literal, 'i') },
       { 'address.fullName': new RegExp(literal, 'i') },
-      ...(/^\d+$/.test(phone) ? [{ 'address.phone': new RegExp(phone) }] : []),
+      ...(phoneFilter ? [{ 'address.phone': phoneFilter }] : []),
       ...(/^\d{1,6}$/.test(input.q) ? [{ 'address.pincode': new RegExp('^' + literal) }] : []),
     ] });
   }
@@ -59,12 +63,12 @@ function findFilter(input, risk) {
   return clauses.length ? { $and: clauses } : {};
 }
 
-function summary(order, risk) {
+function summary(order, risk, fullContact = true) {
   return {
     orderNumber: order.number,
     createdAt: order.createdAt,
     customer: order.address?.fullName,
-    phone: order.address?.phone,
+    phone: fullContact ? order.address?.phone : maskPhone(order.address?.phone),
     pincode: order.address?.pincode,
     status: order.status,
     paymentMethod: order.paymentMethod,
@@ -75,18 +79,18 @@ function summary(order, risk) {
   };
 }
 
-export function readOrderQuery(query, risk) {
+export function readOrderQuery(query, risk, fullContact = true) {
   const input = validate(filters, query);
-  const filter = findFilter(input, risk);
+  const filter = findFilter(input, risk, fullContact);
   return { filter, page: input.page, list: Order.find(filter).select(orderFields).sort(sorts[input.sort]).lean() };
 }
 
-export async function listAdminOrders({ filter, page, list }, risk) {
+export async function listAdminOrders({ filter, page, list }, risk, fullContact) {
   const [orders, total] = await Promise.all([
     list.skip((page - 1) * pageSize).limit(pageSize),
     Order.countDocuments(filter),
   ]);
-  return { items: orders.map((order) => summary(order, risk)), page, total, totalPages: Math.ceil(total / pageSize) };
+  return { items: orders.map((order) => summary(order, risk, fullContact)), page, total, totalPages: Math.ceil(total / pageSize) };
 }
 
 export async function* orderRecords({ list }, risk) {

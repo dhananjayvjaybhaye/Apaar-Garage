@@ -108,4 +108,27 @@ test('Orders and Settings are reachable and support the admin workflows', { time
   await waitFor('staff settings fields', '!!' + field('setting-codFeePaise'));
   assert.ok(await run(field('setting-codFeePaise') + '.matches(":disabled")'));
   assert.equal(await run('!!' + button('Save settings')), false);
+
+  for (const path of ['customers', 'coupons', 'blocked-contacts', 'product-import', 'products/new', 'users']) {
+    await browser.navigate(site + '/admin/' + path);
+    await waitFor('denied ' + path, `location.pathname === '/admin/no-access' && ${text("You don't have access")}`);
+  }
+  await waitFor('access heading receives focus', `document.activeElement?.tagName === 'H1' && document.activeElement.tabIndex === -1`);
+  await browser.pressKey('Tab');
+  assert.equal(await run('document.activeElement?.textContent.trim()'), 'Back to dashboard');
+  await browser.pressKey('Enter');
+  await waitFor('keyboard back to dashboard', `location.pathname === '/admin'`);
+  assert.equal(await run(`!!document.querySelector('nav a[href="/admin/customers"], nav a[href="/admin/coupons"], nav a[href="/admin/blocked-contacts"]')`), false);
+  await browser.navigate(site + '/admin/products');
+  await waitFor('staff product list', `!!document.querySelector('td a[href$="/view"]')`);
+  assert.equal(await run(`!!document.querySelector('a[href="/admin/products/new"], a[href="/admin/product-import"]')`), false);
+  await run(`document.querySelector('td a[href$="/view"]').click()`);
+  await waitFor('read-only product view', text('Back to products'));
+  assert.equal(await run(`!!document.querySelector('main form')`), false);
+  await browser.navigate(site + '/admin/orders');
+  await waitFor('staff orders', text('98•••••210'));
+  assert.equal(await run(`!!document.querySelector('a[href*="/orders/export"]')`), false);
+  await browser.navigate(site + '/admin/newsletter');
+  await waitFor('staff newsletter', text('0 matching subscription records'));
+  assert.equal(await run(`!!document.querySelector('a[href*="/newsletter/export"]')`), false);
 });

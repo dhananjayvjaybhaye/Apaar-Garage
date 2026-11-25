@@ -1,9 +1,11 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { FieldControl, FormField } from '../../ui/form-field/form-field';
 import { AdminFilter, AdminPager, adminList } from '../admin-list';
+import { AdminSessionStore } from '../admin-session-store';
 
 interface Subscriber {
+  id: string;
   _id: string;
   subscribedAt: string;
   unsubscribedAt?: string;
@@ -18,7 +20,7 @@ const endpoint = '/api/admin/newsletter';
     <main>
       <header class="admin-header">
         <h1>Newsletter</h1>
-        @if (list.resource.hasValue()) {
+        @if (canExport() && list.resource.hasValue()) {
           <a class="secondary-button" [href]="exportUrl()">Export active subscribers (CSV)</a>
         }
       </header>
@@ -39,7 +41,7 @@ const endpoint = '/api/admin/newsletter';
             <thead><tr><th scope="col">Email</th><th scope="col">Status</th><th scope="col">Subscribed (IST)</th>
               <th scope="col">Consent</th><th scope="col">Source</th></tr></thead>
             <tbody>
-              @for (subscriber of data.items; track subscriber._id) {
+              @for (subscriber of data.items; track subscriber.id) {
                 <tr>
                   <td data-label="Email">{{ subscriber._id }}</td>
                   <td data-label="Status"><div><span class="admin-badge">{{ subscriber.unsubscribedAt
@@ -66,6 +68,8 @@ const endpoint = '/api/admin/newsletter';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminNewsletter {
+  private readonly sessions = inject(AdminSessionStore);
+  protected readonly canExport = () => this.sessions.can('newsletter.export');
   protected readonly list = adminList<Subscriber>(endpoint);
   protected readonly exportUrl = computed(() => {
     const search = new URLSearchParams(this.list.query()).get('q');

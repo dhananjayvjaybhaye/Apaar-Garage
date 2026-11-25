@@ -3,7 +3,9 @@ import { pipeline } from 'node:stream/promises';
 import { orderBusiness } from '../controllers/order-business.js';
 import { createOrdersController } from '../controllers/orders.js';
 import { noStore, requestLimit } from '../middleware/http.js';
-import { requireAdministrator } from '../middleware/administrator.js';
+import { requirePermission } from '../middleware/administrator.js';
+import { adminPermission as p } from '../config/admin-permissions.js';
+import { auditContactView, canViewFullContactLists } from '../services/admin-contact-access.js';
 import { HttpError } from '../utils/http-error.js';
 import { listAdminOrders, orderRecords, readOrderQuery } from '../services/admin-orders.js';
 import { sheetStream } from '../utils/product-sheet.js';
@@ -47,22 +49,28 @@ export function createOrdersRouter(requireUser, shopper, options) {
 export function createAdminOrdersRouter(requireUser, options) {
   const router = Router();
   const orders = createOrdersController(options);
-  router.use(noStore, requireUser, requireAdministrator);
+  router.use(noStore, requireUser, requirePermission(p.orders));
   router.get('/', async (req, res) => {
     const { risk } = await options.settings.read();
-    res.json(await listAdminOrders(readOrderQuery(req.query, risk), risk));
+    const fullContact = canViewFullContactLists(res);
+    const result = await listAdminOrders(readOrderQuery(req.query, risk, fullContact), risk, fullContact);
+    if (fullContact) {
+      await auditContactView(req, res, 'orders:list', ['phone'], result.items.filter((item) => item.phone).length);
+    }
+    res.json(result);
   });
-  router.get('/export', async (req, res) => {
+  router.get('/export', requirePermission(p.orderExport), async (req, res) => {
     const { risk } = await options.settings.read();
     const query = readOrderQuery(req.query, risk);
+    await auditContactView(req, res, 'orders:export', ['phone']);
     res.attachment('orders.csv').type('text/csv; charset=utf-8');
     await pipeline(sheetStream('csv', orderRecords(query, risk)), res);
   });
   router.get('/:orderNumber/packing-slip', orderBusiness.packingSlip);
   router.get('/:orderNumber/invoice', orderBusiness.adminInvoice);
   router.get('/:orderNumber', (req, res) => orderBusiness.adminDetail(req, res, options.settings));
-  router.get('/:orderNumber/returns', orderBusiness.adminReturns);
-  router.patch('/:orderNumber/returns/:id', orderBusiness.changeReturn);
+  router.get('/:orderNumber/returns', requirePermission(p.returns), orderBusiness.adminReturns);
+  router.patch('/:orderNumber/returns/:id', requirePermission(p.returns), orderBusiness.changeReturn);
   router.post('/:orderNumber/notes', orderBusiness.addNote);
   router.patch('/:orderNumber/confirmation', orderBusiness.confirm);
   router.patch('/:orderNumber/status', orders.changeStatus);

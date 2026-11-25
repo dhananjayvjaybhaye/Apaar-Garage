@@ -23,6 +23,7 @@ interface OrdersPage {
 export class AdminOrderList {
   private readonly sessions = inject(AdminSessionStore);
   private query = '';
+  private requestedPage = 1;
   protected readonly data = signal<OrdersPage | null>(null);
   protected readonly loading = signal(false);
   protected readonly error = signal('');
@@ -30,6 +31,7 @@ export class AdminOrderList {
   protected readonly label = orderLabel;
   protected readonly statuses = orderStatuses;
   protected readonly paise = paisePerRupee;
+  protected readonly canExport = () => this.sessions.can('orders.export');
 
   constructor() {
     void this.load(1);
@@ -47,6 +49,7 @@ export class AdminOrderList {
 
   protected async load(page: number) {
     if (this.loading()) return;
+    this.requestedPage = page;
     this.loading.set(true);
     this.error.set('');
     const query = new URLSearchParams(this.query);
@@ -60,5 +63,9 @@ export class AdminOrderList {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  protected retry() {
+    void this.load(this.requestedPage);
   }
 }

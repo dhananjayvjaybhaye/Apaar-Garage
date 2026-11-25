@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { noStore } from '../middleware/http.js';
-import { requireAdministrator } from '../middleware/administrator.js';
+import { requirePermission } from '../middleware/administrator.js';
+import { adminPermission as p } from '../config/admin-permissions.js';
 import { Coupon } from '../models/coupon.js';
 import { couponRule, createCoupon, saveCoupon } from '../services/discounts.js';
 import { adminAudit, recordAudit } from '../services/audit.js';
@@ -14,7 +15,7 @@ function couponSummary(coupon) {
 
 export function createCouponsRouter(requireUser, initialize) {
   const router = Router();
-  router.use(noStore, requireUser, requireAdministrator);
+  router.use(noStore, requireUser, requirePermission(p.coupons));
   router.get('/', async (_req, res) => {
     await initialize();
     res.json({ items: await Coupon.find().sort({ _id: 1 }).lean() });

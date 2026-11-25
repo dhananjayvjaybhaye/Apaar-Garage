@@ -13,6 +13,7 @@ export interface AdminSession {
   setupRequired: boolean;
   twoFactorEnabled: boolean;
   canEditSettings?: boolean;
+  permissions?: readonly string[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -21,6 +22,10 @@ export class AdminSessionStore {
   private readonly current = signal<AdminSession | null>(null);
   readonly session = this.current.asReadonly();
   private readonly serverOffset = signal(0);
+
+  can(permission: string) {
+    return this.session()?.permissions?.includes(permission) ?? false;
+  }
 
   private store(session: AdminSession) {
     this.serverOffset.set(Date.parse(session.serverTime) - Date.now());

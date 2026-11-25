@@ -35,6 +35,7 @@ const actionLabels: Record<string, string> = {
   'admin.created': 'Admin account created',
   'admin.password_rotated': 'Admin password changed',
   'settings.updated': 'Store settings updated',
+  'privacy.contact_viewed': 'Contact details viewed',
   'product.created': 'Product created',
   'product.updated': 'Product updated',
   'product.stock_adjusted': 'Stock adjusted',

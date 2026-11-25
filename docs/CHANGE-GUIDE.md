@@ -60,7 +60,26 @@ Production requires an authenticator. Set `ADMIN_REQUIRE_2FA=true` to test the s
 
 From `server`, run `npm.cmd run remove-admin` on Windows or `npm run remove-admin` on macOS or Linux. Enter the email and type `REMOVE` to confirm. This revokes admin sessions immediately and removes the old authenticator enrollment. The account can still use the storefront. An operator with database access can use the remove and create commands to re-enroll an administrator who has lost both the authenticator and all recovery codes.
 
-For direct admin API requests, sign in using `POST /auth/admin/login`, keep the admin cookie, and send the returned token as `X-Admin-CSRF` on writes. A non-renewing session check is available at `GET /auth/admin/session`. The dashboard shows the latest audit entries, including account lockouts and changes to settings, products, orders, and refunds.
+For direct admin API requests, sign in using `POST /auth/admin/login`, keep the admin cookie, and send the returned token as `X-Admin-CSRF` on writes. A non-renewing session check is available at `GET /auth/admin/session`. Owners can view the latest audit entries on the dashboard.
+
+## Admin permissions
+
+`server/src/config/admin-permissions.js` defines the roles. The session API returns the granted permissions, which the admin shell uses for navigation and controls. Legacy admin accounts without an explicit access level use the staff permissions.
+
+| Capability | Owner | Staff |
+| --- | --- | --- |
+| Dashboard | View | View |
+| Orders, returns, and support | Work on records and view full contact details | Work on records, view masked lists, and open individual orders and tickets |
+| Products | View, edit, import, export, and see cost price | View with cost price omitted |
+| Store settings and launch readiness | View and edit | View |
+| Customer directory and CSV | View and export | — |
+| Orders CSV and newsletter CSV | Export | — |
+| Newsletter | View and manage | View masked subscriber list |
+| Coupons and blocked contacts | Manage | — |
+| Audit activity | View | — |
+| Admin users | Provision from the server terminal | — |
+
+Staff can search by a complete phone number or email they already have. Partial phone and email searches are available to owners. Full contact disclosures in admin detail views, packing slips, owner lists, and exports create a `privacy.contact_viewed` audit entry with the actor, record or list reference, and field names. The entry omits the contact values.
 
 ## Manage products in the admin panel
 

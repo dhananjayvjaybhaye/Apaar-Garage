@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { BlockedContact } from '../models/cod-risk.js';
-import { requireAdministrator } from '../middleware/administrator.js';
+import { requirePermission } from '../middleware/administrator.js';
+import { adminPermission as p } from '../config/admin-permissions.js';
+import { auditContactView } from '../services/admin-contact-access.js';
 import { noStore } from '../middleware/http.js';
 import { pincode } from '../services/delivery.js';
 import { HttpError, validate } from '../utils/http-error.js';
@@ -22,11 +24,13 @@ const removal = z.strictObject({ reason: z.string().trim().min(1).max(250) });
 
 export function createBlockedContactsRouter(requireUser) {
   const router = Router();
-  router.use(noStore, requireUser, requireAdministrator);
+  router.use(noStore, requireUser, requirePermission(p.blockedContacts));
   router.get('/', async (req, res) => {
     const page = validate(adminPage, req.query.page);
-    res.json(await directoryPage(BlockedContact, {}, 'phone pincode reason createdAt',
-      { createdAt: -1, _id: -1 }, page, 100));
+    const result = await directoryPage(BlockedContact, {}, 'phone pincode reason createdAt',
+      { createdAt: -1, _id: -1 }, page, 100);
+    await auditContactView(req, res, 'blocked-contacts:list', ['phone'], result.items.filter((item) => item.phone).length);
+    res.json(result);
   });
   router.post('/', async (req, res) => {
     const value = validate(input, req.body);

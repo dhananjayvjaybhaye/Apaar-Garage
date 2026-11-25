@@ -5,6 +5,7 @@ import { SupportRequest } from '../models/support-request.js';
 import { writeForAccount } from './account-write.js';
 import { HttpError } from '../utils/http-error.js';
 import { recordAudit } from './audit.js';
+import { recordContactView, ticketContactFields } from './admin-contact-access.js';
 import { transaction } from './transaction.js';
 
 function number() {
@@ -106,6 +107,7 @@ async function updateTicketRecord(ticketNumber, input, audit, session) {
     { returnDocument: 'after', runValidators: true, session },
   ).lean();
   if (!result) throw new HttpError(409, 'The ticket changed. Please refresh and try again.');
+  await recordContactView(audit, ticketNumber, ticketContactFields(result), undefined, session);
   if (status !== ticket.status || input.reply)
     await recordAudit('support.ticket_updated', {
       ...audit, target: ticketNumber,

@@ -24,6 +24,7 @@ export class AdminDashboard {
   protected readonly metrics = signal<AdminMetrics | null>(null);
   protected readonly error = signal('');
   protected readonly setup = signal(false);
+  protected readonly canReadAudit = computed(() => this.sessions.can('audit.read'));
   protected readonly maxSales = computed(() =>
     Math.max(1, ...(this.metrics()?.sales ?? []).map(({ totalPaise }) => totalPaise)),
   );
@@ -38,7 +39,9 @@ export class AdminDashboard {
     try {
       const [metrics, audit] = await Promise.all([
         this.sessions.request<AdminMetrics>('GET', '/api/admin/overview/dashboard'),
-        this.sessions.request<{ items: AuditEntry[] }>('GET', '/api/admin/overview/audit'),
+        this.canReadAudit()
+          ? this.sessions.request<{ items: AuditEntry[] }>('GET', '/api/admin/overview/audit')
+          : Promise.resolve({ items: [] }),
       ]);
       this.metrics.set(metrics);
       this.entries.set(audit.items);

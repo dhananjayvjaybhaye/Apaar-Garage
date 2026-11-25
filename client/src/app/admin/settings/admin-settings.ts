@@ -18,7 +18,7 @@ const settingsApi = '/api/admin/settings';
 })
 export class AdminSettings {
   private readonly sessions = inject(AdminSessionStore);
-  protected readonly canEdit = computed(() => this.sessions.session()?.canEditSettings === true);
+  protected readonly canEdit = computed(() => this.sessions.can('settings.write'));
   protected readonly settings = signal<StoreSettings | null>(null);
   protected readonly loading = signal(false);
   protected readonly loadError = signal('');

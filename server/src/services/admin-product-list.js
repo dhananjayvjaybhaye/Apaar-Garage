@@ -45,7 +45,7 @@ const complete = {
   ],
 };
 
-export async function listAdminProducts(query) {
+export async function listAdminProducts(query, includeCost = false) {
   const { q, productType, category, stock, status, compliance, sort, page } = query;
   const criteria = {
     ...(productType && { productType }),
@@ -70,7 +70,7 @@ export async function listAdminProducts(query) {
   const [total, products] = await Promise.all([
     Product.countDocuments(where),
     Product.find(where)
-      .select('-__v')
+      .select(includeCost ? '+costPrice' : '-costPrice')
       .sort(sorts[sort])
       .skip((page - 1) * adminProductPageSize)
       .limit(adminProductPageSize)
@@ -91,6 +91,7 @@ export async function listAdminProducts(query) {
       status: product.status ?? 'draft',
       placeholder: Boolean(placeholder),
       image: images[0],
+      ...(includeCost && product.costPrice !== undefined && { costPrice: product.costPrice }),
       issues: publicationIssues({ ...product, status: 'published' }),
     };
   });

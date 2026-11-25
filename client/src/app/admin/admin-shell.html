@@ -6,7 +6,7 @@
   <aside id="admin-sidebar" class="admin-sidebar" [class.admin-menu-open]="menuOpen()">
     <div class="admin-brand"><app-brand-logo /><span>Admin</span></div>
     <nav aria-label="Admin sections">
-      @for (item of navigation; track item.path) {
+      @for (item of navigation(); track item.path) {
         <a [routerLink]="item.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: item.path === '/admin' }" ariaCurrentWhenActive="page" (click)="menuOpen.set(false)">{{ item.label }}</a>
       }
       <a routerLink="/">View store</a>

@@ -32,6 +32,8 @@ import { createAdminAuthRouter } from './routes/admin-auth.js';
 import { createAdminOverviewRouter } from './routes/admin-overview.js';
 import { createAdminFulfillmentRouter } from './routes/admin-fulfillment.js';
 import { createSession } from './middleware/session.js';
+import { requirePermission } from './middleware/administrator.js';
+import { adminPermission } from './config/admin-permissions.js';
 
 export function createApp({
   orderEmailEnabled = false,
@@ -103,7 +105,7 @@ export function createApp({
   app.use('/admin/products', createAdminProductsRouter(admin.requireAdmin));
   app.use('/admin/orders', createAdminOrdersRouter(admin.requireAdmin, payment));
   app.use('/admin', createAdminFulfillmentRouter(admin.requireAdmin));
-  app.use('/admin', admin.requireAdmin);
+  app.use('/admin', admin.requireAdmin, requirePermission(adminPermission.adminUsers));
   app.use(() => {
     throw new HttpError(404, 'Route not found.');
   });

@@ -36,7 +36,9 @@ export class AdminShell {
   private readonly router = inject(Router);
   private readonly productDrafts = inject(AdminProductDrafts);
   protected readonly sessions = inject(AdminSessionStore);
-  protected readonly navigation = adminNavigation;
+  protected readonly navigation = computed(
+    () => adminNavigation.filter(({ permission }) => this.sessions.can(permission)),
+  );
   protected readonly menuOpen = signal(false);
   private readonly now = signal(Date.now());
   private readonly remaining = computed(() => this.sessions.remainingMs(this.now()));

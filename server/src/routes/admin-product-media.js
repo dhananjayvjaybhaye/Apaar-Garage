@@ -1,4 +1,6 @@
 import express, { Router } from 'express';
+import { adminPermission as p } from '../config/admin-permissions.js';
+import { requirePermission } from '../middleware/administrator.js';
 import { imageMaxBytes, modelMaxBytes } from '../config/admin-panel.js';
 import { convertProductImage, validateProductModel } from '../services/product-media.js';
 import { HttpError } from '../utils/http-error.js';
@@ -24,7 +26,7 @@ function upload(types, limit, convert, suffix, media) {
 
 export function createAdminProductMediaRouter(requireAdmin, media) {
   const router = Router();
-  router.use(requireAdmin);
+  router.use(requireAdmin, requirePermission(p.productWrite));
   router.post('/image', ...upload(imageTypes, imageMaxBytes, convertProductImage, 'webp', media));
   router.post('/model', ...upload(modelTypes, modelMaxBytes, validateProductModel, 'glb', media));
   return router;

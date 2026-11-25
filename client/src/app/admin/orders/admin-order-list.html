@@ -1,7 +1,7 @@
 <main>
   <header class="admin-header">
     <h1>Orders</h1>
-    @if (!loading() && data(); as orders) {
+    @if (canExport() && !loading() && data(); as orders) {
       @if (orders.total) { <a class="secondary-button" [href]="exportUrl()">Export matching orders (CSV)</a> }
     }
   </header>
@@ -42,6 +42,7 @@
     <p role="status">Loading orders…</p>
   } @else if (error()) {
     <p class="error-text" role="alert">{{ error() }}</p>
+    <button type="button" class="secondary-button" (click)="retry()">Retry</button>
   } @else if (data(); as orders) {
     <p role="status">{{ orders.total }} matching orders</p>
     @if (orders.items.length) {

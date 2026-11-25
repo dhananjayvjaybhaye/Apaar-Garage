@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import { adminPermission as p } from '../config/admin-permissions.js';
+import { requirePermission } from '../middleware/administrator.js';
 import { pipeline } from 'node:stream/promises';
 import { historyPageSize, importModes } from '../config/product-import.js';
 import { productImportCapacity, readImportUpload } from '../middleware/product-import-upload.js';
@@ -143,7 +145,7 @@ function importHandler({ media, secret }, apply) {
 
 export function createAdminProductImportsRouter(requireAdmin, options) {
   const router = Router();
-  router.use(requireAdmin);
+  router.use(requireAdmin, requirePermission(p.productImport));
   router.get('/template', download(true));
   router.get('/export', download(false));
   router.get('/capabilities', (_req, res) => res.json({ extraction: Boolean(options.extractor) }));

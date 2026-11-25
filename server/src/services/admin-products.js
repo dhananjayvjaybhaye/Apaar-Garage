@@ -31,8 +31,8 @@ export function validateProduct(value) {
   throw new HttpError(400, 'Review the product fields.', productIssues(value, result.error.issues));
 }
 
-export async function adminProduct(slug, session = null) {
-  const product = await Product.findOne({ slug }).select('+costPrice').session(session);
+export async function adminProduct(slug, session = null, includeCost = true) {
+  const product = await Product.findOne({ slug }).select(includeCost ? '+costPrice' : '-costPrice').session(session);
   if (!product) throw new HttpError(404, 'Product not found.');
   return product;
 }

@@ -72,7 +72,8 @@ test('admin Orders and owner Settings workflows', async (t) => {
     assert.equal(pages[0].value.items[0].totalPaise, 10_020);
     assert.equal((await staff(base + filter + '&status=delivered&codToCollect=1')).value.total, 1);
     assert.equal((await staff(base + filter + '&flagged=1&needsConfirmation=1')).value.total, 1);
-    const csv = await staff(base + '/export' + filter + '&page=2', { asText: true });
+    await staff(base + '/export' + filter, { status: 403 });
+    const csv = await owner(base + '/export' + filter + '&page=2', { asText: true });
     assert.match(csv.headers.get('content-disposition'), /orders\.csv/);
     const rows = parse(csv.value, { bom: true, columns: true });
     assert.equal(rows.length, 21);

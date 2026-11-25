@@ -1,6 +1,7 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { AdminFilter, AdminPager, adminList } from '../admin-list';
+import { AdminSessionStore } from '../admin-session-store';
 
 interface CustomerSummary {
   _id: string;
@@ -16,7 +17,12 @@ interface CustomerSummary {
   imports: [CurrencyPipe, DatePipe, AdminFilter, AdminPager],
   template: `
     <main>
-      <header class="admin-header"><h1>Customers</h1></header>
+      <header class="admin-header">
+        <h1>Customers</h1>
+        @if (canExport() && list.resource.hasValue()) {
+          <a class="secondary-button" [href]="exportUrl()">Export matching customers (CSV)</a>
+        }
+      </header>
       <p class="muted">Registered accounts. Order value excludes cancelled orders. Collected totals are before refunds.</p>
       <app-admin-filter label="Search by name or email" (applied)="list.apply($event)" />
       @if (list.resource.isLoading()) { <p role="status">Loading customers…</p> }
@@ -49,5 +55,11 @@ interface CustomerSummary {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminCustomers {
+  private readonly sessions = inject(AdminSessionStore);
+  protected readonly canExport = () => this.sessions.can('customers.export');
   protected readonly list = adminList<CustomerSummary>('/api/admin/customers');
+  protected readonly exportUrl = computed(() => {
+    const query = this.list.query();
+    return '/api/admin/customers/export' + (query ? '?' + query : '');
+  });
 }

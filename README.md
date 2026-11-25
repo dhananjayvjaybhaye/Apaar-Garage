@@ -45,7 +45,7 @@ npm.cmd run create-admin
 
 Enter the administrator email and the new password twice. If the email is already registered, the command promotes the account and requires a fresh sign-in. On macOS or Linux, use `npm run create-admin`.
 
-Use `npm run create-admin -- --owner` to grant owner access to an existing administrator, including accounts created before owner access was introduced. Use `--staff` to grant admin access with read-only settings. The command also rotates the account password and ends existing admin sessions. New administrators receive owner access when the flag is omitted. Existing administrators keep their assigned access, and legacy accounts without an assignment are treated as staff.
+Use `npm run create-admin -- --owner` to grant owner access to an existing administrator, including accounts created before owner access was introduced. Use `--staff` to grant limited operational access. The command also rotates the account password and ends existing admin sessions. New administrators receive owner access when the flag is omitted. Existing administrators keep their assigned access, and legacy accounts without an assignment are treated as staff. See the [admin permission table](docs/CHANGE-GUIDE.md#admin-permissions).
 
 Open `/admin/login` after creating the account. Production requires authenticator enrollment. Save your one-time recovery codes. Use `npm.cmd run remove-admin` from `server` to revoke administrator access.
 
