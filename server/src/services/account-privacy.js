@@ -134,6 +134,12 @@ export function deleteAccount(user, days) {
       { session },
     );
     if (!account) throw new HttpError(404, 'Account not found.');
+    if (account.role === 'admin') {
+      throw new HttpError(
+        409,
+        'Remove administrator access from the server terminal before closing this account.',
+      );
+    }
     const orders = await Order.find({ user })
       .select('number status createdAt')
       .session(session)

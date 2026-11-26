@@ -1,4 +1,5 @@
 export interface AdminMetrics {
+  ownerWarning?: string | null;
   counts: {
     ordersToConfirm: number;
     codToCollect: number;
@@ -32,6 +33,8 @@ const actionLabels: Record<string, string> = {
   'admin.sign_in_setup_required': 'Authenticator setup required',
   'admin.role_granted': 'Admin role granted',
   'admin.role_removed': 'Admin role removed',
+  'admin.access_changed': 'Admin access changed',
+  'admin.access_migrated': 'Store owner assigned',
   'admin.created': 'Admin account created',
   'admin.password_rotated': 'Admin password changed',
   'settings.updated': 'Store settings updated',

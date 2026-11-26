@@ -52,19 +52,27 @@ Open **Admin → Returns** for the cross-order queue. Open a request to approve 
 
 ## Create the first administrator
 
-From an interactive terminal in `server`, run `npm.cmd run create-admin` on Windows or `npm run create-admin` on macOS or Linux. Use the target database’s `MONGODB_URI`. Enter the email and type the new password twice. The password is hidden and must be at least 12 characters and at most 72 UTF-8 bytes. If that email already belongs to an account, the command promotes it, sets the password you entered, and requires the account to sign in again.
+From an interactive terminal in `server`, run `npm.cmd run create-admin` on Windows or `npm run create-admin` on macOS or Linux. Use the target database’s `MONGODB_URI`. Enter the email and type the new password twice. The password is hidden and must be at least 12 characters and at most 72 UTF-8 bytes. If the email already belongs to an account, the command updates its access and password and requires a fresh sign-in. Once an owner exists, use `npm run create-admin -- --owner` or `npm run create-admin -- --staff` to specify access explicitly.
 
 Sign in at `/admin/login`. The store login keeps using its separate customer session. Admin sessions require a fresh sign-in after 30 minutes without activity or after 12 hours at most. The dashboard warns shortly before expiry.
 
 Production requires an authenticator. Set `ADMIN_REQUIRE_2FA=true` to test the same flow in development. Sign in with your password, generate the QR code, scan it in an authenticator app, and enter the current six-digit code. Store the recovery codes offline. On future sign-ins, enter a current authenticator code or one unused recovery code. Keep `ADMIN_TOTP_KEY` stable if configured. It must be 64 hex characters from a secure random source. Without it, the key is derived from `JWT_SECRET`.
 
-From `server`, run `npm.cmd run remove-admin` on Windows or `npm run remove-admin` on macOS or Linux. Enter the email and type `REMOVE` to confirm. This revokes admin sessions immediately and removes the old authenticator enrollment. The account can still use the storefront. An operator with database access can use the remove and create commands to re-enroll an administrator who has lost both the authenticator and all recovery codes.
+From `server`, run `npm.cmd run remove-admin` on Windows or `npm run remove-admin` on macOS or Linux. Enter the email and type `REMOVE` to confirm. This revokes admin sessions immediately and removes the old authenticator enrollment. The account can still use the storefront. Remove administrator access from the terminal before closing a storefront account associated with an administrator. To transfer ownership, grant ownership to the replacement before removing or demoting the original owner.
 
 For direct admin API requests, sign in using `POST /auth/admin/login`, keep the admin cookie, and send the returned token as `X-Admin-CSRF` on writes. A non-renewing session check is available at `GET /auth/admin/session`. Owners can view the latest audit entries on the dashboard.
 
+## Recover owner access
+
+Run these commands from `server` against the intended database. On Windows, substitute `npm.cmd` for `npm`.
+
+1. If the store has existing administrators and no owner, run `npm run migrate-admin-access`. It promotes the sole administrator or asks you to select one when there are several. It reports the changed account and records an audit entry. You can run it again safely.
+2. If there are no administrators, run `npm run create-admin -- --owner` and complete the account setup. If an owner lost only the password, use the same command with that owner's email to set a new password.
+3. If the only owner lost their authenticator and all recovery codes, use `npm run remove-admin -- --force` to reset that enrollment and immediately run `npm run create-admin -- --owner` for the same email. To deliberately demote the last owner, use `npm run create-admin -- --staff --force`. Both forced changes are audited. A store without an owner fails the production launch check and displays a warning on the admin dashboard.
+
 ## Admin permissions
 
-`server/src/config/admin-permissions.js` defines the roles. The session API returns the granted permissions, which the admin shell uses for navigation and controls. Legacy admin accounts without an explicit access level use the staff permissions.
+`server/src/config/admin-permissions.js` defines the roles. The session API returns the granted permissions, which the admin shell uses for navigation and controls. Missing and unrecognized access values use the staff permissions. The Admin users screen appears only after an account is explicitly assigned staff access.
 
 | Capability | Owner | Staff |
 | --- | --- | --- |
@@ -77,7 +85,7 @@ For direct admin API requests, sign in using `POST /auth/admin/login`, keep the 
 | Newsletter | View and manage | View masked subscriber list |
 | Coupons and blocked contacts | Manage | — |
 | Audit activity | View | — |
-| Admin users | Provision from the server terminal | — |
+| Administrator accounts | View management guidance when a staff account exists. Provision and remove from the server terminal. | — |
 
 Staff can search by a complete phone number or email they already have. Partial phone and email searches are available to owners. Full contact disclosures in admin detail views, packing slips, owner lists, and exports create a `privacy.contact_viewed` audit entry with the actor, record or list reference, and field names. The entry omits the contact values.
 
@@ -103,7 +111,7 @@ Open **Admin → Settings** as a store owner and follow the launch readiness che
 
 ## Change store settings and COD rules
 
-Edit settings in rupees under **Admin → Settings**. Staff have read-only access. To grant an existing account owner access, run `npm run create-admin -- --owner` from `server` against the target database. Use `--staff` when provisioning staff accounts. These commands rotate the password and end existing admin sessions. Administrators created before owner access was introduced can read settings until an owner grant is assigned.
+Edit settings in rupees under **Admin → Settings**. Staff have read-only access. Follow the [owner recovery steps](#recover-owner-access) if the store has no owner.
 
 For direct API access, use `GET /admin/settings` for the full settings record and `GET /admin/settings/readiness` for the launch blockers. Save with an owner session and `PUT /admin/settings`. The settings API uses integer paise and validates edited fields with the same rules used at startup. Each settings change creates an audit entry. Changes take effect when saved on the current API instance. Other instances refresh within 30 seconds.
 

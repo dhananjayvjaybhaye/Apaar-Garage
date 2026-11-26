@@ -73,7 +73,9 @@ test('only the terminal service can create or promote an administrator', async (
   await browser('/admin/settings');
 
   const freshEmail = 'new-admin@example.test';
-  await createOrPromoteAdministrator(freshEmail, password);
+  await assert.rejects(createOrPromoteAdministrator(freshEmail, password), /--owner or --staff/);
+  assert.equal(await User.exists({ email: freshEmail }), null);
+  await createOrPromoteAdministrator(freshEmail, password, 'staff');
   const fresh = shopper(origin);
   await fresh('/auth/admin/login', post({ email: freshEmail, password }));
   await fresh('/admin/settings');

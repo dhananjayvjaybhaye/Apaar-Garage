@@ -8,9 +8,12 @@ import { MongoMemoryReplSet } from 'mongodb-memory-server-core';
 import { seedProducts } from '../scripts/products.js';
 import { Product } from '../src/models/product.js';
 import { assertProductionReady, LaunchCheckError } from '../src/services/launch-check.js';
+import { User } from '../src/models/user.js';
+import { noOwnerWarning } from '../src/services/admin-access.js';
 
 const exec = promisify(execFile);
 const main = fileURLToPath(new URL('../src/index.js', import.meta.url));
+const migrate = fileURLToPath(new URL('../scripts/migrate-admin-access.js', import.meta.url));
 
 test('production refuses to listen when launch requirements are incomplete', async (t) => {
   const database = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
@@ -56,6 +59,7 @@ test('production refuses to listen when launch requirements are incomplete', asy
   await assert.rejects(exec(process.execPath, [main], { env, timeout: 25_000 }), (error) => {
     assert.equal(error.code, 1);
     assert.match(error.stderr, /Production launch blocked/);
+    assert.ok(error.stderr.includes(noOwnerWarning));
     for (const missing of [
       'Seller legal name',
       'Seller business address',
@@ -65,6 +69,7 @@ test('production refuses to listen when launch requirements are incomplete', asy
       'Grievance officer email',
       'Grievance officer phone',
       'Invoice prefix is unset',
+      'The store must have an owner',
       'published placeholder products (1)',
     ])
       assert.ok(error.stderr.includes(missing), missing);
@@ -74,5 +79,17 @@ test('production refuses to listen when launch requirements are incomplete', asy
   });
 
   await Product.updateOne({ slug: seedProducts[0].slug }, { $set: { status: 'hidden' } });
+  await assert.rejects(assertProductionReady(expected), /must have an owner/);
+  const legacy = await User.create({
+    name: 'Original administrator',
+    email: 'legacy@example.test',
+    role: 'admin',
+    passwordHash: 'fixture',
+  });
+  const { stdout } = await exec(process.execPath, [migrate], { env, timeout: 25_000 });
+  assert.match(stdout, /Store owner assigned to legacy@example.test/);
+  assert.equal((await User.findById(legacy._id)).adminAccess, 'owner');
+  const repeated = await exec(process.execPath, [migrate], { env, timeout: 25_000 });
+  assert.match(repeated.stdout, /already exists.*No access was changed/);
   await assert.doesNotReject(assertProductionReady(expected));
 });

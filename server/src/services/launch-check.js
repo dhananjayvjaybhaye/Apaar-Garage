@@ -1,4 +1,5 @@
 import { Product } from '../models/product.js';
+import { hasStoreOwner } from './admin-access.js';
 
 const requiredSettings = [
   ['seller', 'legalName', 'Seller legal name'],
@@ -25,6 +26,7 @@ export async function launchBlockers(settings) {
     .filter(([group, field]) => !hasSetting(settings[group]?.[field]))
     .map(([, , label]) => label + ' is missing.');
   if (!settings.invoicePrefix) blockers.push('Invoice prefix is unset.');
+  if (!(await hasStoreOwner())) blockers.push('The store must have an owner.');
   const placeholders = await Product.countDocuments({ placeholder: true, status: 'published' });
   if (placeholders) {
     blockers.push('Hide or archive published placeholder products (' + placeholders + ').');

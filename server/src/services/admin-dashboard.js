@@ -2,6 +2,7 @@ import { Product } from '../models/product.js';
 import { Order } from '../models/order.js';
 import { ReturnRequest } from '../models/return-request.js';
 import { SupportRequest } from '../models/support-request.js';
+import { hasStoreOwner, noOwnerWarning } from './admin-access.js';
 import { millisecondsPerDay } from '../config/business.js';
 import {
   dashboardDays,
@@ -123,7 +124,7 @@ async function orderMetrics(now) {
 export async function adminDashboard(now = new Date()) {
   const deadline = new Date(+now + ticketDueSoonHours * 60 * 60_000);
   const inventory = { status: 'published' };
-  const [orders, openReturns, ticketsDueSoon, lowStock, soldOut] = await Promise.all([
+  const [orders, openReturns, ticketsDueSoon, lowStock, soldOut, hasOwner] = await Promise.all([
     orderMetrics(now),
     ReturnRequest.countDocuments({ status: { $in: openReturnStates } }),
     SupportRequest.countDocuments({
@@ -135,9 +136,11 @@ export async function adminDashboard(now = new Date()) {
     }),
     Product.countDocuments({ ...inventory, ...lowStockFilter }),
     Product.countDocuments({ ...inventory, stock: 0 }),
+    hasStoreOwner(),
   ]);
   return {
     ...orders,
+    ownerWarning: hasOwner ? null : noOwnerWarning,
     counts: { ...orders.counts, openReturns, ticketsDueSoon, lowStock, soldOut },
   };
 }

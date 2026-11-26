@@ -154,7 +154,8 @@ test('mandatory enrollment, CSRF, one-time factors, idle cutoff and role removal
   const customer = shopper(origin);
   await customer('/auth/login', post(credentials));
   await browser(signin, post({ ...credentials, code: enabled.value.recoveryCodes[2] }));
-  assert.equal(await removeAdministrator(email), true);
+  await assert.rejects(removeAdministrator(email), /last store owner/);
+  assert.equal(await removeAdministrator(email, { force: true }), true);
   await browser('/admin/settings', { status: 401 });
   await customer('/auth/me');
   await customer('/admin/settings', { status: 403 });

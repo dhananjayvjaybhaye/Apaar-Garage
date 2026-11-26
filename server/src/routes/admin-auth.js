@@ -84,15 +84,15 @@ export function createAdminAuthRouter(config, sessions) {
     }
     await releaseReservations(attempt.reservations);
     sessions.writeCookie(res, result.token, result.record);
-    res.json(describeAdmin(user, result.record));
+    res.json(await describeAdmin(user, result.record));
   });
   router.get('/session', async (req, res) => {
     const { user, session } = await sessions.read(req, res, { allowSetup: true });
-    res.json(describeAdmin(user, session));
+    res.json(await describeAdmin(user, session));
   });
   router.post('/activity', async (req, res) => {
     const { user, session } = await sessions.read(req, res, { renew: true });
-    res.json(describeAdmin(user, session));
+    res.json(await describeAdmin(user, session));
   });
   router.post('/logout', async (req, res) => {
     const { session } = await sessions.read(req, res, { allowSetup: true });
@@ -116,7 +116,7 @@ export function createAdminAuthRouter(config, sessions) {
       const result = await confirmEnrollment(user, session, code, config.encryptionKey, req.ip);
       sessions.writeCookie(res, sessions.token(req), result.session);
       res.json({
-        ...describeAdmin(result.user, result.session),
+        ...(await describeAdmin(result.user, result.session)),
         recoveryCodes: result.recoveryCodes,
       });
     },

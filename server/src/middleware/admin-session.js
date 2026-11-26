@@ -12,19 +12,21 @@ import { AdminSession } from '../models/admin-security.js';
 import { User } from '../models/user.js';
 import { HttpError } from '../utils/http-error.js';
 import { adminPermission, adminPermissions } from '../config/admin-permissions.js';
+import { hasStaffAccount } from '../services/admin-access.js';
 
 const sensitiveMethods = new Set(['GET', 'HEAD', 'OPTIONS']);
 const digest = (token) => createHash('sha256').update(token).digest();
 const randomToken = () => randomBytes(32).toString('base64url');
 const expired = () => new HttpError(401, 'Sign in as an administrator to continue.');
 
-export function describeAdmin(user, session) {
+export async function describeAdmin(user, session) {
   const permissions = adminPermissions(user.adminAccess);
   return {
     name: user.name,
     email: user.email,
     canEditSettings: permissions.includes(adminPermission.settingsWrite),
     permissions,
+    hasStaff: await hasStaffAccount(),
     csrfToken: session.csrf,
     setupRequired: session.scope === setupCookieScope,
     twoFactorEnabled: Boolean(user.adminTotp?.encrypted),

@@ -18,6 +18,9 @@
     <p role="alert" class="error-text">{{ error() }}</p>
     <button type="button" class="secondary-button" (click)="refresh()">Retry</button>
   } @else if (metrics(); as data) {
+    @if (data.ownerWarning; as warning) {
+      <p class="admin-notice" role="alert">{{ warning.replaceAll('`', '') }}</p>
+    }
     <div class="dashboard-cards">
       @for (card of cards; track card.key) {
         <article class="admin-box">

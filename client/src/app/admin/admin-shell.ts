@@ -18,7 +18,6 @@ import { AdminSessionStore } from './admin-session-store';
 import {
   activityThrottleMs,
   adminLoginPath,
-  adminNavigation,
   adminProductEditorReturn,
   sessionClockMs,
   warningMs,
@@ -36,9 +35,7 @@ export class AdminShell {
   private readonly router = inject(Router);
   private readonly productDrafts = inject(AdminProductDrafts);
   protected readonly sessions = inject(AdminSessionStore);
-  protected readonly navigation = computed(
-    () => adminNavigation.filter(({ permission }) => this.sessions.can(permission)),
-  );
+  protected readonly navigation = this.sessions.sections;
   protected readonly menuOpen = signal(false);
   private readonly now = signal(Date.now());
   private readonly remaining = computed(() => this.sessions.remainingMs(this.now()));

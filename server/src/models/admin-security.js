@@ -15,6 +15,11 @@ const sessionSchema = new mongoose.Schema({
 });
 export const AdminSession = mongoose.model('AdminSession', sessionSchema);
 
+export const AdminAccessLock = mongoose.model(
+  'AdminAccessLock',
+  new mongoose.Schema({ _id: String, revision: Number }),
+);
+
 export const AdminLoginLimit = mongoose.model(
   'AdminLoginLimit',
   new mongoose.Schema({

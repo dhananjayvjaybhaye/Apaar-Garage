@@ -9,14 +9,20 @@ import { AdminSessionStore } from './admin-session-store';
 
 export async function mountAdmin<T>(
   component: Type<T>,
-  { params = {}, permissions = [] }: { params?: Record<string, string>; permissions?: string[] } = {},
+  options: {
+    params?: Record<string, string>;
+    query?: Record<string, string>;
+    permissions?: string[];
+    hasStaff?: boolean;
+  } = {},
 ) {
   TestBed.configureTestingModule({
     imports: [component],
     providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
   });
   const route = TestBed.inject(ActivatedRoute);
-  Object.defineProperty(route, 'paramMap', { configurable: true, value: of(convertToParamMap(params)) });
+  Object.defineProperty(route, 'paramMap', { configurable: true, value: of(convertToParamMap(options.params ?? {})) });
+  Object.defineProperty(route, 'queryParamMap', { configurable: true, value: of(convertToParamMap(options.query ?? {})) });
   const http = TestBed.inject(HttpTestingController);
   const restored = TestBed.inject(AdminSessionStore).restore();
   http.expectOne('/api/auth/admin/session').flush({
@@ -28,7 +34,8 @@ export async function mountAdmin<T>(
     serverTime: new Date().toISOString(),
     setupRequired: false,
     twoFactorEnabled: true,
-    permissions,
+    permissions: options.permissions,
+    hasStaff: options.hasStaff,
   });
   await restored;
   const fixture = TestBed.createComponent(component);

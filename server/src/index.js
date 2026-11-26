@@ -19,6 +19,7 @@ import { Review } from './models/review.js';
 import { User } from './models/user.js';
 import { assertProductionReady, LaunchCheckError } from './services/launch-check.js';
 import { createSettingsService, settingsDefaults } from './services/store-settings.js';
+import { hasStoreOwner, noOwnerWarning } from './services/admin-access.js';
 import { bindAddress, readAppOptions, readPort } from './utils/config.js';
 
 try {
@@ -50,6 +51,7 @@ try {
     SupportRequest.init(),
   ]);
 
+  if (!(await hasStoreOwner())) console.warn(noOwnerWarning);
   if (options.production) await assertProductionReady(await settings.read());
 
   app.listen(port, bindAddress, (error) => {

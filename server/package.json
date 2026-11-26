@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node --env-file=.env src/index.js",
     "create-admin": "node --env-file-if-exists=.env scripts/create-admin.js",
+    "migrate-admin-access": "node --env-file-if-exists=.env scripts/migrate-admin-access.js",
     "remove-admin": "node --env-file-if-exists=.env scripts/remove-admin.js",
     "dev": "node --watch --env-file=.env src/index.js",
     "seed": "node --env-file=.env scripts/seed.js",

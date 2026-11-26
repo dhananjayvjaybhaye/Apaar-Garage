@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
-import { inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { adminAuthApi, adminCsrfHeader } from './admin.config';
+import { adminAuthApi, adminCsrfHeader, adminNavigation } from './admin.config';
 
 export interface AdminSession {
   name: string;
@@ -14,6 +14,7 @@ export interface AdminSession {
   twoFactorEnabled: boolean;
   canEditSettings?: boolean;
   permissions?: readonly string[];
+  hasStaff?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -22,9 +23,18 @@ export class AdminSessionStore {
   private readonly current = signal<AdminSession | null>(null);
   readonly session = this.current.asReadonly();
   private readonly serverOffset = signal(0);
+  readonly hasPermissions = computed(() => {
+    const permissions = this.session()?.permissions;
+    return Array.isArray(permissions) && permissions.length > 0;
+  });
+  readonly sections = computed(() => adminNavigation.filter(({ permission }) =>
+    this.can(permission) &&
+    (permission !== 'admin-users.manage' || this.session()?.hasStaff === true),
+  ));
 
   can(permission: string) {
-    return this.session()?.permissions?.includes(permission) ?? false;
+    const permissions = this.session()?.permissions;
+    return Array.isArray(permissions) && permissions.includes(permission);
   }
 
   private store(session: AdminSession) {

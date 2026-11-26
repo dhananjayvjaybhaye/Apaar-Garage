@@ -11,10 +11,16 @@ const requireAdmin: CanActivateFn = async () => {
 };
 
 const requirePermission: CanActivateChildFn = (route) => {
-  const permission = route.data['permission'];
-  return !permission || inject(AdminSessionStore).can(permission)
-    ? true
-    : inject(Router).parseUrl('/admin/no-access');
+  const permission: string | undefined = route.data['permission'];
+  if (!permission) return true;
+  const sessions = inject(AdminSessionStore);
+  const router = inject(Router);
+  if (!sessions.can(permission)) {
+    return router.createUrlTree(['/admin/no-access'], { queryParams: { permission } });
+  }
+  if (permission === 'admin-users.manage' && sessions.session()?.hasStaff !== true)
+    return router.parseUrl('/admin');
+  return true;
 };
 
 export const adminRoutes: Routes = [

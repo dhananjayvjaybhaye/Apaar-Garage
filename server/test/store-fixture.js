@@ -112,7 +112,7 @@ export async function makeAdmin(origin) {
   const admin = shopper(origin);
   const email = 'admin@example.test';
   const password = 'sample-password';
-  await createOrPromoteAdministrator(email, password);
+  await createOrPromoteAdministrator(email, password, 'owner');
   await admin('/auth/admin/login', { method: 'POST', body: { email, password } });
   return admin;
 }
